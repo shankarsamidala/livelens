@@ -2708,8 +2708,9 @@ async function initializeApp() {
   // Register global shortcuts using KeybindManager
   KeybindManager.getInstance().registerGlobalShortcuts()
 
-  // Pre-create settings window in background for faster first open
+  // Pre-create settings and model selector windows in background for faster first open
   appState.settingsWindowHelper.preloadWindow()
+  appState.modelSelectorWindowHelper.preloadWindow()
 
   // One-time macOS screen recording permission prompt.
   //

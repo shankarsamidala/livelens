@@ -2055,26 +2055,25 @@ Provide only the answer, nothing else.`;
                                     </button>
                                     <button
                                         onClick={(e) => {
-                                            if (messages.length === 0 && !isManualRecording && !isProcessing) {
-                                                setModelSelectorOpen(o => !o);
-                                            } else {
-                                                if (!contentRef.current) return;
-                                                const contentRect = contentRef.current.getBoundingClientRect();
-                                                const buttonRect = e.currentTarget.getBoundingClientRect();
-                                                window.electronAPI.toggleModelSelector({
-                                                    offsetX: buttonRect.left,
-                                                    offsetY: contentRect.bottom + 8,
-                                                });
-                                            }
+                                            if (!contentRef.current) return;
+                                            const contentRect = contentRef.current.getBoundingClientRect();
+                                            window.electronAPI.toggleModelSelector({
+                                                offsetX: 0,
+                                                offsetY: contentRect.bottom + 8,
+                                            });
                                         }}
                                         className={`flex items-center gap-1.5 px-2.5 py-1 border rounded-lg text-[11px] font-medium max-w-[130px] interaction-base interaction-press ${controlSurfaceClass}`}
                                         style={appearance.controlStyle}
                                     >
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, backgroundColor: providerDotColor(availableModels.find(m => m.id === currentModel)?.provider, availableModels.find(m => m.id === currentModel)?.type) }} />
                                         <span className="truncate min-w-0 flex-1">
-                                            {availableModels.find(m => m.id === currentModel)?.name ?? (() => {
+                                            {(() => {
                                                 const m = currentModel;
                                                 if (m.startsWith('ollama-')) return m.replace('ollama-', '');
+                                                if (m === 'gemini-3.1-flash-lite-preview') return 'Gemini 3.1 Flash';
+                                                if (m === 'gemini-3.1-pro-preview') return 'Gemini 3.1 Pro';
+                                                if (m === 'llama-3.3-70b-versatile') return 'Groq Llama 3.3';
+                                                if (m === 'gpt-5.4') return 'GPT 5.4';
+                                                if (m === 'claude-sonnet-4-6') return 'Sonnet 4.6';
                                                 return m;
                                             })()}
                                         </span>
@@ -2089,9 +2088,8 @@ Provide only the answer, nothing else.`;
                                             if (isSettingsOpen) { window.electronAPI.toggleSettingsWindow(); return; }
                                             if (!contentRef.current) return;
                                             const contentRect = contentRef.current.getBoundingClientRect();
-                                            const buttonRect = e.currentTarget.getBoundingClientRect();
                                             window.electronAPI.toggleSettingsWindow({
-                                                offsetX: buttonRect.left,
+                                                offsetX: contentRect.right - 220,
                                                 offsetY: contentRect.bottom + 8,
                                             });
                                         }}
@@ -2249,94 +2247,6 @@ Provide only the answer, nothing else.`;
                                     onCopyDiagnostics={copyDiagnostics}
                                 />
                             ) : null}
-
-                            {/* Inline model selector — shown only when chat is empty */}
-                            {messages.length === 0 && !isManualRecording && !isProcessing && (
-                                <div className="flex justify-center px-4 pt-4 pb-2 no-drag">
-                                    <div ref={modelSelectorRef} style={{ position: 'relative' }}>
-                                        <button
-                                            onClick={() => setModelSelectorOpen(o => !o)}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: 7,
-                                                padding: '6px 12px', borderRadius: 99,
-                                                background: isLightTheme ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)',
-                                                border: `1px solid ${isLightTheme ? 'rgba(0,0,0,0.09)' : 'rgba(255,255,255,0.10)'}`,
-                                                cursor: 'pointer', fontSize: 12, fontWeight: 500,
-                                                color: isLightTheme ? 'rgba(0,0,0,0.65)' : 'rgba(226,229,237,0.75)',
-                                                transition: 'background 0.12s',
-                                            }}
-                                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = isLightTheme ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.11)'; }}
-                                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = isLightTheme ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)'; }}
-                                        >
-                                            <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, display: 'inline-block', backgroundColor: providerDotColor(availableModels.find(m => m.id === currentModel)?.provider, availableModels.find(m => m.id === currentModel)?.type) }} />
-                                            <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {availableModels.find(m => m.id === currentModel)?.name ?? currentModel}
-                                            </span>
-                                            <ChevronDown style={{ width: 11, height: 11, opacity: 0.5, flexShrink: 0, transform: modelSelectorOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-                                        </button>
-
-                                        {modelSelectorOpen && availableModels.length > 0 && (
-                                            <div style={{
-                                                position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)',
-                                                width: 200, borderRadius: 14, padding: 6,
-                                                background: '#0d0f14',
-                                                border: '1px solid rgba(255,255,255,0.09)',
-                                                zIndex: 100, display: 'flex', flexDirection: 'column', gap: 1,
-                                                maxHeight: 240, overflowY: 'auto',
-                                            }}>
-                                                {/* Cloud section */}
-                                                {(() => {
-                                                    const cloud = availableModels.filter(m => m.type === 'cloud' || m.type === 'custom');
-                                                    const local = availableModels.filter(m => m.type === 'ollama' || m.type === 'local');
-                                                    return <>
-                                                        {cloud.length > 0 && <>
-                                                            {local.length > 0 && <div style={{ padding: '4px 10px 2px', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(226,229,237,0.25)' }}>Cloud</div>}
-                                                            {cloud.map(m => (
-                                                                <button key={m.id} onClick={() => { handleModelSelect(m.id); setModelSelectorOpen(false); }} style={{
-                                                                    width: '100%', textAlign: 'left', padding: '7px 10px', borderRadius: 9,
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                                                                    background: currentModel === m.id ? 'rgba(255,255,255,0.09)' : 'transparent',
-                                                                    border: currentModel === m.id ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
-                                                                    cursor: 'pointer', color: currentModel === m.id ? '#e2e5ed' : 'rgba(226,229,237,0.65)',
-                                                                    fontSize: 12, fontWeight: 500,
-                                                                }} onMouseEnter={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; }}
-                                                                   onMouseLeave={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
-                                                                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: providerDotColor(m.provider, m.type), flexShrink: 0 }} />
-                                                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
-                                                                    </span>
-                                                                    {currentModel === m.id && <Check style={{ width: 12, height: 12, flexShrink: 0, color: 'rgba(226,229,237,0.65)' }} />}
-                                                                </button>
-                                                            ))}
-                                                        </>}
-                                                        {cloud.length > 0 && local.length > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '3px 6px' }} />}
-                                                        {local.length > 0 && <>
-                                                            {cloud.length > 0 && <div style={{ padding: '4px 10px 2px', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(226,229,237,0.25)' }}>Local</div>}
-                                                            {local.map(m => (
-                                                                <button key={m.id} onClick={() => { handleModelSelect(m.id); setModelSelectorOpen(false); }} style={{
-                                                                    width: '100%', textAlign: 'left', padding: '7px 10px', borderRadius: 9,
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                                                                    background: currentModel === m.id ? 'rgba(255,255,255,0.09)' : 'transparent',
-                                                                    border: currentModel === m.id ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
-                                                                    cursor: 'pointer', color: currentModel === m.id ? '#e2e5ed' : 'rgba(226,229,237,0.65)',
-                                                                    fontSize: 12, fontWeight: 500,
-                                                                }} onMouseEnter={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; }}
-                                                                   onMouseLeave={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
-                                                                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: providerDotColor(m.provider, m.type), flexShrink: 0 }} />
-                                                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
-                                                                    </span>
-                                                                    {currentModel === m.id && <Check style={{ width: 12, height: 12, flexShrink: 0, color: 'rgba(226,229,237,0.65)' }} />}
-                                                                </button>
-                                                            ))}
-                                                        </>}
-                                                    </>;
-                                                })()}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Chat History - Only show if there are messages OR active states */}
                             {(messages.length > 0 || isManualRecording || isProcessing) && (

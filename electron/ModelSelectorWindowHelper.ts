@@ -55,6 +55,7 @@ export class ModelSelectorWindowHelper {
         if (process.platform === "darwin") {
             this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
             this.window.setHiddenInMissionControl(true);
+            this.window.setAlwaysOnTop(true, "floating");
         }
 
         // Standard dropdown positioning
@@ -139,8 +140,9 @@ export class ModelSelectorWindowHelper {
         this.window = new BrowserWindow(windowSettings)
 
         if (process.platform === "darwin") {
-            // Initial defaults - will be updated in showWindow
+            this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
             this.window.setHiddenInMissionControl(true)
+            this.window.setAlwaysOnTop(true, "floating")
         }
 
         // Apply content protection for Undetectable Mode
