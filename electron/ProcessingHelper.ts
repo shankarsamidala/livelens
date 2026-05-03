@@ -79,10 +79,10 @@ export class ProcessingHelper {
       this.llmHelper.setClaudeApiKey(claudeKey);
     }
 
-    const nativelyKey = credManager.getNativelyApiKey();
+    const nativelyKey = credManager.getLiveLensApiKey();
     if (nativelyKey) {
-      console.log("[ProcessingHelper] Loading stored Natively API Key from CredentialsManager");
-      this.llmHelper.setNativelyKey(nativelyKey);
+      console.log("[ProcessingHelper] Loading stored LiveLens API Key from CredentialsManager");
+      this.llmHelper.setLiveLensKey(nativelyKey);
     }
 
     // CRITICAL: Re-initialize IntelligenceManager now that keys are loaded

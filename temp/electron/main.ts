@@ -664,7 +664,7 @@ export class AppState {
     // Workaround: Open the folder containing the downloaded update so user can install manually
     if (process.platform === 'darwin') {
       try {
-        // Get the downloaded update file path (e.g., .../Natively-1.0.9-mac.zip)
+        // Get the downloaded update file path (e.g., .../LiveLens-1.0.9-mac.zip)
         const updateFile = (autoUpdater as any).downloadedUpdateHelper?.file
         console.log('[AutoUpdater] Downloaded update file:', updateFile)
 
@@ -1756,7 +1756,7 @@ export class AppState {
     trayIcon.setTemplateImage(iconToUse.endsWith('Template.png'));
 
     this.tray = new Tray(trayIcon)
-    this.tray.setToolTip('Natively') // This tooltip might also need update if we change global shortcut, but global shortcut is removed.
+    this.tray.setToolTip('LiveLens') // This tooltip might also need update if we change global shortcut, but global shortcut is removed.
     this.updateTrayMenu();
 
     // Double-click to show window
@@ -1774,7 +1774,7 @@ export class AppState {
     console.log('[Main] updateTrayMenu called. Screenshot Accelerator:', screenshotAccel);
 
     // Update tooltip for verification
-    this.tray.setToolTip('Natively');
+    this.tray.setToolTip('LiveLens');
 
     // Helper to format accelerator for display (e.g. CommandOrControl+H -> Cmd+H)
     const formatAccel = (accel: string) => {
@@ -1794,7 +1794,7 @@ export class AppState {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Show Natively',
+        label: 'Show LiveLens',
         click: () => {
           this.centerAndShowWindow()
         }
@@ -1925,7 +1925,7 @@ export class AppState {
           console.log('[Stealth] Calling app.dock.hide()');
           app.dock.hide();
           this.hideTray();
-          // Do NOT call focus() here — Natively is a ghost overlay.
+          // Do NOT call focus() here — LiveLens is a ghost overlay.
           // focus() → [NSApp activateIgnoringOtherApps:YES] which steals OS focus
           // from whatever the user is currently doing (Zoom, browser, etc.)
         } else {
@@ -1975,7 +1975,7 @@ export class AppState {
   }
 
   private _applyDisguise(mode: 'terminal' | 'settings' | 'activity' | 'none'): void {
-    let appName = "Natively";
+    let appName = "LiveLens";
     let iconPath = "";
 
     const isWin = process.platform === 'win32';
@@ -2019,7 +2019,7 @@ export class AppState {
         }
         break;
       case 'none':
-        appName = "Natively";
+        appName = "LiveLens";
         if (isMac) {
           iconPath = app.isPackaged
             ? path.join(process.resourcesPath, "natively.icns")

@@ -52,24 +52,8 @@ export class ModelSelectorWindowHelper {
 
         const activate = options.activate ?? true;
 
-        // Set parent and align window settings
-        const mainWin = this.windowHelper?.getMainWindow();
-        const isOverlay = mainWin === this.windowHelper?.getOverlayWindow();
-
-        if (mainWin && !mainWin.isDestroyed()) {
-            this.window.setParentWindow(mainWin);
-        }
-
         if (process.platform === "darwin") {
-            // Align with parent window behavior
-            this.window.setVisibleOnAllWorkspaces(isOverlay, { visibleOnFullScreen: isOverlay });
-            // Only set alwaysOnTop if the value is actually changing — calling it unnecessarily
-            // triggers NSApp activation on macOS, stealing focus from other apps.
-            const currentAlwaysOnTop = this.window.isAlwaysOnTop();
-            if (currentAlwaysOnTop !== isOverlay) {
-                this.window.setAlwaysOnTop(isOverlay, "floating");
-            }
-            // Always hide from MC as it's a dropdown
+            this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
             this.window.setHiddenInMissionControl(true);
         }
 
@@ -98,7 +82,6 @@ export class ModelSelectorWindowHelper {
 
     public hideWindow(): void {
         if (this.window && !this.window.isDestroyed()) {
-            this.window.setParentWindow(null);
             this.window.hide();
             // Do NOT call mainWin.focus() here — the model selector is a floating dropdown.
             // Explicitly focusing the main window steals OS focus from whatever the user
@@ -129,8 +112,8 @@ export class ModelSelectorWindowHelper {
 
     private createWindow(x?: number, y?: number, showWhenReady: boolean = true): void {
         const windowSettings: Electron.BrowserWindowConstructorOptions = {
-            width: 140,
-            height: 200,
+            width: 216,
+            height: 300,
             frame: false,
             transparent: true,
             resizable: false,
@@ -213,6 +196,13 @@ export class ModelSelectorWindowHelper {
         }
 
         this.window.setPosition(newX, newY);
+    }
+
+    public setWindowDimensions(width: number, height: number): void {
+        if (!this.window || this.window.isDestroyed() || !this.window.isVisible()) return;
+        const current = this.window.getBounds();
+        if (current.width === width && current.height === height) return;
+        this.window.setSize(width, height);
     }
 
     public setContentProtection(enable: boolean): void {

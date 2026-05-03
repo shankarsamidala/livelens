@@ -3,9 +3,9 @@ import WebSocket from 'ws';
 import { RECOGNITION_LANGUAGES, EnglishVariant } from '../config/languages';
 
 /**
- * NativelyProSTT
+ * LiveLensProSTT
  *
- * Connects to the Natively API WebSocket transcription endpoint.
+ * Connects to the LiveLens API WebSocket transcription endpoint.
  * Forwards the user's selected accent/language to the server so
  * Deepgram / Google STT use the correct language model.
  *
@@ -14,7 +14,7 @@ import { RECOGNITION_LANGUAGES, EnglishVariant } from '../config/languages';
  *
  * All subsequent messages are binary LINEAR16 PCM audio.
  */
-export class NativelyProSTT extends EventEmitter {
+export class LiveLensProSTT extends EventEmitter {
     private apiKey: string;
     private channel: string;  // 'system' | 'mic' — disambiguates concurrent streams per key
     private ws: WebSocket | null = null;
@@ -58,7 +58,7 @@ export class NativelyProSTT extends EventEmitter {
 
     public setSampleRate(rate: number): void {
         this.sampleRate = rate;
-        console.log(`[NativelyProSTT:${this.channel}] Sample rate configured to ${rate}Hz`);
+        console.log(`[LiveLensProSTT:${this.channel}] Sample rate configured to ${rate}Hz`);
     }
 
     public setAudioChannelCount(count: number): void {
@@ -77,18 +77,18 @@ export class NativelyProSTT extends EventEmitter {
         if (key === 'auto') {
             this.languageBcp47      = 'auto';
             this.languageAlternates = [];
-            console.log('[NativelyProSTT] Language set to auto-detect mode');
+            console.log('[LiveLensProSTT] Language set to auto-detect mode');
         } else {
             const config = RECOGNITION_LANGUAGES[key];
             if (!config) {
-                console.warn(`[NativelyProSTT] Unknown language key: ${key}`);
+                console.warn(`[LiveLensProSTT] Unknown language key: ${key}`);
                 return;
             }
             this.languageBcp47      = config.bcp47;
             this.languageAlternates = 'alternates' in config
                 ? (config as EnglishVariant).alternates
                 : [];
-            console.log(`[NativelyProSTT] Language set: ${key} → ${this.languageBcp47}`,
+            console.log(`[LiveLensProSTT] Language set: ${key} → ${this.languageBcp47}`,
                 this.languageAlternates.length ? `(alts: ${this.languageAlternates.join(', ')})` : '');
         }
 
@@ -96,7 +96,7 @@ export class NativelyProSTT extends EventEmitter {
         // Set intentionalClose=true so the ws.on('close') handler does NOT
         // also schedule a reconnect — we call connect() ourselves below.
         if (this.isActive && this.ws) {
-            console.log('[NativelyProSTT] Language changed while active — reconnecting');
+            console.log('[LiveLensProSTT] Language changed while active — reconnecting');
             this.reconnectAttempts = 0;  // reset counter so the new session starts fresh
             this.intentionalClose  = true;
             this.closeUpstream();
@@ -106,7 +106,7 @@ export class NativelyProSTT extends EventEmitter {
         }
     }
 
-    /** No-op — Natively API server handles VAD internally */
+    /** No-op — LiveLens API server handles VAD internally */
     public notifySpeechEnded(): void {}
 
     public setCredentials(_path: string): void {}
@@ -157,14 +157,14 @@ export class NativelyProSTT extends EventEmitter {
             // Log first few buffered chunks so we can tell if audio is arriving before connect
             if (this.buffer.length <= 3 || this.buffer.length % 100 === 0) {
                 const wsState = this.ws ? ['CONNECTING','OPEN','CLOSING','CLOSED'][this.ws.readyState] || this.ws.readyState : 'null';
-                console.log(`[NativelyProSTT:${this.channel}] Buffering chunk (buffer=${this.buffer.length}, isConnected=${this.isConnected}, ws=${wsState})`);
+                console.log(`[LiveLensProSTT:${this.channel}] Buffering chunk (buffer=${this.buffer.length}, isConnected=${this.isConnected}, ws=${wsState})`);
             }
             return;
         }
 
         this._chunksSent++;
         if (this._chunksSent <= 5 || this._chunksSent % 200 === 0) {
-            console.log(`[NativelyProSTT:${this.channel}] Sent chunk #${this._chunksSent} (${chunk.length}B) to server`);
+            console.log(`[LiveLensProSTT:${this.channel}] Sent chunk #${this._chunksSent} (${chunk.length}B) to server`);
         }
         this.ws.send(chunk);
     }
@@ -179,13 +179,13 @@ export class NativelyProSTT extends EventEmitter {
             // If the server received two connections within SLOT_INTERVAL_MS, it (or its
             // upstream Deepgram key pool) can fail both with 1006.
             const now = Date.now();
-            const reserved = NativelyProSTT.nextSlotByKey.get(this.apiKey) ?? 0;
+            const reserved = LiveLensProSTT.nextSlotByKey.get(this.apiKey) ?? 0;
             const staggerMs = Math.max(0, reserved - now);
-            NativelyProSTT.nextSlotByKey.set(this.apiKey, Math.max(now, reserved) + NativelyProSTT.SLOT_INTERVAL_MS);
+            LiveLensProSTT.nextSlotByKey.set(this.apiKey, Math.max(now, reserved) + LiveLensProSTT.SLOT_INTERVAL_MS);
 
             if (staggerMs > 0) {
                 this.isConnecting = true; // Hold the slot while waiting
-                console.log(`[NativelyProSTT:${this.channel}] Staggering connection ${staggerMs}ms (concurrent key collision prevention)`);
+                console.log(`[LiveLensProSTT:${this.channel}] Staggering connection ${staggerMs}ms (concurrent key collision prevention)`);
                 setTimeout(() => {
                     this.isConnecting = false;
                     if (this.isActive) this.connect(true);
@@ -197,7 +197,7 @@ export class NativelyProSTT extends EventEmitter {
         this.isConnecting = true;
         this.isConnected  = false;
 
-        console.log(`[NativelyProSTT] Connecting (attempt ${this.reconnectAttempts + 1})...`);
+        console.log(`[LiveLensProSTT] Connecting (attempt ${this.reconnectAttempts + 1})...`);
 
         this.ws = new WebSocket(this.BACKEND_URL);
 
@@ -232,11 +232,11 @@ export class NativelyProSTT extends EventEmitter {
                 const msg = JSON.parse(data.toString());
                 // Log every server message (excluding frequent interim transcripts)
                 if (!msg.text || msg.is_final) {
-                    console.log(`[NativelyProSTT:${this.channel}] Server msg:`, JSON.stringify(msg).slice(0, 120));
+                    console.log(`[LiveLensProSTT:${this.channel}] Server msg:`, JSON.stringify(msg).slice(0, 120));
                 }
 
                 if (msg.error) {
-                    console.error('[NativelyProSTT] Server error:', msg.error, msg.message || '');
+                    console.error('[LiveLensProSTT] Server error:', msg.error, msg.message || '');
                     this.emit('error', new Error(msg.error));
                     // Fatal errors — stop reconnecting entirely
                 if (msg.error === 'auth_timeout' ||
@@ -260,7 +260,7 @@ export class NativelyProSTT extends EventEmitter {
                 if (msg.status === 'connected') {
                     this.isConnecting = false;
                     this.isConnected  = true;
-                    console.log(`[NativelyProSTT] Connected via ${msg.provider}`);
+                    console.log(`[LiveLensProSTT] Connected via ${msg.provider}`);
                     // Delay resetting reconnectAttempts: only reset after 5 s of stability.
                     // An immediate reset means every rapid 1006 loop re-uses the minimum
                     // 1500 ms delay, causing an infinite tight reconnect storm.
@@ -278,7 +278,7 @@ export class NativelyProSTT extends EventEmitter {
                 // are routed through the correct language model from here on.
                 if (msg.language_detected) {
                     const detected: string = msg.language_detected;
-                    console.log(`[NativelyProSTT] Auto-detected language: ${detected}`);
+                    console.log(`[LiveLensProSTT] Auto-detected language: ${detected}`);
                     this.languageBcp47      = detected;
                     this.languageAlternates = [];
                     this.reconnectAttempts  = 0;  // fresh session — reset backoff counter
@@ -299,12 +299,12 @@ export class NativelyProSTT extends EventEmitter {
                     });
                 }
             } catch (err) {
-                console.error('[NativelyProSTT] Parse error:', err);
+                console.error('[LiveLensProSTT] Parse error:', err);
             }
         });
 
         this.ws.on('error', (err: Error) => {
-            console.error('[NativelyProSTT] WebSocket error:', err.message);
+            console.error('[LiveLensProSTT] WebSocket error:', err.message);
             this.isConnecting = false;
             this.isConnected  = false;
             this.emit('error', err);
@@ -313,7 +313,7 @@ export class NativelyProSTT extends EventEmitter {
         this.ws.on('close', (code: number) => {
             this.isConnecting = false;
             this.isConnected  = false;
-            console.log(`[NativelyProSTT] Connection closed (code ${code})`);
+            console.log(`[LiveLensProSTT] Connection closed (code ${code})`);
 
             // Skip auto-reconnect if this close was intentional (e.g. language change)
             if (this.intentionalClose) {
@@ -333,14 +333,14 @@ export class NativelyProSTT extends EventEmitter {
         // Connection dropped before stability window — cancel the backoff reset
         if (this.stabilityTimer) { clearTimeout(this.stabilityTimer); this.stabilityTimer = null; }
         if (this.reconnectAttempts >= this.MAX_RECONNECT) {
-            console.error('[NativelyProSTT] Max reconnect attempts reached — giving up');
-            this.emit('error', new Error('NativelyProSTT: max reconnect attempts exceeded'));
+            console.error('[LiveLensProSTT] Max reconnect attempts reached — giving up');
+            this.emit('error', new Error('LiveLensProSTT: max reconnect attempts exceeded'));
             return;
         }
 
         const delay = this.RECONNECT_BASE_MS * Math.pow(2, this.reconnectAttempts);
         this.reconnectAttempts++;
-        console.log(`[NativelyProSTT] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.MAX_RECONNECT})...`);
+        console.log(`[LiveLensProSTT] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.MAX_RECONNECT})...`);
 
         this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = null;

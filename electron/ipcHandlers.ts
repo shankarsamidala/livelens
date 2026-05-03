@@ -23,7 +23,7 @@ export function initializeIpcHandlers(appState: AppState): void {
    * Used to gate profile intelligence features (resume upload, JD upload, company research, etc.).
    */
   const isProOrTrialActive = (): boolean => {
-    // 1. Full premium license (Dodo / Gumroad / Natively API subscription)
+    // 1. Full premium license (Dodo / Gumroad / LiveLens API subscription)
     try {
       const { LicenseManager } = require('../premium/electron/services/LicenseManager');
       if (LicenseManager.getInstance().isPremium()) return true;
@@ -209,19 +209,19 @@ export function initializeIpcHandlers(appState: AppState): void {
       const settingsWin = appState.settingsWindowHelper.getSettingsWindow()
       const overlayWin = appState.getWindowHelper().getOverlayWindow()
       const launcherWin = appState.getWindowHelper().getLauncherWindow()
+      const modelSelectorWin = appState.modelSelectorWindowHelper.getWindow()
 
       if (settingsWin && !settingsWin.isDestroyed() && settingsWin.webContents.id === senderWebContents.id) {
         appState.settingsWindowHelper.setWindowDimensions(settingsWin, width, height)
+      } else if (modelSelectorWin && !modelSelectorWin.isDestroyed() && modelSelectorWin.webContents.id === senderWebContents.id) {
+        appState.modelSelectorWindowHelper.setWindowDimensions(width, height)
       } else if (
         overlayWin && !overlayWin.isDestroyed() && overlayWin.webContents.id === senderWebContents.id
       ) {
-        // NativelyInterface logic - Resize ONLY the overlay window using dedicated method
         appState.getWindowHelper().setOverlayDimensions(width, height)
       } else if (
         launcherWin && !launcherWin.isDestroyed() && launcherWin.webContents.id === senderWebContents.id
       ) {
-        // EC-05 fix: launcher window resize events were previously silently ignored.
-        // Log them so that if the launcher ever sends this IPC it's visible in logs.
         console.log(`[IPC] update-content-dimensions: launcher window resize request ${width}x${height} (ignored — launcher has fixed dimensions)`);
       }
     }
@@ -356,7 +356,7 @@ export function initializeIpcHandlers(appState: AppState): void {
   });
 
 
-  // Generate suggestion from transcript - Natively-style text-only reasoning
+  // Generate suggestion from transcript - LiveLens-style text-only reasoning
   safeHandle("generate-suggestion", async (event, context: string, lastQuestion: string) => {
     try {
       const suggestion = await appState.processingHelper.getLLMHelper().generateSuggestion(context, lastQuestion)
@@ -591,8 +591,19 @@ export function initializeIpcHandlers(appState: AppState): void {
   });
 
   // Settings Window
-  safeHandle("toggle-settings-window", (event, { x, y } = {}) => {
-    appState.settingsWindowHelper.toggleWindow(x, y)
+  safeHandle("toggle-settings-window", (event, coords: { offsetX?: number; offsetY?: number } = {}) => {
+    if (coords.offsetX !== undefined && coords.offsetY !== undefined) {
+      const overlayWin = appState.getWindowHelper().getOverlayWindow();
+      if (overlayWin && !overlayWin.isDestroyed()) {
+        const bounds = overlayWin.getBounds();
+        appState.settingsWindowHelper.toggleWindow(
+          bounds.x + coords.offsetX,
+          bounds.y + coords.offsetY,
+        );
+        return;
+      }
+    }
+    appState.settingsWindowHelper.toggleWindow(undefined, undefined);
   })
 
   // Open the launcher's SettingsOverlay on a specific tab (callable from any window)
@@ -909,11 +920,11 @@ export function initializeIpcHandlers(appState: AppState): void {
       const { CredentialsManager } = require('./services/CredentialsManager');
       const cm = CredentialsManager.getInstance();
       const prevSttProvider = cm.getSttProvider();
-      cm.setNativelyApiKey(apiKey);
+      cm.setLiveLensApiKey(apiKey);
 
       // Update LLMHelper immediately (same pattern as other provider keys)
       const llmHelper = appState.processingHelper.getLLMHelper();
-      llmHelper.setNativelyKey(apiKey || null);
+      llmHelper.setLiveLensKey(apiKey || null);
 
       // Sync the model into LLMHelper and notify the UI whenever the effective default changed
       const defaultModel = cm.getDefaultModel();
@@ -923,7 +934,7 @@ export function initializeIpcHandlers(appState: AppState): void {
         if (!win.isDestroyed()) win.webContents.send('model-changed', defaultModel);
       });
 
-      // If setNativelyApiKey auto-promoted the STT provider to 'natively', reconfigure
+      // If setLiveLensApiKey auto-promoted the STT provider to 'natively', reconfigure
       // the audio pipeline immediately — without this, the in-memory pipeline still uses
       // the old STT provider (e.g. Google) until the app restarts.
       const newSttProvider = cm.getSttProvider();
@@ -932,7 +943,7 @@ export function initializeIpcHandlers(appState: AppState): void {
         await appState.reconfigureSttProvider();
       }
 
-      // Auto-activate Natively Pro for pro/max/ultra API plans.
+      // Auto-activate LiveLens Pro for pro/max/ultra API plans.
       // Skips silently if the user already has a Gumroad/Dodo lifetime license.
       if (apiKey) {
         try {
@@ -976,7 +987,7 @@ export function initializeIpcHandlers(appState: AppState): void {
 
       return { success: true };
     } catch (error: any) {
-      console.error("Error saving Natively API key:", error);
+      console.error("Error saving LiveLens API key:", error);
       return { success: false, error: error.message };
     } finally {
       // Always bust the cache when the key changes so the next usage fetch is fresh
@@ -988,7 +999,7 @@ export function initializeIpcHandlers(appState: AppState): void {
   safeHandle("get-natively-usage", async () => {
     try {
       const { CredentialsManager } = require('./services/CredentialsManager');
-      const key = CredentialsManager.getInstance().getNativelyApiKey();
+      const key = CredentialsManager.getInstance().getLiveLensApiKey();
       if (!key) return { ok: false, error: 'no_key' };
 
       // Return cached value if it's still fresh
@@ -1056,13 +1067,13 @@ export function initializeIpcHandlers(appState: AppState): void {
 
         // Auto-configure natively as the model + STT provider during trial
         const prevSttProvider = cm.getSttProvider();
-        cm.setNativelyApiKey('__trial__');   // sentinel — activates natively model routing
+        cm.setLiveLensApiKey('__trial__');   // sentinel — activates natively model routing
         const newSttProvider = cm.getSttProvider();
         if (newSttProvider !== prevSttProvider) {
           await appState.reconfigureSttProvider();
         }
         const llmHelper = appState.processingHelper?.getLLMHelper?.();
-        if (llmHelper) llmHelper.setNativelyKey('__trial__');
+        if (llmHelper) llmHelper.setLiveLensKey('__trial__');
       }
 
       return { ok: true, ...data };
@@ -1158,9 +1169,9 @@ export function initializeIpcHandlers(appState: AppState): void {
       cm.clearTrialToken();
 
       // 3. Clear the trial sentinel key + revert model / STT to open defaults
-      cm.setNativelyApiKey('');
+      cm.setLiveLensApiKey('');
       const llmHelper = appState.processingHelper?.getLLMHelper?.();
-      if (llmHelper) llmHelper.setNativelyKey(null);
+      if (llmHelper) llmHelper.setLiveLensKey(null);
       await appState.reconfigureSttProvider();
 
       // 4. Deactivate Pro license (removes license.enc)
@@ -1412,7 +1423,7 @@ export function initializeIpcHandlers(appState: AppState): void {
         hasGroqKey: hasKey(creds.groqApiKey),
         hasOpenaiKey: hasKey(creds.openaiApiKey),
         hasClaudeKey: hasKey(creds.claudeApiKey),
-        hasNativelyKey: hasKey(creds.nativelyApiKey),
+        hasLiveLensKey: hasKey(creds.nativelyApiKey),
         googleServiceAccountPath: creds.googleServiceAccountPath || null,
         sttProvider: creds.sttProvider || 'none',
         groqSttModel: creds.groqSttModel || 'whisper-large-v3-turbo',
@@ -1443,7 +1454,7 @@ export function initializeIpcHandlers(appState: AppState): void {
         claudePreferredModel: creds.claudePreferredModel || undefined,
       };
     } catch (error: any) {
-      return { hasGeminiKey: false, hasGroqKey: false, hasOpenaiKey: false, hasClaudeKey: false, hasNativelyKey: false, googleServiceAccountPath: null, sttProvider: 'none', groqSttModel: 'whisper-large-v3-turbo', hasSttGroqKey: false, hasSttOpenaiKey: false, hasDeepgramKey: false, hasElevenLabsKey: false, hasAzureKey: false, azureRegion: 'eastus', hasIbmWatsonKey: false, ibmWatsonRegion: 'us-south', hasSonioxKey: false, hasTavilyKey: false, sttGroqKey: '', sttOpenaiKey: '', sttDeepgramKey: '', sttElevenLabsKey: '', sttAzureKey: '', sttIbmKey: '', sttSonioxKey: '' };
+      return { hasGeminiKey: false, hasGroqKey: false, hasOpenaiKey: false, hasClaudeKey: false, hasLiveLensKey: false, googleServiceAccountPath: null, sttProvider: 'none', groqSttModel: 'whisper-large-v3-turbo', hasSttGroqKey: false, hasSttOpenaiKey: false, hasDeepgramKey: false, hasElevenLabsKey: false, hasAzureKey: false, azureRegion: 'eastus', hasIbmWatsonKey: false, ibmWatsonRegion: 'us-south', hasSonioxKey: false, hasTavilyKey: false, sttGroqKey: '', sttOpenaiKey: '', sttDeepgramKey: '', sttElevenLabsKey: '', sttAzureKey: '', sttIbmKey: '', sttSonioxKey: '' };
     }
   });
 
@@ -1984,7 +1995,7 @@ export function initializeIpcHandlers(appState: AppState): void {
       // Close the selector window if open
       appState.modelSelectorWindowHelper.hideWindow();
 
-      // Broadcast to all windows so NativelyInterface can update its selector (session-only update)
+      // Broadcast to all windows so LiveLensInterface can update its selector (session-only update)
       BrowserWindow.getAllWindows().forEach(win => {
         if (!win.isDestroyed()) {
           win.webContents.send('model-changed', modelId);
@@ -2015,7 +2026,7 @@ export function initializeIpcHandlers(appState: AppState): void {
       // Close the selector window if open
       appState.modelSelectorWindowHelper.hideWindow();
 
-      // Broadcast to all windows so NativelyInterface can update its selector
+      // Broadcast to all windows so LiveLensInterface can update its selector
       BrowserWindow.getAllWindows().forEach(win => {
         if (!win.isDestroyed()) {
           win.webContents.send('model-changed', modelId);
@@ -2043,16 +2054,30 @@ export function initializeIpcHandlers(appState: AppState): void {
 
   // --- Model Selector Window IPC ---
 
-  safeHandle("show-model-selector", (_, coords: { x: number; y: number }) => {
-    appState.modelSelectorWindowHelper.showWindow(coords.x, coords.y);
+  safeHandle("show-model-selector", (_, coords: { offsetX: number; offsetY: number }) => {
+    const overlayWin = appState.getWindowHelper().getOverlayWindow();
+    if (overlayWin && !overlayWin.isDestroyed()) {
+      const bounds = overlayWin.getBounds();
+      appState.modelSelectorWindowHelper.showWindow(
+        bounds.x + (coords.offsetX ?? 0),
+        bounds.y + (coords.offsetY ?? 0),
+      );
+    }
   });
 
   safeHandle("hide-model-selector", () => {
     appState.modelSelectorWindowHelper.hideWindow();
   });
 
-  safeHandle("toggle-model-selector", (_, coords: { x: number; y: number }) => {
-    appState.modelSelectorWindowHelper.toggleWindow(coords.x, coords.y);
+  safeHandle("toggle-model-selector", (_, coords: { offsetX: number; offsetY: number }) => {
+    const overlayWin = appState.getWindowHelper().getOverlayWindow();
+    if (overlayWin && !overlayWin.isDestroyed()) {
+      const bounds = overlayWin.getBounds();
+      appState.modelSelectorWindowHelper.toggleWindow(
+        bounds.x + (coords.offsetX ?? 0),
+        bounds.y + (coords.offsetY ?? 0),
+      );
+    }
   });
 
 
@@ -2850,7 +2875,7 @@ export function initializeIpcHandlers(appState: AppState): void {
       }
       const engine = orchestrator.getCompanyResearchEngine();
 
-      // Wire search provider: Tavily (user key) → Natively API (fallback) → none (LLM-only)
+      // Wire search provider: Tavily (user key) → LiveLens API (fallback) → none (LLM-only)
       const { CredentialsManager } = require('./services/CredentialsManager');
       const cm = CredentialsManager.getInstance();
       const tavilyApiKey = cm.getTavilyApiKey();
@@ -2858,14 +2883,14 @@ export function initializeIpcHandlers(appState: AppState): void {
         const { TavilySearchProvider } = require('../premium/electron/knowledge/TavilySearchProvider');
         engine.setSearchProvider(new TavilySearchProvider(tavilyApiKey));
       } else {
-        const nativelyKey = cm.getNativelyApiKey();
+        const nativelyKey = cm.getLiveLensApiKey();
         if (nativelyKey) {
-          const { NativelySearchProvider } = require('../premium/electron/knowledge/NativelySearchProvider');
+          const { LiveLensSearchProvider } = require('../premium/electron/knowledge/LiveLensSearchProvider');
           // Pass the real trial token when key is the __trial__ sentinel so the
           // server can authenticate via x-trial-token instead of the invalid key.
           const trialToken = nativelyKey === '__trial__' ? cm.getTrialToken() : undefined;
-          engine.setSearchProvider(new NativelySearchProvider(nativelyKey, trialToken ?? undefined));
-          console.log('[IPC] Company research: using Natively API search (no Tavily key configured)');
+          engine.setSearchProvider(new LiveLensSearchProvider(nativelyKey, trialToken ?? undefined));
+          console.log('[IPC] Company research: using LiveLens API search (no Tavily key configured)');
         }
       }
 

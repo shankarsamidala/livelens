@@ -247,8 +247,8 @@ export class OpenAIStreamingSTT extends EventEmitter {
 
         this.ws = new WebSocket(REALTIME_WS_URL, {
             headers: {
-                Authorization:   `Bearer ${this.apiKey}`,
-                'OpenAI-Beta':   'realtime=v1',
+                Authorization: `Bearer ${this.apiKey}`,
+                'OpenAI-Beta': 'realtime=v1',
             },
         });
 
@@ -292,31 +292,22 @@ export class OpenAIStreamingSTT extends EventEmitter {
                 : '';
 
             this.ws!.send(JSON.stringify({
-                type: 'session.update',
+                type: 'transcription_session.update',
                 session: {
-                    audio: {
-                        input: {
-                            format: {
-                                type: 'audio/pcm',
-                                rate: WS_SAMPLE_RATE,
-                            },
-                            transcription: {
-                                model,
-                                prompt: '',
-                                language: lang || '',
-                            },
-                            // Server VAD — offload voice activity detection entirely to the server
-                            turn_detection: {
-                                type:                'server_vad',
-                                threshold:           0.5,
-                                prefix_padding_ms:   300,
-                                silence_duration_ms: 500,
-                            },
-                            // Server-side noise reduction
-                            noise_reduction: {
-                                type: 'near_field',
-                            },
-                        },
+                    input_audio_format: 'pcm16',
+                    input_audio_transcription: {
+                        model,
+                        language: lang || '',
+                        prompt: '',
+                    },
+                    turn_detection: {
+                        type:                'server_vad',
+                        threshold:           0.5,
+                        prefix_padding_ms:   300,
+                        silence_duration_ms: 500,
+                    },
+                    input_audio_noise_reduction: {
+                        type: 'near_field',
                     },
                 },
             }));
@@ -396,11 +387,25 @@ export class OpenAIStreamingSTT extends EventEmitter {
                 this._flushRingBuffer();
                 break;
 
+            // Transcription API streaming delta
+            case 'conversation.item.input_audio_transcription.delta':
             case 'transcript.text.delta':
                 if (msg.delta) {
                     this.emit('transcript', {
                         text:       msg.delta,
                         isFinal:    false,
+                        confidence: 1.0,
+                    });
+                }
+                break;
+
+            // Transcription API final result
+            case 'conversation.item.input_audio_transcription.completed':
+                if (msg.transcript) {
+                    console.log(`[OpenAIStreaming] Final: "${msg.transcript.substring(0, 60)}"`);
+                    this.emit('transcript', {
+                        text:       msg.transcript,
+                        isFinal:    true,
                         confidence: 1.0,
                     });
                 }

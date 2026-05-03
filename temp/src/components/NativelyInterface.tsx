@@ -66,12 +66,12 @@ interface Message {
     };
 }
 
-interface NativelyInterfaceProps {
+interface LiveLensInterfaceProps {
     onEndMeeting?: () => void;
     overlayOpacity?: number;
 }
 
-const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, overlayOpacity = OVERLAY_OPACITY_DEFAULT }) => {
+const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, overlayOpacity = OVERLAY_OPACITY_DEFAULT }) => {
     const isLightTheme = useResolvedTheme() === 'light';
     const [isExpanded, setIsExpanded] = useState(true);
     const [inputValue, setInputValue] = useState('');
@@ -410,7 +410,7 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, ove
     useEffect(() => {
         if (!window.electronAPI?.onSessionReset) return;
         const unsubscribe = window.electronAPI.onSessionReset(() => {
-            console.log('[NativelyInterface] Resetting session state...');
+            console.log('[LiveLensInterface] Resetting session state...');
             setMessages([]);
             setInputValue('');
             setAttachedContext([]);
@@ -1146,7 +1146,7 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, ove
             setManualTranscript('');  // Clear live preview
 
             // Send manual finalization signal to STT Providers
-            window.electronAPI.finalizeMicSTT().catch(err => console.error('[NativelyInterface] Failed to send finalizeMicSTT:', err));
+            window.electronAPI.finalizeMicSTT().catch(err => console.error('[LiveLensInterface] Failed to send finalizeMicSTT:', err));
 
             const currentAttachments = attachedContext;
             setAttachedContext([]); // Clear context immediately on send
@@ -2186,4 +2186,4 @@ Provide only the answer, nothing else.`;
     );
 };
 
-export default NativelyInterface;
+export default LiveLensInterface;

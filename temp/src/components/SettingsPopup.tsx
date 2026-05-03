@@ -328,7 +328,7 @@ const SettingsPopup = () => {
 
                 <div className={`h-px my-0.5 mx-2 ${dividerClass}`} />
 
-                {/* Show/Hide Natively */}
+                {/* Show/Hide LiveLens */}
                 <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group interaction-base interaction-press ${itemHoverClass}`}>
                     <div className="flex items-center gap-3">
                         <MessageSquare className={`w-3.5 h-3.5 transition-colors ${iconInactiveClass}`} />

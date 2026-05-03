@@ -40,7 +40,7 @@ No global shortcut existed that combined screenshot capture + AI analysis in one
 ### Fix Summary
 Added a new global keybind `general:capture-and-process` (default: `Cmd+Shift+Enter`) that:
 1. Takes a full-screen screenshot from the main process (global trigger works from any app)
-2. Shows the Natively window
+2. Shows the LiveLens window
 3. Sends a `capture-and-process` IPC event with the screenshot path + preview
 4. In the renderer, attaches the screenshot to the input context, then immediately triggers `handleWhatToSay()` (the AI analysis)
 
@@ -49,7 +49,7 @@ Added a new global keybind `general:capture-and-process` (default: `Cmd+Shift+En
 - `electron/main.ts` — handler in `onShortcutTriggered` for the new action
 - `electron/preload.ts` — type declaration + IPC listener for `onCaptureAndProcess`
 - `src/types/electron.d.ts` — `onCaptureAndProcess` added to `ElectronAPI` interface
-- `src/components/NativelyInterface.tsx` — `useEffect` that listens for `capture-and-process`, attaches screenshot, and calls `handleWhatToSay`
+- `src/components/LiveLensInterface.tsx` — `useEffect` that listens for `capture-and-process`, attaches screenshot, and calls `handleWhatToSay`
 
 ### Edge Cases Handled
 - Uses `setTimeout(..., 0)` before calling `handleWhatToSay` to let React flush the `setAttachedContext` state update first
@@ -59,7 +59,7 @@ Added a new global keybind `general:capture-and-process` (default: `Cmd+Shift+En
 ### How to Test
 1. Open any other app (browser, editor, etc.)
 2. Press `Cmd+Shift+Enter`
-3. Natively should appear, attach the current screenshot to context, and immediately start AI analysis
+3. LiveLens should appear, attach the current screenshot to context, and immediately start AI analysis
 
 ### Known Limitations
 - The keybind defaults to `Cmd+Shift+Enter` to avoid conflicting with standard text-editing shortcuts. Power users may prefer `Cmd+Enter` but that would require disabling the local `process-screenshots` binding when the app is unfocused.
@@ -184,12 +184,12 @@ if (actionId === 'general:capture-and-process') return true;
 
 ### Edge Cases Handled
 - Fixes rebind silent failure: new accelerators bound via Settings → Shortcuts are now correctly re-registered after `setKeybind()` calls `registerGlobalShortcuts()`
-- All three shortcuts (full screenshot, selective screenshot, capture+analyze) work from any focused app, whether Natively is in launcher or overlay mode
+- All three shortcuts (full screenshot, selective screenshot, capture+analyze) work from any focused app, whether LiveLens is in launcher or overlay mode
 
 ### How to Test
 1. Launch the app (launcher mode)
 2. Focus any other app (browser, editor, terminal)
-3. Press `Cmd+H` — screenshot should be captured and attached to the Natively chat
+3. Press `Cmd+H` — screenshot should be captured and attached to the LiveLens chat
 4. Press `Cmd+Shift+H` — cropper selection should appear
 5. Press `Cmd+Shift+Enter` — screenshot should be captured and screen-analysis should trigger immediately
 6. Change any of the three shortcuts in Settings → Shortcuts, then verify the NEW shortcut works
@@ -226,7 +226,7 @@ Additionally, `showOverlay()` had an `if/else` branch on mouse passthrough state
 ## Issue #135 — `Cmd+Shift+Enter` screen-analyze intermittently sends screenshot-less request (React 18 race)
 
 ### Root Cause
-`NativelyInterface.tsx` used `setTimeout(() => handleWhatToSay(), 0)` after `setAttachedContext(...)`, hoping React would flush the state update before the timeout fired. In React 18 concurrent mode, the renderer may batch/defer updates, so `handleWhatToSay()` sometimes ran before `attachedContext` had the new screenshot — resulting in `currentAttachments` being empty and the AI being called with no image context.
+`LiveLensInterface.tsx` used `setTimeout(() => handleWhatToSay(), 0)` after `setAttachedContext(...)`, hoping React would flush the state update before the timeout fired. In React 18 concurrent mode, the renderer may batch/defer updates, so `handleWhatToSay()` sometimes ran before `attachedContext` had the new screenshot — resulting in `currentAttachments` being empty and the AI being called with no image context.
 
 ### Fix Summary
 Two-part fix:
@@ -238,7 +238,7 @@ Two-part fix:
 3. **`handleWhatToSay` checks `pendingCaptureRef`** — merges the pending screenshot into `currentAttachments` even if `attachedContext` state hasn't flushed, ensuring the image is always sent to the AI.
 
 ### Files Modified
-- `src/components/NativelyInterface.tsx` — added `pendingCaptureRef`, updated `onCaptureAndProcess` handler, updated `handleWhatToSay`
+- `src/components/LiveLensInterface.tsx` — added `pendingCaptureRef`, updated `onCaptureAndProcess` handler, updated `handleWhatToSay`
 
 ### Edge Cases Handled
 - Duplicate screenshot guard preserved: same path-dedup check before merging from ref

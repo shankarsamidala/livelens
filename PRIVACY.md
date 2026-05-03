@@ -2,7 +2,7 @@
 
 ## Overview
 
-This privacy policy describes how this open-source application ("Natively") handles your data. Our philosophy is privacy-first: we believe your meeting data belongs to you. We do not operate a central server to store your personal meeting recordings or transcripts.
+This privacy policy describes how this open-source application ("LiveLens") handles your data. Our philosophy is privacy-first: we believe your meeting data belongs to you. We do not operate a central server to store your personal meeting recordings or transcripts.
 
 ## Data Collection
 

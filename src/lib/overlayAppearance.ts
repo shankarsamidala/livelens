@@ -49,14 +49,14 @@ export const getOverlayAppearance = (opacity: number, theme: OverlayTheme): Over
             shellStyle: {
                 backgroundColor: `rgba(214, 228, 247, ${scale(0.085, 1, surfaceStrength)})`,
                 borderColor: `rgba(37, 99, 235, ${scale(0.08, 0.16, surfaceStrength)})`,
-                boxShadow: `0 24px 48px rgba(37, 99, 235, ${scale(0.03, 0.12, surfaceStrength)})`,
+                boxShadow: 'none',
                 backdropFilter: `blur(${scale(4, 18, blurStrength)}px) saturate(145%)`,
                 WebkitBackdropFilter: `blur(${scale(4, 18, blurStrength)}px) saturate(145%)`,
             },
             pillStyle: {
                 backgroundColor: `rgba(221, 234, 250, ${scale(0.075, 0.98, surfaceStrength)})`,
                 borderColor: `rgba(37, 99, 235, ${scale(0.08, 0.16, surfaceStrength)})`,
-                boxShadow: `0 12px 28px rgba(37, 99, 235, ${scale(0.02, 0.09, surfaceStrength)})`,
+                boxShadow: 'none',
                 backdropFilter: `blur(${scale(3, 11, blurStrength)}px) saturate(140%)`,
                 WebkitBackdropFilter: `blur(${scale(3, 11, blurStrength)}px) saturate(140%)`,
             },
@@ -99,20 +99,21 @@ export const getOverlayAppearance = (opacity: number, theme: OverlayTheme): Over
         };
     }
 
+    // Premium dark: charcoal base + off-white text + indigo accent
     return {
         shellStyle: {
-            backgroundColor: `rgba(24, 26, 32, ${scale(0.12, 1, surfaceStrength)})`,
-            borderColor: `rgba(255, 255, 255, ${scale(0.08, 0.14, surfaceStrength)})`,
-            boxShadow: `0 24px 48px rgba(0, 0, 0, ${scale(0.05, 0.24, surfaceStrength)})`,
-            backdropFilter: `blur(${scale(6, 20, blurStrength)}px) saturate(140%)`,
-            WebkitBackdropFilter: `blur(${scale(6, 20, blurStrength)}px) saturate(140%)`,
+            backgroundColor: `rgba(13, 15, 20, ${scale(0.88, 0.96, surfaceStrength)})`,
+            borderColor: `rgba(255, 255, 255, ${scale(0.06, 0.10, surfaceStrength)})`,
+            boxShadow: 'none',
+            backdropFilter: `blur(${scale(4, 24, blurStrength)}px) saturate(160%)`,
+            WebkitBackdropFilter: `blur(${scale(4, 24, blurStrength)}px) saturate(160%)`,
         },
         pillStyle: {
-            backgroundColor: `rgba(24, 26, 32, ${scale(0.1, 0.98, surfaceStrength)})`,
-            borderColor: `rgba(255, 255, 255, ${scale(0.08, 0.14, surfaceStrength)})`,
-            boxShadow: `0 12px 28px rgba(0, 0, 0, ${scale(0.035, 0.16, surfaceStrength)})`,
-            backdropFilter: `blur(${scale(4, 13, blurStrength)}px) saturate(136%)`,
-            WebkitBackdropFilter: `blur(${scale(4, 13, blurStrength)}px) saturate(136%)`,
+            backgroundColor: `rgba(13, 15, 20, ${scale(0.86, 0.94, surfaceStrength)})`,
+            borderColor: `rgba(255, 255, 255, ${scale(0.06, 0.10, surfaceStrength)})`,
+            boxShadow: 'none',
+            backdropFilter: `blur(${scale(3, 16, blurStrength)}px) saturate(150%)`,
+            WebkitBackdropFilter: `blur(${scale(3, 16, blurStrength)}px) saturate(150%)`,
         },
         transcriptStyle: {
             backgroundColor: 'transparent',
@@ -121,34 +122,34 @@ export const getOverlayAppearance = (opacity: number, theme: OverlayTheme): Over
             WebkitBackdropFilter: 'none',
         },
         subtleStyle: {
-            backgroundColor: `rgba(40, 45, 56, ${scale(0.18, 0.92, surfaceStrength)})`,
-            borderColor: `rgba(255, 255, 255, ${scale(0.04, 0.085, surfaceStrength)})`,
+            backgroundColor: `rgba(255, 255, 255, ${scale(0.02, 0.05, surfaceStrength)})`,
+            borderColor: `rgba(255, 255, 255, ${scale(0.05, 0.09, surfaceStrength)})`,
         },
         chipStyle: {
-            backgroundColor: `rgba(56, 61, 73, ${scale(0.2, 0.96, surfaceStrength)})`,
-            borderColor: `rgba(255, 255, 255, ${scale(0.04, 0.08, surfaceStrength)})`,
+            backgroundColor: `rgba(255, 255, 255, ${scale(0.04, 0.07, surfaceStrength)})`,
+            borderColor: `rgba(255, 255, 255, ${scale(0.07, 0.11, surfaceStrength)})`,
         },
         inputStyle: {
-            backgroundColor: `rgba(46, 51, 63, ${scale(0.24, 0.94, surfaceStrength)})`,
-            borderColor: `rgba(255, 255, 255, ${scale(0.05, 0.095, surfaceStrength)})`,
+            backgroundColor: `rgba(255, 255, 255, ${scale(0.03, 0.06, surfaceStrength)})`,
+            borderColor: `rgba(255, 255, 255, ${scale(0.07, 0.12, surfaceStrength)})`,
         },
         controlStyle: {
-            backgroundColor: `rgba(52, 57, 69, ${scale(0.22, 0.94, surfaceStrength)})`,
-            borderColor: `rgba(255, 255, 255, ${scale(0.05, 0.095, surfaceStrength)})`,
+            backgroundColor: `rgba(255, 255, 255, ${scale(0.03, 0.06, surfaceStrength)})`,
+            borderColor: `rgba(255, 255, 255, ${scale(0.07, 0.12, surfaceStrength)})`,
         },
         iconStyle: {
-            backgroundColor: `rgba(54, 59, 71, ${scale(0.2, 0.92, surfaceStrength)})`,
+            backgroundColor: `rgba(255, 255, 255, ${scale(0.04, 0.07, surfaceStrength)})`,
         },
         codeBlockStyle: {
-            backgroundColor: `rgba(35, 40, 50, ${scale(0.24, 0.96, surfaceStrength)})`,
-            borderColor: `rgba(255, 255, 255, ${scale(0.05, 0.1, surfaceStrength)})`,
+            backgroundColor: `rgba(0, 0, 0, ${scale(0.28, 0.52, surfaceStrength)})`,
+            borderColor: `rgba(255, 255, 255, ${scale(0.06, 0.10, surfaceStrength)})`,
         },
         codeHeaderStyle: {
-            backgroundColor: `rgba(48, 53, 64, ${scale(0.22, 0.94, surfaceStrength)})`,
-            borderBottomColor: `rgba(255, 255, 255, ${scale(0.05, 0.1, surfaceStrength)})`,
+            backgroundColor: `rgba(255, 255, 255, ${scale(0.03, 0.06, surfaceStrength)})`,
+            borderBottomColor: `rgba(255, 255, 255, ${scale(0.07, 0.11, surfaceStrength)})`,
         },
         dividerStyle: {
-            backgroundColor: `rgba(255, 255, 255, ${scale(0.06, 0.12, surfaceStrength)})`,
+            backgroundColor: `rgba(255, 255, 255, ${scale(0.07, 0.12, surfaceStrength)})`,
         },
     };
 };

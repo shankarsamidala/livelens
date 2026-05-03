@@ -3,9 +3,9 @@
 If you’re looking for a hosted desktop recording API, consider checking out [Recall.ai](https://docs.recall.ai/docs/desktop-sdk?utm_source=github&utm_medium=sponsorship&utm_campaign=evinjohnn-natively-ai-assistant), an API that records Zoom, Google Meet, Microsoft Teams, in-person meetings, and more.
 
 <div align="center">
-  <img src="assets/icon.png" width="150" alt="Natively AI Assistant Logo">
+  <img src="assets/icon.png" width="150" alt="LiveLens AI Assistant Logo">
 
-# Natively — Free, Open-Source AI Interview Copilot & Meeting Assistant
+# LiveLens — Free, Open-Source AI Interview Copilot & Meeting Assistant
 
 **The best free alternative to Cluely, Final Round AI, LockedIn AI, and Interview Coder.**
 <br/>
@@ -47,7 +47,7 @@ If you’re looking for a hosted desktop recording API, consider checking out [R
 ![Status](https://img.shields.io/badge/Status-active-success?style=flat-square)
 [![X Community](https://img.shields.io/badge/Community-black?style=flat-square&logo=x&logoColor=white)](https://x.com/i/communities/2031398735515693507)
 
-> **Competitors charge $20–$149/month, store your data on their servers, and one already breached 83,000 users.** Natively costs $0, runs locally, and has never had a data breach. Your keys, your models, your machine.
+> **Competitors charge $20–$149/month, store your data on their servers, and one already breached 83,000 users.** LiveLens costs $0, runs locally, and has never had a data breach. Your keys, your models, your machine.
 
 <p align="center">
   <a href="https://natively.software">
@@ -76,7 +76,7 @@ If you’re looking for a hosted desktop recording API, consider checking out [R
 
 ## The Free, Open-Source Cluely Clone
 
-Natively started as a pixel-perfect recreation of Cluely's interface — then kept going. If you've used Cluely, you already know how to use Natively. Same overlay, same workflow, same shortcuts. Except it's free, open-source, runs locally, supports any LLM, and has never breached a single user's data.
+LiveLens started as a pixel-perfect recreation of Cluely's interface — then kept going. If you've used Cluely, you already know how to use LiveLens. Same overlay, same workflow, same shortcuts. Except it's free, open-source, runs locally, supports any LLM, and has never breached a single user's data.
 
 > Looking for a **free Cluely alternative**? A **Cluely open-source clone**? You found it.
 
@@ -87,20 +87,20 @@ Natively started as a pixel-perfect recreation of Cluely's interface — then ke
 > "This is a fantastic piece of software and you should definitely keep up the great work! This is exactly what I was looking for. I started out trying the open-source version, and because it worked so well, I decided to go ahead and buy the full premium license."  
 > — **Oskar Krzak** (⭐⭐⭐⭐⭐ via Gumroad)
 
-> "Natively is significantly faster than Cluely when it comes to response time and screen analysis. The latency is practically non-existent."  
+> "LiveLens is significantly faster than Cluely when it comes to response time and screen analysis. The latency is practically non-existent."  
 > — **Premium User**
 
-> "Just wanted to say thanks! Natively helped me completely crack the first two rounds of my Software Engineering interviews. The responses were incredibly fast and accurate."  
+> "Just wanted to say thanks! LiveLens helped me completely crack the first two rounds of my Software Engineering interviews. The responses were incredibly fast and accurate."  
 > — **Private Email Feedback**
 
-> "Used the free version of Natively for my interviews and just landed a massive summer internship. It took all the stress out of the live coding and behavioral rounds!"  
+> "Used the free version of LiveLens for my interviews and just landed a massive summer internship. It took all the stress out of the live coding and behavioral rounds!"  
 > — **Private Email Feedback**
 
 ---
 
-## Why Natively?
+## Why LiveLens?
 
-While other tools act as simple API wrappers, Natively is a complete, native intelligence system designed specifically for high-stakes meetings and interviews.
+While other tools act as simple API wrappers, LiveLens is a complete, native intelligence system designed specifically for high-stakes meetings and interviews.
 
 - **Native Audio Capture (<500ms):** Built with Rust and Zero-Copy ABI transfers, bypassing generic web-audio limitations for ultra-low latency.
 - **Dual-Channel Intelligence:** Distinct pipelines for system audio (what they say) and your microphone (what you dictate) ensuring perfect transcription without room noise.
@@ -109,15 +109,15 @@ While other tools act as simple API wrappers, Natively is a complete, native int
 - **Local RAG Memory:** We embed your meetings locally using SQLite vector search so you can ask, "What did John say about the API last week?"
 - **Custom Personas & Reference Docs:** Switch between tailored AI roles (Tech, Sales, HR) and inject specific PDFs to give the AI your exact context.
 - **Rich Dashboard:** A full UI to manage, search, and export your history—not just a floating window.
-- **Fully Offline Capable:** Don't trust the cloud? Run Natively 100% offline using local Ollama models with limited anonymous telemetry.
+- **Fully Offline Capable:** Don't trust the cloud? Run LiveLens 100% offline using local Ollama models with limited anonymous telemetry.
 
 ---
 
 ## 3 things you should know before choosing an interview AI
 
-1. **Cluely** had a data breach in mid-2025 that exposed 83,000 users' personal info, transcripts, and screenshots — Natively stores everything locally by default with limited anonymous telemetry and has never had a breach.
-2. **Final Round AI** costs $149/month and its taskbar icon is visible to proctoring software — Natively is free, open-source, and has a battle-tested undetectable stealth mode.
-3. **LockedIn AI** charges $55–70/month and locks you into their cloud LLM with no local option — Natively lets you use any model (GPT, Claude, Gemini, Llama) or go fully offline with Ollama.
+1. **Cluely** had a data breach in mid-2025 that exposed 83,000 users' personal info, transcripts, and screenshots — LiveLens stores everything locally by default with limited anonymous telemetry and has never had a breach.
+2. **Final Round AI** costs $149/month and its taskbar icon is visible to proctoring software — LiveLens is free, open-source, and has a battle-tested undetectable stealth mode.
+3. **LockedIn AI** charges $55–70/month and locks you into their cloud LLM with no local option — LiveLens lets you use any model (GPT, Claude, Gemini, Llama) or go fully offline with Ollama.
 
 ---
 
@@ -125,9 +125,9 @@ While other tools act as simple API wrappers, Natively is a complete, native int
 
 ### ⭐ Star this repo — it matters
 
-Every star pushes Natively higher in GitHub search, helping developers and job seekers find a free, private alternative instead of paying $149/month for tools that store their data on someone else's server.
+Every star pushes LiveLens higher in GitHub search, helping developers and job seekers find a free, private alternative instead of paying $149/month for tools that store their data on someone else's server.
 
-[![Star Natively](https://img.shields.io/github/stars/evinjohnn/natively-cluely-ai-assistant?style=for-the-badge&color=gold&label=Star%20on%20GitHub)](https://github.com/Natively-AI-assistant/natively-cluely-ai-assistant)
+[![Star LiveLens](https://img.shields.io/github/stars/evinjohnn/natively-cluely-ai-assistant?style=for-the-badge&color=gold&label=Star%20on%20GitHub)](https://github.com/Natively-AI-assistant/natively-cluely-ai-assistant)
 
 </div>
 
@@ -135,7 +135,7 @@ Every star pushes Natively higher in GitHub search, helping developers and job s
 
 ## Demo
 
-![Natively AI Assistant Demo - Real-time Interview Helper and Transcription](assets/natively-ai-meeting-assistant-demo.gif)
+![LiveLens AI Assistant Demo - Real-time Interview Helper and Transcription](assets/natively-ai-meeting-assistant-demo.gif)
 
 This demo shows **a complete live meeting scenario**:
 
@@ -148,9 +148,9 @@ This demo shows **a complete live meeting scenario**:
 
 ---
 
-## Full Comparison: Natively vs Cluely vs Final Round AI vs LockedIn AI vs Interview Coder
+## Full Comparison: LiveLens vs Cluely vs Final Round AI vs LockedIn AI vs Interview Coder
 
-| Feature                   | Natively                   | Cluely               | Pluely     | LockedIn AI      | Final Round AI         |
+| Feature                   | LiveLens                   | Cluely               | Pluely     | LockedIn AI      | Final Round AI         |
 | :------------------------ | :------------------------- | :------------------- | :--------- | :--------------- | :--------------------- |
 | **Price**                 | ✅ Free (BYOK)             | ⚠️ $20/mo            | ✅ Free    | ❌ $55–70/mo     | ❌ $149/mo             |
 | **Open source**           | ✅ AGPL-3.0                | ❌                   | ✅         | ❌               | ❌                     |
@@ -172,7 +172,7 @@ This demo shows **a complete live meeting scenario**:
 
 ---
 
-## Why Natively wins
+## Why LiveLens wins
 
 ### vs Cluely — breached 83,000 users
 
@@ -180,33 +180,33 @@ The UI is intentionally familiar — if you've used Cluely, there's zero learnin
 
 Cluely's mid-2025 data breach exposed personal information, full interview transcripts, and screenshots of 83,000 users. Every word spoken during an interview was stored on their servers — and then leaked. They charge $20/month for this privilege.
 
-By default, Natively stores everything on your local machine, with only limited anonymous telemetry (basic GA4 install tracking, zero personal data). Your transcripts, API keys, and screenshots never leave your machine when using your own keys. The entire codebase is open-source (AGPL-3.0) and auditable. Zero breaches — that is the only acceptable standard for a tool that listens to your interviews.
+By default, LiveLens stores everything on your local machine, with only limited anonymous telemetry (basic GA4 install tracking, zero personal data). Your transcripts, API keys, and screenshots never leave your machine when using your own keys. The entire codebase is open-source (AGPL-3.0) and auditable. Zero breaches — that is the only acceptable standard for a tool that listens to your interviews.
 
-Unlike Cluely's rigid interface, Natively also gives you complete control over the AI: **Custom Persona Modes** (Tech, Sales, Recruiting) to strictly format behavior, and **Reference Files** capabilities to upload PDFs so the AI knows exactly the context of the job or meeting before it starts.
+Unlike Cluely's rigid interface, LiveLens also gives you complete control over the AI: **Custom Persona Modes** (Tech, Sales, Recruiting) to strictly format behavior, and **Reference Files** capabilities to upload PDFs so the AI knows exactly the context of the job or meeting before it starts.
 
 ### vs LockedIn AI — $70/month for cloud lock-in
 
 LockedIn AI is the most expensive tool in the category at $55–70/month. It locks you into a single cloud LLM with no option for local inference. Every transcript and response passes through their servers.
 
-Natively supports every major model (Gemini, GPT, Claude, Groq) via bring-your-own-key, and offers 100% offline mode through Ollama. You pay only for the API tokens you actually use — or pay nothing at all by running Llama 3 locally. No subscription, no vendor lock-in.
+LiveLens supports every major model (Gemini, GPT, Claude, Groq) via bring-your-own-key, and offers 100% offline mode through Ollama. You pay only for the API tokens you actually use — or pay nothing at all by running Llama 3 locally. No subscription, no vendor lock-in.
 
 ### vs Final Round AI — $149/month and visible to proctors
 
 Final Round AI is the most expensive option at $149/month, optimized for pre-interview prep and mock interviews but with the slowest live latency in the category. Critically, its taskbar icon is visible to proctoring software, making it detectable during monitored interviews.
 
-Natively delivers <500ms end-to-end latency using Rust-based native audio capture with Zero-Copy ABI Transfers. Its undetectable stealth mode hides from the dock, disguises process names, and syncs state across all windows — battle-tested and hardened across five major releases.
+LiveLens delivers <500ms end-to-end latency using Rust-based native audio capture with Zero-Copy ABI Transfers. Its undetectable stealth mode hides from the dock, disguises process names, and syncs state across all windows — battle-tested and hardened across five major releases.
 
 ### vs Pluely — lightweight but limited
 
-Pluely is a solid lightweight alternative (~10MB, Tauri-based) and it has Linux support, which Natively does not yet offer. Credit where it is due.
+Pluely is a solid lightweight alternative (~10MB, Tauri-based) and it has Linux support, which LiveLens does not yet offer. Credit where it is due.
 
-But Pluely is a basic overlay. It has no local RAG, no meeting history, no dual audio channels, and no dashboard. Natively is a complete intelligence system: it remembers your past meetings via local vector search, separates system audio from your microphone, and gives you a full management dashboard with export to Markdown, JSON, and Text.
+But Pluely is a basic overlay. It has no local RAG, no meeting history, no dual audio channels, and no dashboard. LiveLens is a complete intelligence system: it remembers your past meetings via local vector search, separates system audio from your microphone, and gives you a full management dashboard with export to Markdown, JSON, and Text.
 
 ### vs Interview Coder — More Powerful, Completely Free
 
-Interview Coder is a paid tool focused specifically on coding interview assistance. Natively does everything Interview Coder does — and more — for free:
+Interview Coder is a paid tool focused specifically on coding interview assistance. LiveLens does everything Interview Coder does — and more — for free:
 
-|                                    |    Natively    | Interview Coder |
+|                                    |    LiveLens    | Interview Coder |
 | :--------------------------------- | :------------: | :-------------: |
 | **Price**                          | ✅ Free (BYOK) |     ❌ Paid     |
 | **Open source**                    |       ✅       |       ❌        |
@@ -220,25 +220,25 @@ Interview Coder is a paid tool focused specifically on coding interview assistan
 | **Any LLM (BYOK)**                 |       ✅       |    ❌ Locked    |
 | **Data stored locally**            |       ✅       |    ❌ Cloud     |
 
-Natively covers the full interview loop — not just the coding round.
+LiveLens covers the full interview loop — not just the coding round.
 
 ### vs Parakeet AI — Memory and History vs Stateless Overlay
 
-Parakeet AI offers basic live meeting assistance but has no persistent memory, no meeting history, and no local vector search. Natively remembers your past meetings via local RAG, lets you ask questions across all your history, and gives you a full dashboard to manage, export, and search everything. Furthermore, Natively includes **Custom Persona Modes** allowing the AI to structure notes and behave optimally for specific flavors of conversations, instead of relying on Parakeet's one-size-fits-all model.
+Parakeet AI offers basic live meeting assistance but has no persistent memory, no meeting history, and no local vector search. LiveLens remembers your past meetings via local RAG, lets you ask questions across all your history, and gives you a full dashboard to manage, export, and search everything. Furthermore, LiveLens includes **Custom Persona Modes** allowing the AI to structure notes and behave optimally for specific flavors of conversations, instead of relying on Parakeet's one-size-fits-all model.
 
 ---
 
 ### Where we're not there yet
 
-- **No Linux support** — we are actively looking for maintainers to help bring Natively to Linux
+- **No Linux support** — we are actively looking for maintainers to help bring LiveLens to Linux
 - **API key setup overhead** — you need to bring your own API keys (or install Ollama), which adds initial setup friction compared to all-in-one cloud tools
-- **No built-in mock interview mode** — Final Round AI has dedicated mock interview practice; Natively focuses on live, real-time assistance
+- **No built-in mock interview mode** — Final Round AI has dedicated mock interview practice; LiveLens focuses on live, real-time assistance
 
 ---
 
 ## Free AI Coding Interview Assistant — Undetectable on LeetCode, HackerRank & CoderPad
 
-Natively works as a **free, undetectable AI coding interview assistant** for standard online assessments. It captures your screen, analyzes the problem, and gives you real-time hints, solutions, and explanations — all through an invisible overlay that doesn't interfere with your coding environment.
+LiveLens works as a **free, undetectable AI coding interview assistant** for standard online assessments. It captures your screen, analyzes the problem, and gives you real-time hints, solutions, and explanations — all through an invisible overlay that doesn't interfere with your coding environment.
 
 **Works undetected on:**
 
@@ -253,10 +253,10 @@ Natively works as a **free, undetectable AI coding interview assistant** for sta
 **How it works:**
 
 1. Screenshot the problem with a single shortcut
-2. Natively OCRs the question and sends it to your chosen AI (GPT, Claude, Gemini, or local Ollama)
+2. LiveLens OCRs the question and sends it to your chosen AI (GPT, Claude, Gemini, or local Ollama)
 3. Response appears in the invisible overlay — never on screen share
 
-> ⚠️ **Important:** Natively is not designed to bypass dedicated proctoring software like **Pearson VUE**, **ProctorU**, or **Respondus Lockdown Browser** — these run at the OS level and are a different category entirely. For standard online coding assessments without dedicated proctoring software, Natively's stealth mode is not detectable.
+> ⚠️ **Important:** LiveLens is not designed to bypass dedicated proctoring software like **Pearson VUE**, **ProctorU**, or **Respondus Lockdown Browser** — these run at the OS level and are a different category entirely. For standard online coding assessments without dedicated proctoring software, LiveLens's stealth mode is not detectable.
 
 ---
 
@@ -265,20 +265,20 @@ Natively works as a **free, undetectable AI coding interview assistant** for sta
 [![Portfolio](https://img.shields.io/badge/Portfolio-evinjohn.vercel.app-blueviolet?style=flat-square&logo=vercel&logoColor=white)](https://evinjohn.vercel.app/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/evinjohn/)
 [![X](https://img.shields.io/badge/X-@evinjohnn-black?style=flat-square&logo=x&logoColor=white)](https://x.com/evinjohnn)
-[![Hire Me](https://img.shields.io/badge/Hire_Me-Contact-success?style=flat-square&logo=gmail&logoColor=white)](mailto:evinjohnn@gmail.com?subject=Natively%20-%20Hiring%20Inquiry)
+[![Hire Me](https://img.shields.io/badge/Hire_Me-Contact-success?style=flat-square&logo=gmail&logoColor=white)](mailto:evinjohnn@gmail.com?subject=LiveLens%20-%20Hiring%20Inquiry)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/evinjohn)
 
 </div>
 
 ---
 
-## Natively API (Hosted Tier)
+## LiveLens API (Hosted Tier)
 
 **Stop managing four separate services. One key. Zero configuration.**
 
-Are you managing separate accounts for your AI reasoning, live transcription, fast inference, and web search? Juggling multiple API keys, rate limits, and invoices across completely different categories of tools is unnecessary overhead. Natively API replaces all of those categories with **one flat subscription**.
+Are you managing separate accounts for your AI reasoning, live transcription, fast inference, and web search? Juggling multiple API keys, rate limits, and invoices across completely different categories of tools is unnecessary overhead. LiveLens API replaces all of those categories with **one flat subscription**.
 
-Under the hood, Natively API connects you to the absolute best models for the optimal user experience:
+Under the hood, LiveLens API connects you to the absolute best models for the optimal user experience:
 
 - **Backend AI Models**: Claude, OpenAI, Gemini, and Groq.
 - **Premium STT Models**: Google Chirp 2/3, ElevenLabs Scribe v2, and Deepgram Nova-3.
@@ -292,7 +292,7 @@ Under the hood, Natively API connects you to the absolute best models for the op
 - **Real-Time Transcription (Deepgram/Google STT):** separate key + quota
 - **Web Search & Research (Tavily/Perplexity):** yet another subscription
 
-**Replaced by Natively API:**
+**Replaced by LiveLens API:**
 
 - **AI chat, transcription & web search** — all included
 - **One flat subscription.** Zero surprise bills. Starts at $8/mo.
@@ -304,11 +304,11 @@ Under the hood, Natively API connects you to the absolute best models for the op
 | :------------------------------------ | :--------------- | :----------- | :----------- | :------------- |
 | **All-in-One Cloud AI Access**        | ✅ Yes           | ✅ Yes       | ✅ Yes       | ✅ Yes         |
 | **Real-Time Transcription**           | ✅ Yes           | ✅ Yes       | ✅ Yes       | ✅ Yes         |
-| **Included Natively Pro Desktop App** | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
+| **Included LiveLens Pro Desktop App** | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
 | **Premium Support**                   | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
 | **Higher Monthly Quotas**             | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
 
-**Don't start the long way.** Skip the 20-minute manual setup. One Natively subscription skips all of it — AI, transcription, and web search are ready immediately.
+**Don't start the long way.** Skip the 20-minute manual setup. One LiveLens subscription skips all of it — AI, transcription, and web search are ready immediately.
 
 <p align="center">
   <a href="https://checkout.dodopayments.com/buy/pdt_0NbFixGmD8CSeawb5qvVl">
@@ -327,19 +327,19 @@ Under the hood, Natively API connects you to the absolute best models for the op
 
 ---
 
-## Natively Pro
+## LiveLens Pro
 
-While Natively is **free and open-source forever**, we also offer a **Pro Edition** (available as **Lifetime or Yearly** subscriptions) designed specifically for power users and job seekers. Purchasing a Pro license gives you an edge in the job market, all while directly supporting the continued development of the open-source Natively core!
+While LiveLens is **free and open-source forever**, we also offer a **Pro Edition** (available as **Lifetime or Yearly** subscriptions) designed specifically for power users and job seekers. Purchasing a Pro license gives you an edge in the job market, all while directly supporting the continued development of the open-source LiveLens core!
 
-### 🪙 Unlock Natively Pro with $NAT Token
+### 🪙 Unlock LiveLens Pro with $NAT Token
 
-We've launched the official **$NAT token** on Printr! Holders who maintain a specific balance of `$NAT` tokens in their connected wallet automatically unlock access to all **Natively Pro** features.
+We've launched the official **$NAT token** on Printr! Holders who maintain a specific balance of `$NAT` tokens in their connected wallet automatically unlock access to all **LiveLens Pro** features.
 
 👉 **[Trade $NAT on Printr](https://app.printr.money/trade/0xba1e50273ec14ca52b3fa64a5054c39470c2835392c6ecd06876f5bccd597d7b)**
 
 ### Free vs Pro Feature Comparison
 
-| Feature                                             | Natively Free | Natively Pro |
+| Feature                                             | LiveLens Free | LiveLens Pro |
 | :-------------------------------------------------- | :-----------: | :----------: |
 | **Bring Your Own Key (BYOK) Models**                |      ✅       |      ✅      |
 | **Local AI Support (Ollama)**                       |      ✅       |      ✅      |
@@ -373,7 +373,7 @@ Version 2.5.0 introduces major feature upgrades, architectural overhauls, and ro
 - **Custom Persona Modes**: Completed Cluely-style Custom Modes (Technical Interview, Sales, Recruiting, Team Meet, Lecture, etc.) allowing tailored AI personas and behaviors.
 - **Dynamic Note Templates**: AI now dynamically generates highly structured meeting notes based on the active persona mode (e.g., Problem Statement, Follow-ups, Space & Time Complexity for tech interviews).
 - **Reference Files & Custom Context**: Deeply integrate PDFs, DOCX files, and custom text instructions into the AI's real-time prompt logic.
-- **10-Minute Free Trial**: A new free trial system lets you experience Natively API with built-in HWID+IP anti-abuse protections and seamless upgrade paths.
+- **10-Minute Free Trial**: A new free trial system lets you experience LiveLens API with built-in HWID+IP anti-abuse protections and seamless upgrade paths.
 - **Reliable Screenshot Capture**: Hardened and completely stable multi-screenshot capture with single-trigger `Cmd+Shift+Enter` analysis.
 - **Custom Provider Enhancements**: Custom cURL endpoints now completely support automatic meeting summaries and custom AI behaviors without breaking the prompt injection strategy.
 - **STT Connection Pools & Resilience**: Added round-robin connection pools for Deepgram and ElevenLabs with exponential backoff and shadow-probe failover, absolutely eliminating 1006 reconnect storms.
@@ -386,13 +386,13 @@ Version 2.5.0 introduces major feature upgrades, architectural overhauls, and ro
 
 - [The free Cluely clone](#the-free-open-source-cluely-clone)
 - [What Users Are Saying](#what-users-are-saying)
-- [Why Natively?](#why-natively)
+- [Why LiveLens?](#why-natively)
 - [3 things to know](#3-things-you-should-know-before-choosing-an-interview-ai)
 - [Demo](#demo)
 - [Full comparison](#full-comparison-natively-vs-cluely-vs-final-round-ai-vs-lockedin-ai-vs-interview-coder)
-- [Why Natively wins](#why-natively-wins)
+- [Why LiveLens wins](#why-natively-wins)
 - [AI Coding Assistant](#free-ai-coding-interview-assistant-undetectable-on-leetcode-hackerrank--coderpad)
-- [Natively Pro](#natively-pro)
+- [LiveLens Pro](#natively-pro)
 - [What's New in v2.4.0](#whats-new-in-v240)
 - [Privacy & Security](#privacy--security-core-design-principle)
 - [Installation](#installation-developers--contributors)
@@ -407,14 +407,14 @@ Version 2.5.0 introduces major feature upgrades, architectural overhauls, and ro
 - [Contributing](#contributing)
 - [License](#license)
 - [FAQ](#faq)
-- [Alternatives Natively replaces](#alternatives-natively-replaces)
+- [Alternatives LiveLens replaces](#alternatives-natively-replaces)
 - [Star History](#star-history)
 
 ---
 
-## What Is Natively?
+## What Is LiveLens?
 
-**Natively** is a **desktop AI assistant for live situations**:
+**LiveLens** is a **desktop AI assistant for live situations**:
 
 - Meetings
 - Interviews
@@ -463,16 +463,16 @@ You explicitly control:
 >     **For .zip downloads:**
 >
 >     ```bash
->     xattr -cr /Applications/Natively.app
+>     xattr -cr /Applications/LiveLens.app
 >     ```
 >
 >     **For .dmg downloads:**
 >     1. Open Terminal and run:
 >        ```bash
->        xattr -cr ~/Downloads/Natively-2.0.2-arm64.dmg # Or your specific filename
+>        xattr -cr ~/Downloads/LiveLens-2.0.2-arm64.dmg # Or your specific filename
 >        ```
 >     2. Install the natively.dmg
->     3. Open Terminal and run: `xattr -cr /Applications/Natively.app`
+>     3. Open Terminal and run: `xattr -cr /Applications/LiveLens.app`
 
 ### Prerequisites
 
@@ -482,7 +482,7 @@ You explicitly control:
 
 ### AI Credentials & Speech Providers
 
-**Natively is 100% free to use with your own keys.**  
+**LiveLens is 100% free to use with your own keys.**  
 Connect **any** speech provider and **any** LLM. No subscriptions, no markups, no hidden fees. All keys are stored locally.
 
 ### Unlimited Free Transcription (Whisper, Google, Deepgram)
@@ -498,7 +498,7 @@ Connect **any** speech provider and **any** LLM. No subscriptions, no markups, n
 
 ### AI Engine Support (Bring Your Own Key)
 
-Connect Natively to **any** leading model or local inference engine.
+Connect LiveLens to **any** leading model or local inference engine.
 
 | Provider                     | Best For                                                    |
 | :--------------------------- | :---------------------------------------------------------- |
@@ -535,7 +535,7 @@ Setup Summary:
 3. Create a Service Account
 4. Assign role: `roles/speech.client`
 5. Generate and download a JSON key
-6. Point Natively to the JSON file in settings
+6. Point LiveLens to the JSON file in settings
 
 ---
 
@@ -649,7 +649,7 @@ This runs: Vite build → TypeScript compile → native module build → electro
 
 - **Custom Persona Modes**: Seamlessly switch between built-in personas (Technical Interview, Sales, Recruiting) or create your own custom modes tailored to any conversation.
 - **Reference Files & Custom Context**: Upload PDFs, DOCX files, or type custom instructions to give the AI real-time context on your specific situation.
-- **Job Description & Resume Context**: Natively understands your background and the role you're applying for to provide highly tailored, context-aware answers.
+- **Job Description & Resume Context**: LiveLens understands your background and the role you're applying for to provide highly tailored, context-aware answers.
 - **Company Research**: Get instant intelligence and dossiers on the company you are interviewing with.
 - **Negotiation Assistance**: Real-time guidance and strategy during offer and salary negotiations.
 
@@ -663,12 +663,12 @@ This runs: Vite build → TypeScript compile → native module build → electro
 
 ### Dual-Channel Audio Intelligence
 
-Natively understands that _listening_ to a meeting and _talking_ to an AI are different tasks. We treat them separately:
+LiveLens understands that _listening_ to a meeting and _talking_ to an AI are different tasks. We treat them separately:
 
 - **System Audio (The Meeting):** Captures high-fidelity audio directly from your OS (fully supported on both macOS and Windows). It "hears" what your colleagues are saying without interference from your room noise.
 - **Sample Rate Auto-Detection**: Dynamically detects and syncs true hardware sample rates (e.g., automatically handling 48kHz audio interfaces or external microphones without distortion or downsampling artifacts).
 - **Two-Stage Silence Processing**: Combines adaptive RMS thresholds with **WebRTC Machine Learning VAD** to reject typing and fan noise.
-- **Microphone Input (Your Voice):** A dedicated channel for your voice commands and dictation. Toggle it instantly to ask Natively a private question without muting your meeting software.
+- **Microphone Input (Your Voice):** A dedicated channel for your voice commands and dictation. Toggle it instantly to ask LiveLens a private question without muting your meeting software.
 
 ### Spotlight Search & Customization
 
@@ -699,7 +699,7 @@ Natively understands that _listening_ to a meeting and _talking_ to an AI are di
 
 ## Meeting Intelligence Dashboard
 
-Natively includes a powerful, local-first meeting management system to review, search, and manage your entire conversation history.
+LiveLens includes a powerful, local-first meeting management system to review, search, and manage your entire conversation history.
 
 ![Dashboard Preview](assets/dashboard-preview.png)
 
@@ -715,7 +715,7 @@ Natively includes a powerful, local-first meeting management system to review, s
 
 ```mermaid
 timeline
-    title Natively Product Roadmap
+    title LiveLens Product Roadmap
     section Recently Completed
         Personas : ✅ Custom Modes & Templates
         Trial : ✅ 10-Minute Free Trial
@@ -763,7 +763,7 @@ timeline
 
 ## Architecture Overview
 
-Natively processes audio, screen context, and user input locally, maintains a rolling context window, and sends only the required prompt data to the selected AI provider (local or cloud).
+LiveLens processes audio, screen context, and user input locally, maintains a rolling context window, and sends only the required prompt data to the selected AI provider (local or cloud).
 
 No raw audio, screenshots, or transcripts are stored or transmitted unless explicitly enabled by the user.
 
@@ -796,7 +796,7 @@ No raw audio, screenshots, or transcripts are stored or transmitted unless expli
 
 ## Responsible Use
 
-Natively is intended for:
+LiveLens is intended for:
 
 - Learning
 - Productivity
@@ -857,59 +857,59 @@ commercial Premium Edition and are not included in this repository.
 
 ---
 
-**Star this repo if Natively helps you succeed in meetings, interviews, or presentations!**
+**Star this repo if LiveLens helps you succeed in meetings, interviews, or presentations!**
 
 ---
 
 ## FAQ
 
-#### Is Natively really free?
+#### Is LiveLens really free?
 
-Yes. Natively is an open-source project. You only pay for what you use by bringing your own API keys (Gemini, OpenAI, Anthropic, etc.), or use it **100% free** by connecting to a local Ollama instance.
+Yes. LiveLens is an open-source project. You only pay for what you use by bringing your own API keys (Gemini, OpenAI, Anthropic, etc.), or use it **100% free** by connecting to a local Ollama instance.
 
-#### Does Natively work with Zoom, Teams, and Google Meet?
+#### Does LiveLens work with Zoom, Teams, and Google Meet?
 
-Yes. Natively uses a Rust-based system audio capture that works universally across any desktop application, including Zoom, Microsoft Teams, Google Meet, Slack, and Discord.
+Yes. LiveLens uses a Rust-based system audio capture that works universally across any desktop application, including Zoom, Microsoft Teams, Google Meet, Slack, and Discord.
 
 #### Is my data safe?
 
-Natively is built on **Privacy-by-Design**. By default, all transcripts, vector embeddings (Local RAG), and keys are stored locally on your machine. We collect only limited anonymous telemetry (no personal user data).
+LiveLens is built on **Privacy-by-Design**. By default, all transcripts, vector embeddings (Local RAG), and keys are stored locally on your machine. We collect only limited anonymous telemetry (no personal user data).
 
 #### Can I use it for technical interviews?
 
-Natively is a powerful assistant for any professional situation. However, users are responsible for complying with their company policies and interview guidelines.
+LiveLens is a powerful assistant for any professional situation. However, users are responsible for complying with their company policies and interview guidelines.
 
 #### How do I use local models?
 
-Simply install **Ollama**, run a model (e.g., `ollama run llama3`), and Natively will automatically detect it. Enable "Ollama" in the AI Providers settings to switch to offline mode.
+Simply install **Ollama**, run a model (e.g., `ollama run llama3`), and LiveLens will automatically detect it. Enable "Ollama" in the AI Providers settings to switch to offline mode.
 
-#### How does Natively compare to Cluely?
+#### How does LiveLens compare to Cluely?
 
-Cluely is a $20/month cloud-based tool that stores all data on their servers. In mid-2025, Cluely suffered a data breach that exposed personal information, transcripts, and screenshots of 83,000 users. Natively is free, open-source, and stores everything locally. It supports any LLM (not just one vendor), offers local AI via Ollama, and has battle-tested stealth mode. Natively has never had a data breach because there is no server to breach.
+Cluely is a $20/month cloud-based tool that stores all data on their servers. In mid-2025, Cluely suffered a data breach that exposed personal information, transcripts, and screenshots of 83,000 users. LiveLens is free, open-source, and stores everything locally. It supports any LLM (not just one vendor), offers local AI via Ollama, and has battle-tested stealth mode. LiveLens has never had a data breach because there is no server to breach.
 
 #### Is stealth mode actually undetectable?
 
-Yes. Natively hides from the dock, disguises process names as harmless system utilities (Terminal, Activity Monitor, System Settings), and syncs state across all windows. It has been hardened across five major releases and tested against screen share detection in Zoom, Teams, and Google Meet.
+Yes. LiveLens hides from the dock, disguises process names as harmless system utilities (Terminal, Activity Monitor, System Settings), and syncs state across all windows. It has been hardened across five major releases and tested against screen share detection in Zoom, Teams, and Google Meet.
 
-#### Does Natively work on LeetCode and HackerRank?
+#### Does LiveLens work on LeetCode and HackerRank?
 
-Yes. Natively's screenshot + OCR captures any visible coding problem and returns a full solution through the invisible overlay. It works on LeetCode, HackerRank, CoderPad, Codility, HackerEarth, Karat, and any browser-based coding environment.
+Yes. LiveLens's screenshot + OCR captures any visible coding problem and returns a full solution through the invisible overlay. It works on LeetCode, HackerRank, CoderPad, Codility, HackerEarth, Karat, and any browser-based coding environment.
 
-#### Is Natively detectable during coding interviews?
+#### Is LiveLens detectable during coding interviews?
 
-For standard online assessments (LeetCode, HackerRank, CoderPad, etc.), Natively is not detectable — it runs as a disguised system process and the overlay never appears in screen recordings or screen shares. It is **not** designed to bypass dedicated proctoring software like Pearson VUE, ProctorU, or Respondus Lockdown Browser, which operate at the OS level.
+For standard online assessments (LeetCode, HackerRank, CoderPad, etc.), LiveLens is not detectable — it runs as a disguised system process and the overlay never appears in screen recordings or screen shares. It is **not** designed to bypass dedicated proctoring software like Pearson VUE, ProctorU, or Respondus Lockdown Browser, which operate at the OS level.
 
-#### Is Natively a free alternative to Interview Coder?
+#### Is LiveLens a free alternative to Interview Coder?
 
-Yes. Natively does everything Interview Coder does — screenshot OCR, real-time coding assistance, invisible overlay — and adds behavioral interview support, system design help, local RAG memory, and any-LLM BYOK. All for free.
+Yes. LiveLens does everything Interview Coder does — screenshot OCR, real-time coding assistance, invisible overlay — and adds behavioral interview support, system design help, local RAG memory, and any-LLM BYOK. All for free.
 
 ---
 
-## Alternatives Natively Replaces
+## Alternatives LiveLens Replaces
 
-Natively is a free, open-source alternative to:
+LiveLens is a free, open-source alternative to:
 
-| Tool                | What Natively replaces                                                              |
+| Tool                | What LiveLens replaces                                                              |
 | :------------------ | :---------------------------------------------------------------------------------- |
 | **Cluely**          | Real-time AI meeting copilot — without the $20/mo fee or data breach risk           |
 | **Final Round AI**  | Live AI interview copilot — without the $149/mo fee or proctor-visible taskbar icon |

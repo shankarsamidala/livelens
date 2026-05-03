@@ -115,8 +115,8 @@ export const STT_PROVIDERS: Record<SttProviderId, SttProviderConfig> = {
     },
     natively: {
         id: 'natively',
-        name: 'Natively Pro (Managed)',
-        description: 'All-in-one managed STT via Natively API',
+        name: 'LiveLens Pro (Managed)',
+        description: 'All-in-one managed STT via LiveLens API',
         endpoint: '', 
         model: '',
         uploadType: 'websocket',

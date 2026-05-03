@@ -59,9 +59,9 @@ interface ElectronAPI {
   setGroqApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
   setOpenaiApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
   setClaudeApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
-  setNativelyApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
-  getNativelyUsage: () => Promise<{ ok: boolean; plan?: string; quota?: { transcription: { used: number; limit: number; remaining: number }; ai: { used: number; limit: number; remaining: number }; search: { used: number; limit: number; remaining: number }; resets_at: string }; member_since?: string; error?: string; status?: number }>
-  getStoredCredentials: () => Promise<{ hasGeminiKey: boolean; hasGroqKey: boolean; hasOpenaiKey: boolean; hasClaudeKey: boolean; hasNativelyKey: boolean; googleServiceAccountPath: string | null; sttProvider: string; hasSttGroqKey: boolean; hasSttOpenaiKey: boolean; hasDeepgramKey: boolean; hasElevenLabsKey: boolean; hasAzureKey: boolean; azureRegion: string; hasIbmWatsonKey: boolean; ibmWatsonRegion: string; hasSonioxKey: boolean }>
+  setLiveLensApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
+  getLiveLensUsage: () => Promise<{ ok: boolean; plan?: string; quota?: { transcription: { used: number; limit: number; remaining: number }; ai: { used: number; limit: number; remaining: number }; search: { used: number; limit: number; remaining: number }; resets_at: string }; member_since?: string; error?: string; status?: number }>
+  getStoredCredentials: () => Promise<{ hasGeminiKey: boolean; hasGroqKey: boolean; hasOpenaiKey: boolean; hasClaudeKey: boolean; hasLiveLensKey: boolean; googleServiceAccountPath: string | null; sttProvider: string; hasSttGroqKey: boolean; hasSttOpenaiKey: boolean; hasDeepgramKey: boolean; hasElevenLabsKey: boolean; hasAzureKey: boolean; azureRegion: string; hasIbmWatsonKey: boolean; ibmWatsonRegion: string; hasSonioxKey: boolean }>
   // Free Trial
   startTrial:     () => Promise<{ ok: boolean; trial_token?: string; started_at?: string; expires_at?: string; expired?: boolean; already_used?: boolean; converted_to?: string | null; usage?: { ai: number; stt_seconds: number; search: number }; limits?: { duration_ms: number; ai_requests: number; stt_minutes: number; search_requests: number }; error?: string; status?: number }>
   getTrialStatus: () => Promise<{ ok: boolean; expired?: boolean; remaining_ms?: number; started_at?: string; expires_at?: string; converted_to?: string | null; usage?: { ai: number; stt_seconds: number; search: number }; limits?: object; error?: string }>
@@ -147,11 +147,11 @@ interface ElectronAPI {
   getDefaultModel: () => Promise<{ model: string }>
   setModel: (modelId: string) => Promise<{ success: boolean; error?: string }>
   setDefaultModel: (modelId: string) => Promise<{ success: boolean; error?: string }>
-  toggleModelSelector: (coords: { x: number; y: number }) => Promise<void>
+  toggleModelSelector: (coords: { offsetX: number; offsetY: number }) => Promise<void>
   forceRestartOllama: () => Promise<void>
 
   // Settings Window
-  toggleSettingsWindow: (coords?: { x: number; y: number }) => Promise<void>
+  toggleSettingsWindow: (coords?: { offsetX: number; offsetY: number }) => Promise<void>
 
   // Groq Fast Text Mode
   getGroqFastTextMode: () => Promise<{ enabled: boolean }>
@@ -551,8 +551,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setGroqApiKey: (apiKey: string) => ipcRenderer.invoke("set-groq-api-key", apiKey),
   setOpenaiApiKey: (apiKey: string) => ipcRenderer.invoke("set-openai-api-key", apiKey),
   setClaudeApiKey: (apiKey: string) => ipcRenderer.invoke("set-claude-api-key", apiKey),
-  setNativelyApiKey: (apiKey: string) => ipcRenderer.invoke("set-natively-api-key", apiKey),
-  getNativelyUsage: () => ipcRenderer.invoke("get-natively-usage"),
+  setLiveLensApiKey: (apiKey: string) => ipcRenderer.invoke("set-natively-api-key", apiKey),
+  getLiveLensUsage: () => ipcRenderer.invoke("get-natively-usage"),
   getStoredCredentials: () => ipcRenderer.invoke("get-stored-credentials"),
 
   // Permissions
@@ -873,11 +873,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getDefaultModel: () => ipcRenderer.invoke('get-default-model'),
   setModel: (modelId: string) => ipcRenderer.invoke('set-model', modelId),
   setDefaultModel: (modelId: string) => ipcRenderer.invoke('set-default-model', modelId),
-  toggleModelSelector: (coords: { x: number; y: number }) => ipcRenderer.invoke('toggle-model-selector', coords),
+  toggleModelSelector: (coords: { offsetX: number; offsetY: number }) => ipcRenderer.invoke('toggle-model-selector', coords),
   forceRestartOllama: () => ipcRenderer.invoke('force-restart-ollama'),
 
   // Settings Window
-  toggleSettingsWindow: (coords?: { x: number; y: number }) => ipcRenderer.invoke('toggle-settings-window', coords),
+  toggleSettingsWindow: (coords?: { offsetX: number; offsetY: number }) => ipcRenderer.invoke('toggle-settings-window', coords),
 
   // Groq Fast Text Mode
   getGroqFastTextMode: () => ipcRenderer.invoke('get-groq-fast-text-mode'),

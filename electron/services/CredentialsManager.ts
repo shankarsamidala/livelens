@@ -114,13 +114,13 @@ export class CredentialsManager {
 
     public getSttProvider(): 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' {
         const provider = this.credentials.sttProvider || 'none';
-        // Self-heal: if provider is 'none' but a Natively key exists, the user is in a
+        // Self-heal: if provider is 'none' but a LiveLens key exists, the user is in a
         // broken state (key cleared then re-entered via a path that skipped auto-promote,
         // or credentials restored from backup). Silently restore to 'natively' so STT works.
         if (provider === 'none' && this.credentials.nativelyApiKey) {
             this.credentials.sttProvider = 'natively';
             this.saveCredentials();
-            console.log('[CredentialsManager] Self-healed sttProvider: none→natively (Natively key present)');
+            console.log('[CredentialsManager] Self-healed sttProvider: none→natively (LiveLens key present)');
             return 'natively';
         }
         return provider;
@@ -181,7 +181,7 @@ export class CredentialsManager {
         return this.credentials.defaultModel || 'gemini-3.1-flash-lite-preview';
     }
 
-    public getNativelyApiKey(): string | undefined {
+    public getLiveLensApiKey(): string | undefined {
         return this.credentials.nativelyApiKey;
     }
 
@@ -313,7 +313,7 @@ export class CredentialsManager {
         console.log(`[CredentialsManager] Default Model set to: ${model}`);
     }
 
-    public setNativelyApiKey(key: string): void {
+    public setLiveLensApiKey(key: string): void {
         const trimmed = key.trim();
         this.credentials.nativelyApiKey = trimmed || undefined;
 
@@ -341,16 +341,16 @@ export class CredentialsManager {
             // Key cleared — revert natively-auto-set defaults back to safe fallbacks
             if (this.credentials.defaultModel === 'natively') {
                 this.credentials.defaultModel = 'gemini-3.1-flash-lite-preview';
-                console.log('[CredentialsManager] Natively key cleared — reset default model to Gemini Flash');
+                console.log('[CredentialsManager] LiveLens key cleared — reset default model to Gemini Flash');
             }
             if (this.credentials.sttProvider === 'natively') {
                 this.credentials.sttProvider = 'none';
-                console.log('[CredentialsManager] Natively key cleared — reset STT provider to none');
+                console.log('[CredentialsManager] LiveLens key cleared — reset STT provider to none');
             }
         }
 
         this.saveCredentials();
-        console.log('[CredentialsManager] Natively API Key updated');
+        console.log('[CredentialsManager] LiveLens API Key updated');
     }
 
     public getPreferredModel(provider: 'gemini' | 'groq' | 'openai' | 'claude'): string | undefined {

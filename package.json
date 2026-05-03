@@ -2,7 +2,7 @@
   "name": "natively",
   "version": "2.5.0",
   "main": "dist-electron/electron/main.js",
-  "description": "Natively is a meeting notes app that uses AI to generate notes from your meetings.",
+  "description": "LiveLens is a meeting notes app that uses AI to generate notes from your meetings.",
   "scripts": {
     "clean": "rimraf dist dist-electron",
     "dev": "vite",
@@ -25,7 +25,7 @@
     "generateUpdatesFilesForAllChannels": true,
     "appId": "com.electron.meeting-notes",
     "afterPack": "./scripts/ad-hoc-sign.js",
-    "productName": "Natively",
+    "productName": "LiveLens",
     "files": [
       "dist",
       "dist-electron",
@@ -80,8 +80,8 @@
       "identity": null,
       "hardenedRuntime": false,
       "extendInfo": {
-        "NSScreenCaptureUsageDescription": "Natively needs Screen Recording permission to capture system audio for meeting transcription.",
-        "NSMicrophoneUsageDescription": "Natively needs microphone access to transcribe your voice during meetings."
+        "NSScreenCaptureUsageDescription": "LiveLens needs Screen Recording permission to capture system audio for meeting transcription.",
+        "NSMicrophoneUsageDescription": "LiveLens needs microphone access to transcribe your voice during meetings."
       }
     },
     "win": {

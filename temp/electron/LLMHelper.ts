@@ -639,7 +639,7 @@ CRITICAL RULES:
   }
 
   /**
-   * Generate a suggestion based on conversation transcript - Natively-style
+   * Generate a suggestion based on conversation transcript - LiveLens-style
    * This uses Gemini Flash to reason about what the user should say
    * @param context - The full conversation transcript
    * @param lastQuestion - The most recent question from the interviewer

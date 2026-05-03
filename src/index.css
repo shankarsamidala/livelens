@@ -22,83 +22,71 @@
   /* System Fonts - SF Pro */
   --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 
-  /* --- SEMANTIC TOKEN SYSTEM (DEFAULT: DARK) --- */
-  /* Reference Image Matching */
-  --bg-sidebar: #18181B;
-  /* User Spec: Side Panel */
-  --bg-main: #1E1E21;
-  /* User Spec: Main BG */
-  --bg-card: #242429;
-  /* User Spec: Detectable Container */
+  /* --- TERMINAL THEME (DEFAULT: DARK) — pure black + neon green --- */
+  --bg-sidebar:      #000000;
+  --bg-main:         #000000;
+  --bg-card:         #030803;
+  --bg-toggle-switch:#071007;
+  --bg-item-surface: #050d05;
+  --bg-item-active:  #0a160a;
 
-  --bg-toggle-switch: #303033;
-  /* User Spec: Toggle Button */
-  --bg-item-surface: #27272A;
-  /* User Spec: Icons & Input Backgrounds */
-  --bg-item-active: #2C2C2C;
-  /* Selected state */
+  --bg-primary:    #000000;
+  --bg-secondary:  #010301;
+  --bg-elevated:   #050d05;
+  --bg-input:      #030803;
 
-  --bg-primary: #000000;
-  /* Fallback */
-  --bg-secondary: #050505;
-  /* Fallback */
-  --bg-elevated: #151515;
-  /* Fallback */
-  --bg-input: #1A1A1A;
-  /* Fallback */
+  --text-primary:   #00ff41;
+  --text-secondary: rgba(0, 255, 65, 0.75);
+  --text-tertiary:  rgba(0, 255, 65, 0.55);
 
-  --text-primary: #ffffff;
-  --text-secondary: #A0A0A0;
-  --text-tertiary: #606060;
+  --border-subtle: rgba(0, 255, 65, 0.14);
+  --border-muted:  rgba(0, 255, 65, 0.22);
 
-  --border-subtle: transparent;
-  --border-muted: #333333;
+  --accent-primary: #00ff41;
+  --accent-muted:   rgba(0, 255, 65, 0.15);
 
-  --accent-primary: #3b82f6;
-  --accent-muted: rgba(59, 130, 246, 0.15);
+  --bg-component: #030803;
 
-  --bg-component: #262626;
-  /* Specific legacy value */
+  --overlay-bg: rgba(0, 0, 0, 0.94);
 
-  --overlay-bg: rgba(30, 30, 30, 0.65);
-
+  /* ── PREMIUM DARK — charcoal + off-white + indigo accent ── */
   --overlay-opacity: 0.65;
-  --overlay-border: rgba(255, 255, 255, 0.12);
-  --overlay-border-soft: rgba(255, 255, 255, 0.1);
-  --overlay-panel-bg: rgb(30 30 30 / calc(0.05 + (var(--overlay-opacity) * 0.55)));
-  --overlay-pill-bg: rgb(30 30 30 / calc(0.04 + (var(--overlay-opacity) * 0.48)));
-  --overlay-transcript-bg: rgb(30 30 30 / calc(0.02 + (var(--overlay-opacity) * 0.24)));
-  --overlay-chip-bg: rgba(255, 255, 255, 0.035);
-  --overlay-chip-hover-bg: rgba(255, 255, 255, 0.11);
-  --overlay-input-bg: rgba(255, 255, 255, 0.05);
-  --overlay-input-hover-bg: rgba(255, 255, 255, 0.12);
-  --overlay-input-focus-bg: rgba(255, 255, 255, 0.16);
+  --overlay-border: rgba(255, 255, 255, 0.09);
+  --overlay-border-soft: rgba(255, 255, 255, 0.06);
+  --overlay-panel-bg: rgb(13 15 20 / calc(0.88 + (var(--overlay-opacity) * 0.07)));
+  --overlay-pill-bg: rgb(13 15 20 / calc(0.86 + (var(--overlay-opacity) * 0.07)));
+  --overlay-transcript-bg: rgba(255, 255, 255, 0.03);
+  --overlay-chip-bg: rgba(255, 255, 255, 0.06);
+  --overlay-chip-hover-bg: rgba(255, 255, 255, 0.10);
+  --overlay-input-bg: rgba(255, 255, 255, 0.04);
+  --overlay-input-hover-bg: rgba(255, 255, 255, 0.07);
+  --overlay-input-focus-bg: rgba(255, 255, 255, 0.09);
   --overlay-control-bg: rgba(255, 255, 255, 0.05);
-  --overlay-control-hover-bg: rgba(255, 255, 255, 0.12);
-  --overlay-code-bg: rgba(255, 255, 255, 0.03);
-  --overlay-code-border: rgba(255, 255, 255, 0.08);
-  --overlay-code-header-bg: rgba(255, 255, 255, 0.05);
-  --overlay-inline-code-bg: rgba(255, 255, 255, 0.07);
+  --overlay-control-hover-bg: rgba(255, 255, 255, 0.09);
+  --overlay-code-bg: rgba(0, 0, 0, 0.38);
+  --overlay-code-border: rgba(255, 255, 255, 0.09);
+  --overlay-code-header-bg: rgba(255, 255, 255, 0.04);
+  --overlay-inline-code-bg: rgba(255, 255, 255, 0.09);
   --overlay-icon-bg: rgba(255, 255, 255, 0.05);
-  --overlay-icon-hover-bg: rgba(255, 255, 255, 0.12);
-  --overlay-panel-shadow: rgb(0 0 0 / calc(0.05 + (var(--overlay-opacity) * 0.18)));
-  --overlay-pill-shadow: rgb(0 0 0 / calc(0.03 + (var(--overlay-opacity) * 0.12)));
-  --overlay-text-primary: rgba(255, 255, 255, 0.985);
-  --overlay-text-secondary: rgba(255, 255, 255, 0.9);
-  --overlay-text-muted: rgba(255, 255, 255, 0.7);
-  --overlay-text-placeholder: rgba(255, 255, 255, 0.58);
+  --overlay-icon-hover-bg: rgba(255, 255, 255, 0.10);
+  --overlay-panel-shadow: rgba(0, 0, 0, 0.55);
+  --overlay-pill-shadow: rgba(0, 0, 0, 0.40);
+  --overlay-text-primary: #e2e5ed;
+  --overlay-text-secondary: rgba(226, 229, 237, 0.60);
+  --overlay-text-muted: rgba(226, 229, 237, 0.38);
+  --overlay-text-placeholder: rgba(226, 229, 237, 0.28);
   --overlay-text-strong: #ffffff;
-  --overlay-shell-blur: calc(2px + (var(--overlay-opacity) * 18px));
-  --overlay-pill-blur: calc(1px + (var(--overlay-opacity) * 12px));
-  --overlay-transcript-blur: calc(var(--overlay-opacity) * 6px);
+  --overlay-shell-blur: calc(4px + (var(--overlay-opacity) * 20px));
+  --overlay-pill-blur: calc(3px + (var(--overlay-opacity) * 13px));
+  --overlay-transcript-blur: calc(var(--overlay-opacity) * 5px);
 
-  /* Primary Action Button Defaults (Dark) */
-  --btn-primary-bg: #2563EB; /* blue-600 */
-  --btn-primary-hover: #3b82f6; /* blue-500 */
-  --btn-primary-disabled-bg: rgba(30, 58, 138, 0.3); /* blue-900/30 */
-  --btn-primary-disabled-border: rgba(30, 64, 175, 0.3); /* blue-800/30 */
-  --btn-primary-disabled-text: rgba(96, 165, 250, 0.4); /* blue-400/40 */
-  --btn-primary-shadow-color: rgba(30, 58, 138, 0.3); /* blue-900/30 */
+  /* Primary Action Button Defaults */
+  --btn-primary-bg: rgba(130, 166, 255, 0.15);
+  --btn-primary-hover: rgba(130, 166, 255, 0.25);
+  --btn-primary-disabled-bg: rgba(255, 255, 255, 0.05);
+  --btn-primary-disabled-border: rgba(255, 255, 255, 0.08);
+  --btn-primary-disabled-text: rgba(226, 229, 237, 0.25);
+  --btn-primary-shadow-color: rgba(130, 166, 255, 0.12);
 }
 
 [data-theme='light'] {
@@ -248,11 +236,8 @@ body,
   height: 100%;
   width: 100%;
   overflow: hidden;
-  /* Transparent background to let vibrancy show through */
   background: transparent !important;
-  /* System font */
   font-family: var(--font-system);
-  /* Smoother fonts */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -277,28 +262,50 @@ body {
 /* Liquid Glass Effect Base - Refined Matte Look */
 /* Used for floating elements on top of the vibrant background */
 .liquid-glass {
-  background: rgba(30, 30, 30, 0.65);
-  /* Restored original opacity */
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 6, 1, 0.88);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  border: 1px solid rgba(0, 255, 65, 0.14);
   border-radius: 1.25rem;
   box-shadow:
-    0 20px 40px -10px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 20px 40px -10px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 255, 65, 0.10),
+    inset 0 1px 0 rgba(0, 255, 65, 0.06);
   position: relative;
   overflow: hidden;
+}
+
+[data-theme='light'] .liquid-glass {
+  background: rgba(255, 255, 255, 0.80);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Subtle scrollbar — overlay only */
+.terminal-scope ::-webkit-scrollbar {
+  width: 3px;
+  background: transparent;
+}
+.terminal-scope ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+.terminal-scope ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .overlay-shell-surface {
   background: var(--overlay-panel-bg);
   border-color: var(--overlay-border);
-  box-shadow: 0 24px 48px var(--overlay-panel-shadow);
-  backdrop-filter: blur(var(--overlay-shell-blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--overlay-shell-blur)) saturate(140%);
+  backdrop-filter: blur(var(--overlay-shell-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--overlay-shell-blur)) saturate(160%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 [data-theme='light'] .overlay-shell-surface {
+  box-shadow: 0 24px 48px var(--overlay-panel-shadow);
   backdrop-filter: blur(var(--overlay-shell-blur)) saturate(200%);
   -webkit-backdrop-filter: blur(var(--overlay-shell-blur)) saturate(200%);
 }
@@ -306,12 +313,14 @@ body {
 .overlay-pill-surface {
   background: var(--overlay-pill-bg);
   border-color: var(--overlay-border);
-  box-shadow: 0 12px 28px var(--overlay-pill-shadow);
-  backdrop-filter: blur(var(--overlay-pill-blur)) saturate(135%);
-  -webkit-backdrop-filter: blur(var(--overlay-pill-blur)) saturate(135%);
+  box-shadow: none;
+  backdrop-filter: blur(var(--overlay-pill-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--overlay-pill-blur)) saturate(150%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 [data-theme='light'] .overlay-pill-surface {
+  box-shadow: none;
   backdrop-filter: blur(var(--overlay-pill-blur)) saturate(200%);
   -webkit-backdrop-filter: blur(var(--overlay-pill-blur)) saturate(200%);
 }
@@ -432,12 +441,12 @@ body {
 
 .overlay-chip-surface {
   background: var(--overlay-chip-bg);
-  border-color: transparent;
+  border-color: var(--overlay-border-soft);
 }
 
 .overlay-chip-surface:hover {
   background: var(--overlay-chip-hover-bg);
-  border-color: var(--overlay-border-soft);
+  border-color: var(--overlay-border);
 }
 
 .overlay-input-surface {
@@ -505,6 +514,110 @@ body {
 
 .overlay-input-text::placeholder {
   color: var(--overlay-text-placeholder);
+}
+
+/* ── Terminal Theme Extras ─────────────────────────────────────────────── */
+
+@keyframes terminal-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+
+/* ── Force all overlay CSS variables on .terminal-scope ────────────────
+   Overrides any [data-theme='light'] rules on the parent <html> element.
+   Without this, light-mode document theme bleeds into the overlay.       */
+.terminal-scope {
+  --overlay-text-primary:     #e2e5ed;
+  --overlay-text-secondary:   rgba(226, 229, 237, 0.60);
+  --overlay-text-muted:       rgba(226, 229, 237, 0.38);
+  --overlay-text-placeholder: rgba(226, 229, 237, 0.28);
+  --overlay-text-strong:      #ffffff;
+  --overlay-border:           rgba(255, 255, 255, 0.09);
+  --overlay-border-soft:      rgba(255, 255, 255, 0.06);
+  --overlay-chip-bg:          rgba(255, 255, 255, 0.06);
+  --overlay-chip-hover-bg:    rgba(255, 255, 255, 0.10);
+  --overlay-input-bg:         rgba(255, 255, 255, 0.04);
+  --overlay-input-hover-bg:   rgba(255, 255, 255, 0.07);
+  --overlay-input-focus-bg:   rgba(255, 255, 255, 0.09);
+  --overlay-control-bg:       rgba(255, 255, 255, 0.05);
+  --overlay-control-hover-bg: rgba(255, 255, 255, 0.09);
+  --overlay-icon-bg:          rgba(255, 255, 255, 0.05);
+  --overlay-icon-hover-bg:    rgba(255, 255, 255, 0.10);
+  --overlay-code-bg:          rgba(0, 0, 0, 0.38);
+  --overlay-code-border:      rgba(255, 255, 255, 0.09);
+  --overlay-code-header-bg:   rgba(255, 255, 255, 0.04);
+  --overlay-inline-code-bg:   rgba(255, 255, 255, 0.09);
+}
+
+/* Input caret — overlay only */
+.terminal-scope .overlay-input-text {
+  caret-color: #83a6ff;
+}
+
+/* ── Premium dark: overrides scoped ONLY to the overlay (.terminal-scope) ── */
+.terminal-scope .text-white,
+.terminal-scope .text-slate-100,
+.terminal-scope .text-slate-200,
+.terminal-scope .text-gray-100,
+.terminal-scope .text-gray-200,
+.terminal-scope .text-zinc-100,
+.terminal-scope .text-zinc-200 {
+  color: #e2e5ed !important;
+}
+
+.terminal-scope .text-slate-300,
+.terminal-scope .text-slate-400,
+.terminal-scope .text-gray-300,
+.terminal-scope .text-gray-400,
+.terminal-scope .text-zinc-300,
+.terminal-scope .text-zinc-400 {
+  color: rgba(226, 229, 237, 0.65) !important;
+}
+
+.terminal-scope .text-slate-500,
+.terminal-scope .text-slate-600,
+.terminal-scope .text-gray-500,
+.terminal-scope .text-gray-600,
+.terminal-scope .text-zinc-500,
+.terminal-scope .text-zinc-600 {
+  color: rgba(226, 229, 237, 0.42) !important;
+}
+
+/* Premium dark markdown content — overlay only */
+.terminal-scope .markdown-content,
+.terminal-scope .markdown-content p,
+.terminal-scope .markdown-content li,
+.terminal-scope .markdown-content span {
+  color: #e2e5ed;
+}
+
+.terminal-scope .markdown-content strong,
+.terminal-scope .markdown-content b {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.terminal-scope .markdown-content em,
+.terminal-scope .markdown-content blockquote {
+  color: rgba(226, 229, 237, 0.65);
+  border-left-color: rgba(255, 255, 255, 0.18);
+}
+
+.terminal-scope .markdown-content code {
+  color: #c3ceff;
+  background: rgba(130, 166, 255, 0.10);
+}
+
+.terminal-scope .markdown-content a {
+  color: #83a6ff;
+  text-decoration-color: rgba(130, 166, 255, 0.40);
+}
+
+/* Listening / waveform bar animation */
+@keyframes listening {
+  0%, 100% { transform: scaleY(1);   opacity: 0.35; }
+  50%       { transform: scaleY(2.2); opacity: 0.90; }
 }
 
 /* Interaction Utilities - Reusable */

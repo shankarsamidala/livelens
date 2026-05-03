@@ -88,7 +88,7 @@ export const AIProvidersSettings: React.FC = () => {
     const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
     const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
     const [hasStoredKey, setHasStoredKey] = useState<Record<string, boolean>>({});
-    // Fast mode is available with a local Groq key OR via the Natively API (server-side Groq pool)
+    // Fast mode is available with a local Groq key OR via the LiveLens API (server-side Groq pool)
     const canUseFastMode = !!(hasStoredKey.groq || hasStoredKey.natively);
     const [testStatus, setTestStatus] = useState<Record<string, 'idle' | 'testing' | 'success' | 'error'>>({});
     const [testError, setTestError] = useState<Record<string, string>>({});
@@ -132,7 +132,7 @@ export const AIProvidersSettings: React.FC = () => {
                         groq: creds.hasGroqKey,
                         openai: creds.hasOpenaiKey,
                         claude: creds.hasClaudeKey,
-                        natively: creds.hasNativelyKey || false
+                        natively: creds.hasLiveLensKey || false
                     });
                     // Load preferred models
                     const pm: Record<string, string> = {};
@@ -186,7 +186,7 @@ export const AIProvidersSettings: React.FC = () => {
         }
     }, []);
 
-    // Effect to enforce fast mode disabled if neither Groq key nor Natively API is configured.
+    // Effect to enforce fast mode disabled if neither Groq key nor LiveLens API is configured.
     // Guard with credentialsLoaded so this never fires during the initial async load phase
     // (when hasStoredKey is still empty and canUseFastMode is incorrectly false).
     useEffect(() => {
@@ -448,7 +448,7 @@ export const AIProvidersSettings: React.FC = () => {
                             const opts: { id: string; name: string }[] = [];
 
                             if (hasStoredKey.natively) {
-                                opts.push({ id: 'natively', name: 'Natively API' });
+                                opts.push({ id: 'natively', name: 'LiveLens API' });
                             }
 
                             for (const [prov, cfg] of Object.entries(STANDARD_CLOUD_MODELS)) {
@@ -478,7 +478,7 @@ export const AIProvidersSettings: React.FC = () => {
                 {/* Fast Response Mode */}
                 <div
                     className={`bg-bg-item-surface rounded-xl p-5 border border-border-subtle flex items-center justify-between ${!canUseFastMode ? 'opacity-50 grayscale' : ''}`}
-                    title={!canUseFastMode ? "Requires a Groq API Key or Natively API to be configured" : ""}
+                    title={!canUseFastMode ? "Requires a Groq API Key or LiveLens API to be configured" : ""}
                 >
                     <div>
                         <div className="flex items-center gap-2">
@@ -487,13 +487,13 @@ export const AIProvidersSettings: React.FC = () => {
                         </div>
                         <p className="text-[10px] text-text-secondary mt-0.5">Super fast responses using Groq Llama 3 for text. Multimodal requests still use your Default Model.</p>
                         {!canUseFastMode && (
-                            <p className="text-[10px] text-orange-500 mt-0.5 font-medium">Requires a Groq API Key or Natively API to be configured.</p>
+                            <p className="text-[10px] text-orange-500 mt-0.5 font-medium">Requires a Groq API Key or LiveLens API to be configured.</p>
                         )}
                     </div>
                     <div
                         onClick={async () => {
                             if (!canUseFastMode) {
-                                alert("Please configure a Groq API Key or Natively API first to enable Fast Response Mode.");
+                                alert("Please configure a Groq API Key or LiveLens API first to enable Fast Response Mode.");
                                 return;
                             }
                             const newState = !fastResponseMode;

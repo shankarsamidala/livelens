@@ -1,6 +1,6 @@
 ## Summary
 
-Major update introducing Auto-Language Detection for STT, a revamped automated email ecosystem, and massive production hardening for the Natively API.
+Major update introducing Auto-Language Detection for STT, a revamped automated email ecosystem, and massive production hardening for the LiveLens API.
 
 ## What's New
 
@@ -33,17 +33,17 @@ If you see "App is damaged":
 
 - **For .zip downloads:**
   1. Move the app to your Applications folder.
-  2. Open Terminal and run: `xattr -cr /Applications/Natively.app`
+  2. Open Terminal and run: `xattr -cr /Applications/LiveLens.app`
 
 - **For .dmg downloads:**
   1. Open Terminal and run:
      ```bash
-     xattr -cr ~/Downloads/Natively-2.0.2-arm64.dmg
+     xattr -cr ~/Downloads/LiveLens-2.0.2-arm64.dmg
      # Or for Intel Macs:
-     xattr -cr ~/Downloads/Natively-2.0.2-x64.dmg
+     xattr -cr ~/Downloads/LiveLens-2.0.2-x64.dmg
      ```
   2. Install the natively.dmg
-  3. Open Terminal and run: `xattr -cr /Applications/Natively.app`
+  3. Open Terminal and run: `xattr -cr /Applications/LiveLens.app`
 
 ## ⚠️Windows Installation (Unsigned Build)
 

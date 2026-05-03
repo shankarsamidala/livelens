@@ -142,7 +142,7 @@ export function initializeIpcHandlers(appState: AppState): void {
       } else if (
         overlayWin && !overlayWin.isDestroyed() && overlayWin.webContents.id === senderWebContents.id
       ) {
-        // NativelyInterface logic - Resize ONLY the overlay window using dedicated method
+        // LiveLensInterface logic - Resize ONLY the overlay window using dedicated method
         appState.getWindowHelper().setOverlayDimensions(width, height)
       }
     }
@@ -276,7 +276,7 @@ export function initializeIpcHandlers(appState: AppState): void {
   });
 
 
-  // Generate suggestion from transcript - Natively-style text-only reasoning
+  // Generate suggestion from transcript - LiveLens-style text-only reasoning
   safeHandle("generate-suggestion", async (event, context: string, lastQuestion: string) => {
     try {
       const suggestion = await appState.processingHelper.getLLMHelper().generateSuggestion(context, lastQuestion)
@@ -1316,7 +1316,7 @@ export function initializeIpcHandlers(appState: AppState): void {
       // Close the selector window if open
       appState.modelSelectorWindowHelper.hideWindow();
 
-      // Broadcast to all windows so NativelyInterface can update its selector (session-only update)
+      // Broadcast to all windows so LiveLensInterface can update its selector (session-only update)
       BrowserWindow.getAllWindows().forEach(win => {
         if (!win.isDestroyed()) {
           win.webContents.send('model-changed', modelId);
@@ -1347,7 +1347,7 @@ export function initializeIpcHandlers(appState: AppState): void {
       // Close the selector window if open
       appState.modelSelectorWindowHelper.hideWindow();
 
-      // Broadcast to all windows so NativelyInterface can update its selector
+      // Broadcast to all windows so LiveLensInterface can update its selector
       BrowserWindow.getAllWindows().forEach(win => {
         if (!win.isDestroyed()) {
           win.webContents.send('model-changed', modelId);
@@ -1527,7 +1527,7 @@ export function initializeIpcHandlers(appState: AppState): void {
       // Auto-capture a fresh screenshot so the AI always sees the user's CURRENT code,
       // not a stale problem screenshot from an earlier ⌘H press.
       // restoreFocus=false: the screenshot session hides/restores windows without stealing
-      // focus back to Natively, so the user stays in their code editor.
+      // focus back to LiveLens, so the user stays in their code editor.
       try {
         await appState.takeScreenshot(false);
       } catch (screenshotErr: any) {

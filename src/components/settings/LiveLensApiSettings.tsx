@@ -5,7 +5,7 @@ import {
     RefreshCw, CalendarClock, Trash2, ArrowUpRight, Info,
     Zap, Clock, Sparkles
 } from 'lucide-react';
-import { NativelyLogoMark } from '../NativelyLogoMark';
+import { LiveLensLogoMark } from '../LiveLensLogoMark';
 import { FreeTrialModal } from '../trial/FreeTrialModal';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -118,7 +118,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 // ─── Component ───────────────────────────────────────────────
-export const NativelyApiSettings: React.FC = () => {
+export const LiveLensApiSettings: React.FC = () => {
     const [apiKey,         setApiKey]         = useState('');
     const [isSaved,        setIsSaved]        = useState(false);
     const [isLoading,      setIsLoading]      = useState(true);
@@ -149,8 +149,8 @@ export const NativelyApiSettings: React.FC = () => {
         (async () => {
             try {
                 const creds = await window.electronAPI.getStoredCredentials();
-                if (creds.hasNativelyKey) { setApiKey('•'.repeat(24)); setIsSaved(true); }
-            } catch (e) { console.error('[NativelyApi]', e); }
+                if (creds.hasLiveLensKey) { setApiKey('•'.repeat(24)); setIsSaved(true); }
+            } catch (e) { console.error('[LiveLensApi]', e); }
             finally { setIsLoading(false); }
         })();
     }, []);
@@ -159,7 +159,7 @@ export const NativelyApiSettings: React.FC = () => {
         setIsLoadingUsage(true);
         setUsageError(null);
         try {
-            const r = await window.electronAPI.getNativelyUsage();
+            const r = await window.electronAPI.getLiveLensUsage();
             if (r.ok && r.quota) {
                 setUsageData(r as UsageData);
             } else {
@@ -291,7 +291,7 @@ export const NativelyApiSettings: React.FC = () => {
         if (!apiKey.trim() || apiKey.includes('•')) return;
         setIsSaving(true); setError(null);
         try {
-            const r = await window.electronAPI.setNativelyApiKey(apiKey.trim());
+            const r = await window.electronAPI.setLiveLensApiKey(apiKey.trim());
             if (r.success) {
                 setApiKey('•'.repeat(24)); setIsSaved(true); setJustSaved(true);
                 setTimeout(() => setJustSaved(false), 2500);
@@ -306,7 +306,7 @@ export const NativelyApiSettings: React.FC = () => {
 
     const handleClear = () => {
         setApiKey(''); setIsSaved(false); setError(null); setUsageData(null); setUsageError(null);
-        window.electronAPI.setNativelyApiKey('').catch(() => {});
+        window.electronAPI.setLiveLensApiKey('').catch(() => {});
     };
 
     const openExternal = (url: string) => { (window.electronAPI as any)?.openExternal?.(url); };
@@ -321,7 +321,7 @@ export const NativelyApiSettings: React.FC = () => {
                 <div className="flex flex-col gap-2.5 mb-4">
                     <div className="flex items-center justify-between">
                         <p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-widest">Choose a Plan</p>
-                        <span className="text-[10px] text-text-tertiary">Pro, Max &amp; Ultra include Natively Pro app</span>
+                        <span className="text-[10px] text-text-tertiary">Pro, Max &amp; Ultra include LiveLens Pro app</span>
                     </div>
                     <div className="w-full flex items-center justify-center py-2 bg-violet-500/10 border border-violet-500/20 rounded-[10px]">
                         <span className="text-[11.5px] font-medium text-violet-400/90">
@@ -442,7 +442,7 @@ export const NativelyApiSettings: React.FC = () => {
             {/* ── Page title ───────────────────────────────────── */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-[15px] font-semibold text-text-primary tracking-[-0.01em]">Natively API</h3>
+                    <h3 className="text-[15px] font-semibold text-text-primary tracking-[-0.01em]">LiveLens API</h3>
                     <p className="text-[12px] text-text-tertiary mt-0.5 leading-snug">
                         Managed transcription, AI &amp; search
                     </p>
@@ -472,10 +472,10 @@ export const NativelyApiSettings: React.FC = () => {
                 return (
                     <Card className="shadow-sm border-violet-500/25">
                         <div className="px-5 pt-5 pb-5 space-y-4">
-                            {/* Header — same layout as "Try Natively API free" start card */}
+                            {/* Header — same layout as "Try LiveLens API free" start card */}
                             <div className="flex items-start gap-3.5">
                                 <div className="w-10 h-10 rounded-[11px] bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-                                    <NativelyLogoMark size={18} className="text-violet-400" />
+                                    <LiveLensLogoMark size={18} className="text-violet-400" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
@@ -521,10 +521,10 @@ export const NativelyApiSettings: React.FC = () => {
                         <div className="px-5 pt-5 pb-4 flex flex-col items-center justify-center text-center">
                             {/* Apple Promo Icon */}
                             <div className="w-[42px] h-[42px] mb-3 rounded-[12px] bg-bg-input border border-border-subtle shadow-[inset_0_1px_rgba(255,255,255,0.06),0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-center relative overflow-hidden">
-                                <NativelyLogoMark size={20} className={isClaimed ? "text-text-tertiary" : "text-text-primary drop-shadow-sm"} />
+                                <LiveLensLogoMark size={20} className={isClaimed ? "text-text-tertiary" : "text-text-primary drop-shadow-sm"} />
                             </div>
                             
-                            <h3 className="text-[14.5px] font-bold text-text-primary tracking-tight mb-1">Natively API. Try it free.</h3>
+                            <h3 className="text-[14.5px] font-bold text-text-primary tracking-tight mb-1">LiveLens API. Try it free.</h3>
                             <p className="text-[12px] text-text-secondary leading-snug px-4 mb-4">
                                 Experience managed text-to-speech, AI models, and real-time research without a subscription.
                             </p>
@@ -597,12 +597,12 @@ export const NativelyApiSettings: React.FC = () => {
                 <div className="flex items-center gap-3 px-5 pt-5 pb-4">
                     {/* Tinted icon well — Apple style */}
                     <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center shrink-0">
-                        <NativelyLogoMark size={18} className="text-blue-400" />
+                        <LiveLensLogoMark size={18} className="text-blue-400" />
                     </div>
                     <div className="min-w-0">
                         <p className="text-[13px] font-semibold text-text-primary">API Key</p>
                         <p className="text-[11px] text-text-tertiary leading-snug mt-0.5">
-                            Your Natively API key from your subscription email
+                            Your LiveLens API key from your subscription email
                         </p>
                     </div>
                 </div>
@@ -773,7 +773,7 @@ export const NativelyApiSettings: React.FC = () => {
                         {[
                             { step: '1', text: 'Subscribe above and complete checkout on Dodo Payments.' },
                             { step: '2', text: 'Your API key is emailed instantly to your inbox.'        },
-                            { step: '3', text: 'Paste it here — Natively handles the rest automatically.' },
+                            { step: '3', text: 'Paste it here — LiveLens handles the rest automatically.' },
                         ].map(({ step, text }) => (
                             <div key={step} className="flex items-start gap-3">
                                 <div className="w-5 h-5 rounded-full bg-bg-input border border-border-subtle flex items-center justify-center text-[10px] font-bold text-text-tertiary shrink-0 mt-[1px]">

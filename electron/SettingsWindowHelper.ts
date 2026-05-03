@@ -90,12 +90,6 @@ export class SettingsWindowHelper {
 
         const activate = options.activate ?? true;
 
-        // Set parent to ensure it stays on top of the correct window
-        const mainWin = this.windowHelper?.getMainWindow();
-        if (mainWin && !mainWin.isDestroyed()) {
-            this.settingsWindow.setParentWindow(mainWin);
-        }
-
         if (x !== undefined && y !== undefined) {
             this.settingsWindow.setPosition(Math.round(x), Math.round(y))
         }
@@ -149,8 +143,8 @@ export class SettingsWindowHelper {
 
     private createWindow(x?: number, y?: number, showWhenReady: boolean = true): void {
         const windowSettings: Electron.BrowserWindowConstructorOptions = {
-            width: 200, // Match React component width
-            height: 238, // Increased to accommodate new Transcript toggle
+            width: 236,
+            height: 340,
             frame: false,
             transparent: true,
             resizable: false,

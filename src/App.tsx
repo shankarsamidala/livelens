@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react" // forcing refresh
 import { QueryClient, QueryClientProvider } from "react-query"
 import { ToastProvider, ToastViewport } from "./components/ui/toast"
-import NativelyInterface from "./components/NativelyInterface"
+import LiveLensInterface from "./components/LiveLensInterface"
 import SettingsPopup from "./components/SettingsPopup" // Keeping for legacy/specific window support if needed
 import Launcher from "./components/Launcher"
 import ModelSelectorWindow from "./components/ModelSelectorWindow"
@@ -10,7 +10,7 @@ import StartupSequence from "./components/StartupSequence"
 import { AnimatePresence, motion } from "framer-motion"
 import UpdateBanner from "./components/UpdateBanner"
 import { SupportToaster } from "./components/SupportToaster"
-import { NativelyQuotaBanner } from "./components/NativelyQuotaBanner"
+import { LiveLensQuotaBanner } from "./components/LiveLensQuotaBanner"
 import { FreeTrialBanner }      from "./components/trial/FreeTrialBanner"
 import { FreeTrialModal }       from "./components/trial/FreeTrialModal"
 import { TrialPromoToaster }    from "./components/trial/TrialPromoToaster"
@@ -23,7 +23,7 @@ import {
   PremiumPromoToaster,
   RemoteCampaignToaster,
   PremiumUpgradeModal,
-  NativelyApiPromoToaster,
+  LiveLensApiPromoToaster,
   MaxUltraUpgradeToaster,
   useAdCampaigns
 } from './premium'
@@ -124,7 +124,7 @@ const App: React.FC = () => {
   const [incompatibleWarning, setIncompatibleWarning] = useState<{count: number; oldProvider: string; newProvider: string} | null>(null);
   
   // API check
-  const [hasNativelyApi, setHasNativelyApi] = useState<boolean>(false);
+  const [hasLiveLensApi, setHasLiveLensApi] = useState<boolean>(false);
 
   // ── Onboarding / promo toasters ───────────────────────────
   const [showPermissionsToaster, setShowPermissionsToaster] = useState(false);
@@ -145,7 +145,7 @@ const App: React.FC = () => {
     appStartTime,
     lastMeetingEndTime,
     isProcessingMeeting,
-    hasNativelyApi
+    hasLiveLensApi
   );
 
   // Preview shortcuts — Ctrl/Cmd+Shift+1-5 force-show any ad card.
@@ -196,9 +196,9 @@ const App: React.FC = () => {
         }
       });
 
-    // Also check for Natively API key
+    // Also check for LiveLens API key
     window.electronAPI?.getStoredCredentials?.()
-      .then((creds) => setHasNativelyApi(!!creds?.hasNativelyKey))
+      .then((creds) => setHasLiveLensApi(!!creds?.hasLiveLensKey))
       .catch(() => {});
 
     // ── Trial: check stored token and start polling if active ──
@@ -413,7 +413,7 @@ const App: React.FC = () => {
   if (isSettingsWindow) {
     return (
       <ErrorBoundary context="SettingsPopup">
-        <div className="h-full min-h-0 w-full">
+        <div style={{ background: 'transparent' }} className="h-full min-h-0 w-full">
           <QueryClientProvider client={queryClient}>
             <ToastProvider>
               <SettingsPopup />
@@ -428,7 +428,7 @@ const App: React.FC = () => {
   if (isModelSelectorWindow) {
     return (
       <ErrorBoundary context="ModelSelector">
-        <div className="h-full min-h-0 w-full overflow-hidden">
+        <div style={{ background: 'transparent' }} className="h-full min-h-0 w-full overflow-hidden">
           <QueryClientProvider client={queryClient}>
             <ToastProvider>
               <ModelSelectorWindow />
@@ -453,7 +453,7 @@ const App: React.FC = () => {
                   transition: 'background-color 75ms ease, border-color 75ms ease, box-shadow 75ms ease'
                 } as React.CSSProperties}
               >
-                <NativelyInterface
+                <LiveLensInterface
                   onEndMeeting={handleEndMeeting}
                   overlayOpacity={overlayOpacity}
                 />
@@ -534,7 +534,7 @@ const App: React.FC = () => {
                         transition={{ duration: 0.18, ease: [0.19, 1, 0.22, 1] }}
                         className="w-[820px] h-[600px] max-w-[95vw] max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-[#141414]"
                       >
-                        <ModesSettings onClose={() => setIsModesOpen(false)} isPremium={isPremiumActive} isLoaded={hasLoadedLicense} isTrialActive={!!activeTrial} onOpenNativelyAPI={() => { setIsModesOpen(false); setSettingsInitialTab('natively-api'); setIsSettingsOpen(true); }} />
+                        <ModesSettings onClose={() => setIsModesOpen(false)} isPremium={isPremiumActive} isLoaded={hasLoadedLicense} isTrialActive={!!activeTrial} onOpenLiveLensAPI={() => { setIsModesOpen(false); setSettingsInitialTab('natively-api'); setIsSettingsOpen(true); }} />
                       </motion.div>
                     </motion.div>
                   )}
@@ -586,7 +586,7 @@ const App: React.FC = () => {
 
       <UpdateBanner />
       <SupportToaster />
-      <NativelyQuotaBanner />
+      <LiveLensQuotaBanner />
 
 
 
@@ -615,7 +615,7 @@ const App: React.FC = () => {
       {/* Trial promo toaster — 5s after restart (self-gates via localStorage + conditions) */}
       <TrialPromoToaster
         isOpen={showTrialPromo}
-        hasNativelyKey={hasNativelyApi}
+        hasLiveLensKey={hasLiveLensApi}
         hasTrialToken={!!activeTrial}
         onDismiss={() => setShowTrialPromo(false)}
         onStartTrial={async () => {
@@ -655,7 +655,7 @@ const App: React.FC = () => {
       {/* Ad toasters — render whenever activeAd is set (isLauncherMainView guard bypassed
           when triggered via preview shortcut so the card always surfaces) */}
       {(isLauncherMainView || !!activeAd) && !isSettingsOpen && (
-        <NativelyApiPromoToaster
+        <LiveLensApiPromoToaster
           isOpen={activeAd === 'natively_api'}
           onDismiss={() => dismissAd('natively_api')}
           onOpenSettings={(tab: string) => {

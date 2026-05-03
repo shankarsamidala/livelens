@@ -459,7 +459,7 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onP
                                     {/* 1.5. Hero Header (Title + Controls + CTA) */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
-                                            <h1 className="text-3xl font-celeb-light font-medium text-text-primary tracking-wide drop-shadow-sm">My Natively</h1>
+                                            <h1 className="text-3xl font-celeb-light font-medium text-text-primary tracking-wide drop-shadow-sm">My LiveLens</h1>
 
                                             {/* Refresh Button */}
                                             <button
@@ -549,7 +549,7 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onP
                                             onClick={() => {
                                                 if (isMeetingActive) {
                                                     // inactive=true: overlay appears on top but doesn't activate
-                                                    // the Natively app or steal OS focus — preserves stealth.
+                                                    // the LiveLens app or steal OS focus — preserves stealth.
                                                     // setWindowMode (not showWindow) is required because
                                                     // logo-click set currentWindowMode='launcher', so showWindow()
                                                     // would re-show the launcher rather than switch to overlay.
@@ -616,7 +616,7 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onP
                                                             className="flex items-center gap-3"
                                                         >
                                                             <img src={icon} alt="Logo" className="w-[18px] h-[18px] object-contain brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)] opacity-90" />
-                                                            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)] text-[20px] leading-none">Start Natively</span>
+                                                            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)] text-[20px] leading-none">Start LiveLens</span>
                                                         </motion.div>
                                                     )}
                                                 </AnimatePresence>

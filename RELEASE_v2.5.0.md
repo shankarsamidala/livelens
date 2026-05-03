@@ -4,9 +4,9 @@ This major release introduces the **Modes Manager**, bringing 7 specialized AI p
 
 ## What's New
 
-- **Modes Manager**: Tailor Natively to your specific meeting context with 7 specialized personas: General, Sales, Recruiting, Team Meet, Looking for Work, Lecture, and Technical Interview. Each mode features custom system prompts and note templates.
+- **Modes Manager**: Tailor LiveLens to your specific meeting context with 7 specialized personas: General, Sales, Recruiting, Team Meet, Looking for Work, Lecture, and Technical Interview. Each mode features custom system prompts and note templates.
 - **Custom Context**: A new free-form textarea in Profile Intelligence—auto-saved and injected into all AI interactions—allowing you to provide persistent context like sales stats, tech stacks, or personal preferences.
-- **10-Minute Free Trial**: New users can now explore the full power of Natively, including premium STT and AI features, with a guided 10-minute trial and real-time quota tracking.
+- **10-Minute Free Trial**: New users can now explore the full power of LiveLens, including premium STT and AI features, with a guided 10-minute trial and real-time quota tracking.
 - **Permissions Guided Setup**: A new premium "Permissions Toaster" ensures Mic and Screen Recording permissions are correctly configured on first launch, reducing setup friction.
 - **Trial Promo Toaster**: A subtle, beautifully designed delayed offer that introduces new users to the Pro features via a 10-minute hero countdown.
 
@@ -22,7 +22,7 @@ This major release introduces the **Modes Manager**, bringing 7 specialized AI p
 - **Audio Privacy**: Fixed an issue where the microphone could remain active while browsing the settings menu outside of a meeting.
 - **Screenshot Capture**: Resolved a race condition that prevented screenshot listeners from attaching correctly during panel expansion.
 - **Trial Persistence**: Fixed the "Start Trial" card incorrectly reappearing after a trial had already been claimed or expired.
-- **Branding Consistency**: Completed the rebranding transition by replacing legacy "Cluely" references with "Natively" across all user-facing components.
+- **Branding Consistency**: Completed the rebranding transition by replacing legacy "Cluely" references with "LiveLens" across all user-facing components.
 - **Pro Gating**: Reinforced security gates on Modes and Profile Intelligence features to ensure correct license entitlement.
 
 ## Technical
@@ -40,17 +40,17 @@ If you see "App is damaged":
 
 - **For .zip downloads:**
   1. Move the app to your Applications folder.
-  2. Open Terminal and run: `xattr -cr /Applications/Natively.app`
+  2. Open Terminal and run: `xattr -cr /Applications/LiveLens.app`
 
 - **For .dmg downloads:**
   1. Open Terminal and run:
      ```bash
-     xattr -cr ~/Downloads/Natively-2.5.0-arm64.dmg
+     xattr -cr ~/Downloads/LiveLens-2.5.0-arm64.dmg
      # Or for Intel Macs:
-     xattr -cr ~/Downloads/Natively-2.5.0-x64.dmg
+     xattr -cr ~/Downloads/LiveLens-2.5.0-x64.dmg
      ```
   2. Install the natively.dmg
-  3. Open Terminal and run: `xattr -cr /Applications/Natively.app`
+  3. Open Terminal and run: `xattr -cr /Applications/LiveLens.app`
 
 ## ⚠️Windows Installation (Unsigned Build)
 

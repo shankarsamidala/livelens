@@ -163,14 +163,14 @@ import { DeepgramStreamingSTT } from "./audio/DeepgramStreamingSTT"
 import { SonioxStreamingSTT } from "./audio/SonioxStreamingSTT"
 import { ElevenLabsStreamingSTT } from "./audio/ElevenLabsStreamingSTT"
 import { OpenAIStreamingSTT } from "./audio/OpenAIStreamingSTT"
-import { NativelyProSTT } from "./audio/NativelyProSTT"
+import { LiveLensProSTT } from "./audio/LiveLensProSTT"
 import { ThemeManager } from "./ThemeManager"
 import { RAGManager } from "./rag/RAGManager"
 import { DatabaseManager } from "./db/DatabaseManager"
 import { warmupIntentClassifier } from "./llm"
 
 /** Unified type for all STT providers with optional extended capabilities */
-type STTProvider = (GoogleSTT | RestSTT | DeepgramStreamingSTT | SonioxStreamingSTT | ElevenLabsStreamingSTT | OpenAIStreamingSTT | NativelyProSTT) & {
+type STTProvider = (GoogleSTT | RestSTT | DeepgramStreamingSTT | SonioxStreamingSTT | ElevenLabsStreamingSTT | OpenAIStreamingSTT | LiveLensProSTT) & {
   finalize?: () => void;
   setAudioChannelCount?: (count: number) => void;
   notifySpeechEnded?: () => void;
@@ -759,7 +759,7 @@ export class AppState {
     // Workaround: Open the folder containing the downloaded update so user can install manually
     if (process.platform === 'darwin') {
       try {
-        // Get the downloaded update file path (e.g., .../Natively-1.0.9-mac.zip)
+        // Get the downloaded update file path (e.g., .../LiveLens-1.0.9-mac.zip)
         const updateFile = (autoUpdater as any).downloadedUpdateHelper?.file
         console.log('[AutoUpdater] Downloaded update file:', updateFile)
 
@@ -841,16 +841,16 @@ export class AppState {
     let stt: STTProvider;
 
     if (sttProvider === 'natively') {
-      const nativelyKey = CredentialsManager.getInstance().getNativelyApiKey();
+      const nativelyKey = CredentialsManager.getInstance().getLiveLensApiKey();
       if (!nativelyKey) {
-        // Natively is Coming Soon — no key means degrade gracefully like every other provider
-        console.warn(`[Main] No Natively API Key configured for ${speaker}, falling back to GoogleSTT`);
+        // LiveLens is Coming Soon — no key means degrade gracefully like every other provider
+        console.warn(`[Main] No LiveLens API Key configured for ${speaker}, falling back to GoogleSTT`);
         stt = new GoogleSTT(speaker);
       } else {
         // 'system' for interviewer (system audio), 'mic' for user (microphone).
         // The server uses ${key}:${channel} as the session key so both streams
         // can coexist without triggering concurrent_session_blocked.
-        stt = new NativelyProSTT(nativelyKey, speaker === 'interviewer' ? 'system' : 'mic');
+        stt = new LiveLensProSTT(nativelyKey, speaker === 'interviewer' ? 'system' : 'mic');
       }
     } else if (sttProvider === 'deepgram') {
       const apiKey = CredentialsManager.getInstance().getDeepgramApiKey();
@@ -880,8 +880,9 @@ export class AppState {
         stt = new GoogleSTT(speaker);
       }
     } else if (sttProvider === 'openai') {
-      // OpenAI: WebSocket Realtime (gpt-4o-transcribe → gpt-4o-mini-transcribe) with whisper-1 REST fallback
-      const apiKey = CredentialsManager.getInstance().getOpenAiSttApiKey();
+      // OpenAI STT: prefer dedicated STT key, fall back to the shared LLM key
+      const apiKey = CredentialsManager.getInstance().getOpenAiSttApiKey()
+        || CredentialsManager.getInstance().getOpenaiApiKey();
       if (apiKey) {
         console.log(`[Main] Using OpenAIStreamingSTT (WebSocket+REST fallback) for ${speaker}`);
         stt = new OpenAIStreamingSTT(apiKey);
@@ -962,7 +963,7 @@ export class AppState {
     let _consecutiveErrors = 0;
 
     // Track state so we broadcast 'connected' on recovery from failed/reconnecting
-    let _lastState: 'connected' | 'reconnecting' | 'failed' = 'reconnecting';
+    let _lastState: 'connected' | 'reconnecting' | 'failed' = 'connected';
 
     stt.on('error', (err: Error) => {
       console.error(`[Main] STT (${speaker}) Error:`, err);
@@ -980,11 +981,15 @@ export class AppState {
       }
 
       // Immediately fatal: auth/account problems — no amount of retrying helps
+      const msg = err.message.toLowerCase();
       const isAuthError = httpStatus === 401
-        || err.message.toLowerCase().includes('auth_timeout')
-        || err.message.toLowerCase().includes('invalid_key')
-        || err.message.toLowerCase().includes('invalid api')
-        || err.message.toLowerCase().includes('authentication');
+        || msg.includes('auth_timeout')
+        || msg.includes('invalid_key')
+        || msg.includes('invalid api')
+        || msg.includes('authentication')
+        || msg.includes('could not load')       // Google ADC: "Could not load the default credentials"
+        || msg.includes('default credentials')  // Google ADC fallback phrase
+        || msg.includes('unauthorized');        // generic 401 text
 
       const isQuotaError = err.message.toLowerCase().includes('transcription_quota_exceeded')
         || err.message.toLowerCase().includes('quota');
@@ -1044,10 +1049,10 @@ export class AppState {
       }
     });
 
-    // Auto language detection: NativelyProSTT emits 'languageDetected' when the
+    // Auto language detection: LiveLensProSTT emits 'languageDetected' when the
     // backend resolves the language from the first audio batch. Notify the renderer
     // so the settings UI can show what was detected.
-    if (stt instanceof NativelyProSTT) {
+    if (stt instanceof LiveLensProSTT) {
       stt.on('languageDetected', (bcp47: string) => {
         console.log(`[Main] STT language auto-detected (${speaker}): ${bcp47}`);
         const helper = this.getWindowHelper();
@@ -1503,7 +1508,7 @@ export class AppState {
         // auto-open System Settings. Forcing that window open every meeting start
         // is extremely disruptive, especially when mic transcription is still working.
         // The UI will show a non-blocking banner; the user can fix it deliberately.
-        const message = 'Screen Recording permission denied. System audio will not be captured. To fix: System Settings → Privacy & Security → Screen Recording → enable Natively.';
+        const message = 'Screen Recording permission denied. System audio will not be captured. To fix: System Settings → Privacy & Security → Screen Recording → enable LiveLens.';
         console.warn('[Main]', message);
         this.broadcast('system-audio-permission-denied', message);
         // NOTE: Do NOT call shell.openExternal() here — it hijacks focus on every meeting
@@ -1827,7 +1832,7 @@ export class AppState {
     const { CredentialsManager } = require('./services/CredentialsManager');
     CredentialsManager.getInstance().setSttLanguage(key);
 
-    // 'auto' is only meaningful for NativelyProSTT — other providers fall back to en-US.
+    // 'auto' is only meaningful for LiveLensProSTT — other providers fall back to en-US.
     const sttProvider = CredentialsManager.getInstance().getSttProvider();
     const effectiveKey = (key === 'auto' && sttProvider !== 'natively') ? 'english-us' : key;
 
@@ -2186,7 +2191,7 @@ export class AppState {
     trayIcon.setTemplateImage(iconToUse.endsWith('Template.png'));
 
     this.tray = new Tray(trayIcon)
-    this.tray.setToolTip('Natively') // This tooltip might also need update if we change global shortcut, but global shortcut is removed.
+    this.tray.setToolTip('LiveLens') // This tooltip might also need update if we change global shortcut, but global shortcut is removed.
     this.updateTrayMenu();
 
     // Double-click to show window
@@ -2204,7 +2209,7 @@ export class AppState {
     console.log('[Main] updateTrayMenu called. Screenshot Accelerator:', screenshotAccel);
 
     // Update tooltip for verification
-    this.tray.setToolTip('Natively');
+    this.tray.setToolTip('LiveLens');
 
     // Helper to format accelerator for display (e.g. CommandOrControl+H -> Cmd+H)
     const formatAccel = (accel: string) => {
@@ -2224,7 +2229,7 @@ export class AppState {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Show Natively',
+        label: 'Show LiveLens',
         click: () => {
           this.centerAndShowWindow()
         }
@@ -2352,7 +2357,7 @@ export class AppState {
         }
 
         if (settled) {
-          // Capture whether Natively is currently the frontmost app BEFORE
+          // Capture whether LiveLens is currently the frontmost app BEFORE
           // dock.hide() — that call triggers an implicit macOS app-deactivation
           // which shifts keyboard focus to the next frontmost app (Chrome, etc.).
           const nativelyWasFocused =
@@ -2364,7 +2369,7 @@ export class AppState {
           app.dock.hide();
           this.hideTray();
 
-          // If Natively was the focused window when the user toggled stealth,
+          // If LiveLens was the focused window when the user toggled stealth,
           // restore focus to our window after dock.hide() so macOS does not
           // hand control to Chrome / whatever is behind us.
           // We use win.focus() (not app.focus()) to avoid the heavy-handed
@@ -2451,7 +2456,7 @@ export class AppState {
   }
 
   private _applyDisguise(mode: 'terminal' | 'settings' | 'activity' | 'none'): void {
-    let appName = "Natively";
+    let appName = "LiveLens";
     let iconPath = "";
 
     const isWin = process.platform === 'win32';
@@ -2495,7 +2500,7 @@ export class AppState {
         }
         break;
       case 'none':
-        appName = "Natively";
+        appName = "LiveLens";
         if (isMac) {
           iconPath = app.isPackaged
             ? path.join(process.resourcesPath, "natively.icns")
@@ -2709,7 +2714,7 @@ async function initializeApp() {
   // One-time macOS screen recording permission prompt.
   //
   // We must fire this AFTER createWindow() so that:
-  //   1. The Natively launcher window is visible and focused when the TCC dialog
+  //   1. The LiveLens launcher window is visible and focused when the TCC dialog
   //      appears — macOS anchors the dialog to the frontmost app window on Ventura+.
   //      Without a visible window the dialog can appear behind other apps (Sequoia).
   //   2. In stealth/undetectable mode the dock icon is hidden, but the window is
@@ -2759,7 +2764,7 @@ async function initializeApp() {
             if (!win.isDestroyed()) {
               win.webContents.send(
                 'system-audio-permission-denied',
-                'Screen Recording is disabled. System audio capture will not work. Click "Open Settings" to enable it, then restart Natively.'
+                'Screen Recording is disabled. System audio capture will not work. Click "Open Settings" to enable it, then restart LiveLens.'
               );
             }
           });

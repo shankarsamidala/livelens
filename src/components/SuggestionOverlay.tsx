@@ -17,7 +17,7 @@ interface GeneratedSuggestion {
 }
 
 /**
- * Natively-style suggestion overlay component
+ * LiveLens-style suggestion overlay component
  * Displays real-time transcripts and AI-generated suggestions
  */
 export const SuggestionOverlay: React.FC<SuggestionOverlayProps> = ({ className }) => {
@@ -96,46 +96,46 @@ export const SuggestionOverlay: React.FC<SuggestionOverlayProps> = ({ className 
             {/* Connection indicator */}
             <div className="flex items-center gap-2 mb-2">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-xs text-gray-400">
+                <span className="text-xs overlay-text-muted">
                     {isConnected ? 'Live' : 'Disconnected'}
                 </span>
             </div>
 
             {/* Current transcript (interviewer's speech) */}
             {currentTranscript && (
-                <div className="transcript-bubble mb-3 p-3 rounded-lg bg-gray-800/80 backdrop-blur-sm border border-gray-700">
+                <div className="transcript-bubble mb-3 p-3 rounded-lg bg-[rgba(0,255,65,0.04)] backdrop-blur-sm border border-[rgba(0,255,65,0.15)]">
                     <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-blue-400">
+                        <span className="text-xs font-medium overlay-text-secondary">
                             {currentTranscript.speaker === 'interviewer' ? '🎤 Interviewer' : '👤 You'}
                         </span>
                         {!currentTranscript.final && (
-                            <span className="text-xs text-gray-500 animate-pulse">listening...</span>
+                            <span className="text-xs overlay-text-muted animate-pulse">listening...</span>
                         )}
                     </div>
-                    <p className="text-sm text-gray-200">{currentTranscript.text}</p>
+                    <p className="text-sm overlay-text-primary">{currentTranscript.text}</p>
                 </div>
             )}
 
             {/* Processing indicator */}
             {isProcessing && (
-                <div className="processing-indicator flex items-center gap-2 p-3 rounded-lg bg-purple-900/30 border border-purple-700">
-                    <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm text-purple-300">Generating suggestion...</span>
+                <div className="processing-indicator flex items-center gap-2 p-3 rounded-lg bg-[rgba(0,255,65,0.05)] border border-[rgba(0,255,65,0.20)]">
+                    <div className="w-4 h-4 border-2 border-[rgba(0,255,65,0.6)] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm overlay-text-secondary">Generating suggestion...</span>
                 </div>
             )}
 
             {/* AI Suggestion */}
             {suggestion && !isProcessing && (
-                <div className="suggestion-card p-4 rounded-lg bg-gradient-to-br from-indigo-900/80 to-purple-900/80 backdrop-blur-sm border border-indigo-500/50 shadow-lg shadow-indigo-500/20">
+                <div className="suggestion-card p-4 rounded-lg bg-[rgba(0,255,65,0.05)] backdrop-blur-sm border border-[rgba(0,255,65,0.22)] shadow-lg shadow-[rgba(0,255,65,0.08)]">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-indigo-300">💡 Suggested Response</span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs font-medium overlay-text-secondary">💡 Suggested Response</span>
+                        <span className="text-xs overlay-text-muted">
                             {Math.round(suggestion.confidence * 100)}% confidence
                         </span>
                     </div>
-                    <p className="text-sm text-gray-100 leading-relaxed">{suggestion.suggestion}</p>
-                    <div className="mt-2 pt-2 border-t border-indigo-700/50">
-                        <p className="text-xs text-gray-400 italic">
+                    <p className="text-sm overlay-text-primary leading-relaxed">{suggestion.suggestion}</p>
+                    <div className="mt-2 pt-2 border-t border-[rgba(0,255,65,0.12)]">
+                        <p className="text-xs overlay-text-muted italic">
                             Re: "{suggestion.question.substring(0, 50)}..."
                         </p>
                     </div>
@@ -150,7 +150,7 @@ export const SuggestionOverlay: React.FC<SuggestionOverlayProps> = ({ className 
             )}
 
             {/* Instructions */}
-            <div className="mt-3 text-xs text-gray-500 text-center">
+            <div className="mt-3 text-xs overlay-text-muted text-center">
                 <p>Say "rephrase that" or "make it shorter" for follow-ups</p>
             </div>
         </div>

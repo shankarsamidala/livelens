@@ -12,7 +12,7 @@ import { analytics } from '../lib/analytics/analytics.service';
 import { AboutSection } from './AboutSection';
 import { HelpSettings } from './settings/HelpSettings';
 import { AIProvidersSettings } from './settings/AIProvidersSettings';
-import { NativelyApiSettings } from './settings/NativelyApiSettings';
+import { LiveLensApiSettings } from './settings/LiveLensApiSettings';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShortcuts } from '../hooks/useShortcuts';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
@@ -51,18 +51,18 @@ const StarRating = ({ value, size = 11 }: { value: number; size?: number }) => {
 };
 
 // ---------------------------------------------------------------------------
-// MockupNativelyInterface — fake in-meeting widget for the opacity preview
+// MockupLiveLensInterface — fake in-meeting widget for the opacity preview
 // ---------------------------------------------------------------------------
-const MockupNativelyInterface = ({ opacity }: { opacity: number }) => {
+const MockupLiveLensInterface = ({ opacity }: { opacity: number }) => {
     const resolvedTheme = useResolvedTheme();
     const appearance = useMemo(
-        () => getOverlayAppearance(opacity, resolvedTheme),
-        [opacity, resolvedTheme]
+        () => getOverlayAppearance(opacity, 'dark'),
+        [opacity]
     );
 
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none bg-transparent">
-                {/* NativelyInterface Widget — opacity controlled by the slider */}
+                {/* LiveLensInterface Widget — opacity controlled by the slider */}
                 <div
                     id="mockup-natively-interface"
                     className="flex flex-col items-center pointer-events-none -mt-56"
@@ -73,7 +73,7 @@ const MockupNativelyInterface = ({ opacity }: { opacity: number }) => {
                             <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden overlay-icon-surface" style={appearance.iconStyle}>
                                 <img
                                     src={icon}
-                                    alt="Natively"
+                                    alt="LiveLens"
                                     className="w-[24px] h-[24px] object-contain opacity-95 scale-105 force-black-icon"
                                     draggable="false"
                                 />
@@ -866,7 +866,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
     const [sttSaving, setSttSaving] = useState(false);
     const [sttSaved, setSttSaved] = useState(false);
     const [googleServiceAccountPath, setGoogleServiceAccountPath] = useState<string | null>(null);
-    const [hasNativelyKey, setHasNativelyKey] = useState(false);
+    const [hasLiveLensKey, setHasLiveLensKey] = useState(false);
     const [hasStoredSttGroqKey, setHasStoredSttGroqKey] = useState(false);
     const [hasStoredSttOpenaiKey, setHasStoredSttOpenaiKey] = useState(false);
     const [hasStoredDeepgramKey, setHasStoredDeepgramKey] = useState(false);
@@ -910,7 +910,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                     setHasStoredIbmWatsonKey(creds.hasIbmWatsonKey);
                     setHasStoredSonioxKey(creds.hasSonioxKey || false);
                     setHasStoredTavilyKey(creds.hasTavilyKey || false);
-                    setHasNativelyKey(creds.hasNativelyKey || false);
+                    setHasLiveLensKey(creds.hasLiveLensKey || false);
                     // Populate key fields so switching providers doesn't make saved keys appear gone
                     if (creds.sttGroqKey) setSttGroqKey(creds.sttGroqKey);
                     if (creds.sttOpenaiKey) setSttOpenaiKey(creds.sttOpenaiKey);
@@ -929,7 +929,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
 
     // PR #173: Live-reload settings whenever the backend broadcasts a credentials change
     // (e.g., when the user saves an STT key in a different window, or main fires it after
-    // a provider auto-reconfigure like Natively key clear).
+    // a provider auto-reconfigure like LiveLens key clear).
     useEffect(() => {
         if (!window.electronAPI?.onCredentialsChanged) return;
         const unsubscribe = window.electronAPI.onCredentialsChanged(() => {
@@ -939,7 +939,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                     if (!creds) return;
                     setSttProvider(creds.sttProvider || 'none');
                     if (creds.groqSttModel) setGroqSttModel(creds.groqSttModel);
-                    setHasNativelyKey(creds.hasNativelyKey || false);
+                    setHasLiveLensKey(creds.hasLiveLensKey || false);
                     setHasStoredSttGroqKey(creds.hasSttGroqKey);
                     setHasStoredSttOpenaiKey(creds.hasSttOpenaiKey);
                     setHasStoredDeepgramKey(creds.hasDeepgramKey);
@@ -1315,7 +1315,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                         className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'natively-api' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
                                     >
                                         <Zap size={16} className={activeTab === 'natively-api' ? 'text-blue-500' : 'text-blue-500/70'} />
-                                        <span>Natively API</span>
+                                        <span>LiveLens API</span>
                                     </button>
                                     <button
                                         onClick={() => {
@@ -1380,7 +1380,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                     onClick={() => window.electronAPI.quitApp()}
                                     className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3"
                                 >
-                                    <LogOut size={16} /> Quit Natively
+                                    <LogOut size={16} /> Quit LiveLens
                                 </button>
                                 <button onClick={onClose} className="group mt-2 w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50 transition-colors flex items-center gap-3">
                                     <X size={18} className="group-hover:text-red-500 transition-colors" /> Close
@@ -1419,7 +1419,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                     <h3 className="text-lg font-bold text-text-primary">{isUndetectable ? 'Undetectable' : 'Detectable'}</h3>
                                                 </div>
                                                 <p className="text-xs text-text-secondary">
-                                                    Natively is currently {isUndetectable ? 'undetectable' : 'detectable'} by screen-sharing. <button className="text-blue-400 hover:underline">Supported apps here</button>
+                                                    LiveLens is currently {isUndetectable ? 'undetectable' : 'detectable'} by screen-sharing. <button className="text-blue-400 hover:underline">Supported apps here</button>
                                                 </p>
                                             </div>
                                             <div
@@ -1461,7 +1461,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
 
                                         <div>
                                             <h3 className="text-lg font-bold text-text-primary mb-1">General settings</h3>
-                                            <p className="text-xs text-text-secondary mb-2">Customize how Natively works for you</p>
+                                            <p className="text-xs text-text-secondary mb-2">Customize how LiveLens works for you</p>
 
                                             <div className={`rounded-xl border ${isLight ? 'bg-bg-card border-border-subtle divide-y divide-border-subtle' : 'bg-transparent border-transparent divide-y divide-border-subtle/20'}`}>
                                             <div className="space-y-0">
@@ -1472,8 +1472,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                             <Power size={20} />
                                                         </div>
                                                         <div>
-                                                            <h3 className="text-sm font-bold text-text-primary">Open Natively when you log in</h3>
-                                                            <p className="text-xs text-text-secondary mt-0.5">Natively will open automatically when you log in to your computer</p>
+                                                            <h3 className="text-sm font-bold text-text-primary">Open LiveLens when you log in</h3>
+                                                            <p className="text-xs text-text-secondary mt-0.5">LiveLens will open automatically when you log in to your computer</p>
                                                         </div>
                                                     </div>
                                                     <div
@@ -1583,7 +1583,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                         </div>
                                                         <div>
                                                             <h3 className="text-sm font-bold text-text-primary">Theme</h3>
-                                                            <p className="text-xs text-text-secondary mt-0.5">Customize how Natively looks on your device</p>
+                                                            <p className="text-xs text-text-secondary mt-0.5">Customize how LiveLens looks on your device</p>
                                                         </div>
                                                     </div>
 
@@ -1689,7 +1689,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                         <div>
                                                             <h3 className="text-sm font-bold text-text-primary">Version</h3>
                                                             <p className="text-xs text-text-secondary mt-0.5">
-                                                                You are currently using Natively version {packageJson.version}
+                                                                You are currently using LiveLens version {packageJson.version}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -1802,7 +1802,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                 <h3 className="text-lg font-bold text-text-primary">Process Disguise</h3>
                                             </div>
                                             <p className="text-xs text-text-secondary">
-                                                Disguise Natively as another application to prevent detection during screen sharing.
+                                                Disguise LiveLens as another application to prevent detection during screen sharing.
                                                 <span className="block mt-1 text-text-tertiary">
                                                     Select a disguise to be automatically applied when Undetectable mode is on.
                                                 </span>
@@ -2778,14 +2778,14 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                 <AIProvidersSettings />
                             )}
                             {activeTab === 'natively-api' && (
-                                <NativelyApiSettings />
+                                <LiveLensApiSettings />
                             )}
                             {activeTab === 'keybinds' && (
                                 <div className="space-y-5 animated fadeIn select-text pb-4">
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <h3 className="text-lg font-bold text-text-primary mb-1">Keyboard shortcuts</h3>
-                                            <p className="text-xs text-text-secondary">Natively works with these easy to remember commands.</p>
+                                            <p className="text-xs text-text-secondary">LiveLens works with these easy to remember commands.</p>
                                         </div>
                                         <button
                                             onClick={resetShortcuts}
@@ -2947,7 +2947,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                         value={sttProvider}
                                                         onChange={(val) => handleSttProviderChange(val as any)}
                                                         options={[
-                                                            ...(hasNativelyKey ? [{ id: 'natively', label: 'Natively API', badge: 'Saved' as const, recommended: true, desc: 'Managed transcription via Natively backend', color: 'blue', icon: <Mic size={14} /> }] : []),
+                                                            ...(hasLiveLensKey ? [{ id: 'natively', label: 'LiveLens API', badge: 'Saved' as const, recommended: true, desc: 'Managed transcription via LiveLens backend', color: 'blue', icon: <Mic size={14} /> }] : []),
                                                             { id: 'google', label: 'Google Cloud', badge: googleServiceAccountPath ? 'Saved' : null, recommended: true, desc: 'gRPC streaming via Service Account', color: 'blue', icon: <Mic size={14} /> },
                                                             { id: 'groq', label: 'Groq Whisper', badge: hasStoredSttGroqKey ? 'Saved' : null, recommended: true, desc: 'Ultra-fast REST transcription', color: 'orange', icon: <Mic size={14} /> },
                                                             { id: 'openai', label: 'OpenAI Whisper', badge: hasStoredSttOpenaiKey ? 'Saved' : null, desc: 'OpenAI-compatible Whisper API', color: 'green', icon: <Mic size={14} /> },
@@ -3490,7 +3490,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                 className="fixed inset-0 z-[49] pointer-events-none transition-opacity duration-150"
                 style={{ opacity: isPreviewingOpacity ? 1 : 0 }}
             >
-                <MockupNativelyInterface opacity={previewOverlayOpacity} />
+                <MockupLiveLensInterface opacity={previewOverlayOpacity} />
             </div>
         </AnimatePresence >
     );

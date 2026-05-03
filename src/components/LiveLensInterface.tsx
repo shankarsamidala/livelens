@@ -45,6 +45,7 @@ import { analytics, detectProviderType } from '../lib/analytics/analytics.servic
 import { useShortcuts } from '../hooks/useShortcuts';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
 import { getOverlayAppearance, OVERLAY_OPACITY_DEFAULT } from '../lib/overlayAppearance';
+import icon from './icon.png';
 
 interface Message {
     id: string;
@@ -67,12 +68,12 @@ interface Message {
     };
 }
 
-interface NativelyInterfaceProps {
+interface LiveLensInterfaceProps {
     onEndMeeting?: () => void;
     overlayOpacity?: number;
 }
 
-const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, overlayOpacity = OVERLAY_OPACITY_DEFAULT }) => {
+const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, overlayOpacity = OVERLAY_OPACITY_DEFAULT }) => {
     const isLightTheme = useResolvedTheme() === 'light';
     const [isExpanded, setIsExpanded] = useState(true);
     const [inputValue, setInputValue] = useState('');
@@ -151,7 +152,6 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, ove
 
     // Model Selection State
     const [currentModel, setCurrentModel] = useState<string>('gemini-3-flash-preview');
-
     // Dynamic Action Button Mode (Recap vs Brainstorm)
     const [actionButtonMode, setActionButtonMode] = useState<'recap' | 'brainstorm'>('recap');
 
@@ -171,8 +171,8 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, ove
     const codeTheme = isLightTheme ? oneLight : vscDarkPlus;
     const codeLineNumberColor = isLightTheme ? 'rgba(15,23,42,0.35)' : 'rgba(255,255,255,0.2)';
     const appearance = useMemo(
-        () => getOverlayAppearance(overlayOpacity, isLightTheme ? 'light' : 'dark'),
-        [overlayOpacity, isLightTheme]
+        () => getOverlayAppearance(overlayOpacity, 'dark'),
+        [overlayOpacity]
     );
     const overlayPanelClass = 'overlay-text-primary';
     const subtleSurfaceClass = 'overlay-subtle-surface';
@@ -284,7 +284,7 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, ove
 
                 // Send exact dimensions to Electron
                 // Removed buffer to ensure tight fit
-                console.log('[NativelyInterface] ResizeObserver:', Math.ceil(rect.width), Math.ceil(rect.height));
+                console.log('[LiveLensInterface] ResizeObserver:', Math.ceil(rect.width), Math.ceil(rect.height));
                 window.electronAPI?.updateContentDimensions({
                     width: Math.ceil(rect.width),
                     height: Math.ceil(rect.height)
@@ -382,7 +382,7 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, ove
     useEffect(() => {
         if (!window.electronAPI?.onSessionReset) return;
         const unsubscribe = window.electronAPI.onSessionReset(() => {
-            console.log('[NativelyInterface] Resetting session state...');
+            console.log('[LiveLensInterface] Resetting session state...');
             setMessages([]);
             setInputValue('');
             setAttachedContext([]);
@@ -1227,7 +1227,7 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({ onEndMeeting, ove
             setManualTranscript('');  // Clear live preview
 
             // Send manual finalization signal to STT Providers
-            window.electronAPI.finalizeMicSTT().catch(err => console.error('[NativelyInterface] Failed to send finalizeMicSTT:', err));
+            window.electronAPI.finalizeMicSTT().catch(err => console.error('[LiveLensInterface] Failed to send finalizeMicSTT:', err));
 
             const currentAttachments = attachedContext;
             setAttachedContext([]); // Clear context immediately on send
@@ -1469,7 +1469,7 @@ Provide only the answer, nothing else.`;
                         <Code className="w-3.5 h-3.5" />
                         <span>Code Solution</span>
                     </div>
-                    <div className={`space-y-2 text-[13px] leading-relaxed ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
+                    <div className={`space-y-2 text-[13px] leading-relaxed ${isLightTheme ? 'text-slate-800' : 'overlay-text-primary'}`}>
                         {parts.map((part, i) => {
                             if (part.startsWith('```')) {
                                 const match = part.match(/```(\w+)?\n?([\s\S]*?)```/);
@@ -1525,7 +1525,7 @@ Provide only the answer, nothing else.`;
                                             h2: ({ node, ...props }: any) => <h2 className="text-base font-bold mb-2 mt-3 overlay-text-strong" {...props} />,
                                             h3: ({ node, ...props }: any) => <h3 className="text-sm font-bold mb-1 mt-2 overlay-text-primary" {...props} />,
                                             code: ({ node, ...props }: any) => <code className={`overlay-inline-code-surface rounded px-1 py-0.5 text-xs font-mono whitespace-pre-wrap ${isLightTheme ? 'text-violet-700' : 'text-purple-200'}`} {...props} />,
-                                            blockquote: ({ node, ...props }: any) => <blockquote className={`border-l-2 pl-3 italic my-2 ${isLightTheme ? 'border-violet-500/30 text-slate-600' : 'border-purple-500/50 text-slate-400'}`} {...props} />,
+                                            blockquote: ({ node, ...props }: any) => <blockquote className={`border-l-2 pl-3 italic my-2 ${isLightTheme ? 'border-violet-500/30 text-slate-600' : 'border-[rgba(0,255,65,0.30)] overlay-text-secondary'}`} {...props} />,
                                             a: ({ node, ...props }: any) => <a className={`hover:underline ${isLightTheme ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`} target="_blank" rel="noopener noreferrer" {...props} />,
                                         }}
                                     >
@@ -1547,7 +1547,7 @@ Provide only the answer, nothing else.`;
                         <MessageSquare className="w-3.5 h-3.5" />
                         <span>Shortened</span>
                     </div>
-                    <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
+                    <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'overlay-text-primary'}`}>
                         <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{
                             p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
                             strong: ({ node, ...props }: any) => <strong className={`font-bold ${isLightTheme ? 'text-cyan-800' : 'text-cyan-100'}`} {...props} />,
@@ -1568,7 +1568,7 @@ Provide only the answer, nothing else.`;
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Recap</span>
                     </div>
-                    <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
+                    <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'overlay-text-primary'}`}>
                         <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{
                             p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
                             strong: ({ node, ...props }: any) => <strong className={`font-bold ${isLightTheme ? 'text-indigo-800' : 'text-indigo-100'}`} {...props} />,
@@ -1589,7 +1589,7 @@ Provide only the answer, nothing else.`;
                         <HelpCircle className="w-3.5 h-3.5" />
                         <span>Follow-Up Questions</span>
                     </div>
-                    <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
+                    <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'overlay-text-primary'}`}>
                         <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{
                             p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
                             strong: ({ node, ...props }: any) => <strong className={`font-bold ${isLightTheme ? 'text-amber-800' : 'text-[#FFF9C4]'}`} {...props} />,
@@ -2025,7 +2025,7 @@ Provide only the answer, nothing else.`;
     };
 
     return (
-        <div ref={contentRef} className="flex flex-col items-center w-fit mx-auto h-fit min-h-0 bg-transparent p-0 rounded-[24px] font-sans gap-2 overlay-text-primary">
+        <div data-theme="dark" ref={contentRef} className="terminal-scope flex flex-col items-center w-fit mx-auto h-fit min-h-0 bg-transparent p-0 rounded-[20px] font-sans overlay-text-primary">
 
             <AnimatePresence>
                 {isExpanded && (
@@ -2034,19 +2034,131 @@ Provide only the answer, nothing else.`;
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="flex flex-col items-center gap-2 w-full"
+                        className="flex flex-col items-center w-full"
                     >
-                        <TopPill
-                            expanded={isExpanded}
-                            onToggle={() => setIsExpanded(!isExpanded)}
-                            onQuit={() => onEndMeeting ? onEndMeeting() : window.electronAPI.quitApp()}
-                            appearance={appearance}
-                            onLogoClick={() => window.electronAPI?.setWindowMode?.('launcher')}
-                        />
                         <div
-                            className={`relative w-[600px] max-w-full backdrop-blur-2xl border rounded-[24px] overflow-hidden flex flex-col draggable-area overlay-shell-surface ${overlayPanelClass}`}
+                            className={`relative w-[600px] max-w-full backdrop-blur-2xl border rounded-[20px] overflow-hidden flex flex-col draggable-area overlay-shell-surface ${overlayPanelClass}`}
                             style={appearance.shellStyle}
                         >
+
+                            {/* ── TOP BAR ───────────────────────────────────────────── */}
+                            <div className="flex items-center justify-between px-3 py-2.5 shrink-0 draggable-area" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                                {/* Left: Logo + Model selector */}
+                                <div className="flex items-center gap-2 no-drag">
+                                    <button
+                                        onClick={() => window.electronAPI?.setWindowMode?.('launcher')}
+                                        className="w-7 h-7 rounded-full overlay-icon-surface overlay-icon-surface-hover flex items-center justify-center interaction-base interaction-press"
+                                        style={appearance.iconStyle}
+                                        title="LiveLens home"
+                                    >
+                                        <img src={icon} alt="LiveLens" className="w-[18px] h-[18px] object-contain force-black-icon" draggable="false" onDragStart={(e) => e.preventDefault()} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            if (messages.length === 0 && !isManualRecording && !isProcessing) {
+                                                setModelSelectorOpen(o => !o);
+                                            } else {
+                                                if (!contentRef.current) return;
+                                                const contentRect = contentRef.current.getBoundingClientRect();
+                                                const buttonRect = e.currentTarget.getBoundingClientRect();
+                                                window.electronAPI.toggleModelSelector({
+                                                    offsetX: buttonRect.left,
+                                                    offsetY: contentRect.bottom + 8,
+                                                });
+                                            }
+                                        }}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 border rounded-lg text-[11px] font-medium max-w-[130px] interaction-base interaction-press ${controlSurfaceClass}`}
+                                        style={appearance.controlStyle}
+                                    >
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, backgroundColor: providerDotColor(availableModels.find(m => m.id === currentModel)?.provider, availableModels.find(m => m.id === currentModel)?.type) }} />
+                                        <span className="truncate min-w-0 flex-1">
+                                            {availableModels.find(m => m.id === currentModel)?.name ?? (() => {
+                                                const m = currentModel;
+                                                if (m.startsWith('ollama-')) return m.replace('ollama-', '');
+                                                return m;
+                                            })()}
+                                        </span>
+                                        <ChevronDown size={12} className="shrink-0 opacity-50" />
+                                    </button>
+                                </div>
+
+                                {/* Right: Settings, Mouse, Mic, divider, Hide, Stop */}
+                                <div className="flex items-center gap-0.5 no-drag">
+                                    <button
+                                        onClick={(e) => {
+                                            if (isSettingsOpen) { window.electronAPI.toggleSettingsWindow(); return; }
+                                            if (!contentRef.current) return;
+                                            const contentRect = contentRef.current.getBoundingClientRect();
+                                            const buttonRect = e.currentTarget.getBoundingClientRect();
+                                            window.electronAPI.toggleSettingsWindow({
+                                                offsetX: buttonRect.left,
+                                                offsetY: contentRect.bottom + 8,
+                                            });
+                                        }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isSettingsOpen ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
+                                        style={appearance.iconStyle}
+                                        title="Settings"
+                                    >
+                                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => { const s = !isMousePassthrough; setIsMousePassthrough(s); window.electronAPI?.setOverlayMousePassthrough?.(s); }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isMousePassthrough ? 'overlay-icon-surface overlay-icon-surface-hover text-sky-400' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
+                                        style={appearance.iconStyle}
+                                        title="Mouse passthrough"
+                                    >
+                                        <PointerOff className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={handleAnswerNow}
+                                        title={isManualRecording ? 'Stop mic' : 'Enable mic'}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press transition-colors duration-200 ${isManualRecording ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
+                                        style={isManualRecording ? undefined : appearance.iconStyle}
+                                    >
+                                        {isManualRecording ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5 opacity-60" />}
+                                    </button>
+                                    <div className="w-px h-3.5 mx-1.5 shrink-0" style={appearance.dividerStyle} />
+                                    <button
+                                        onClick={() => setIsExpanded(false)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive interaction-base interaction-press"
+                                        style={appearance.iconStyle}
+                                        title="Hide"
+                                    >
+                                        <ChevronUp className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => onEndMeeting ? onEndMeeting() : window.electronAPI.quitApp()}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg overlay-icon-surface overlay-text-primary interaction-base interaction-press hover:bg-red-500/10 hover:text-red-400"
+                                        style={appearance.iconStyle}
+                                        title="End session"
+                                    >
+                                        <div className="w-2.5 h-2.5 rounded-[2px] bg-current opacity-80" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* ── QUICK ACTIONS ROW ─────────────────────────────────── */}
+                            <div className="flex flex-nowrap items-center gap-1.5 px-3 py-2 overflow-x-auto no-drag scrollbar-hide shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <button onClick={handleWhatToSay} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                    <Pencil className="w-3 h-3 opacity-70" /> What to answer?
+                                </button>
+                                <button onClick={handleClarify} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                    <MessageSquare className="w-3 h-3 opacity-70" /> Clarify
+                                </button>
+                                <button onClick={actionButtonMode === 'brainstorm' ? handleBrainstorm : handleRecap} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                    {actionButtonMode === 'brainstorm' ? <><Lightbulb className="w-3 h-3 opacity-70" /> Brainstorm</> : <><RefreshCw className="w-3 h-3 opacity-70" /> Recap</>}
+                                </button>
+                                <button onClick={handleFollowUpQuestions} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                    <HelpCircle className="w-3 h-3 opacity-70" /> Follow Up
+                                </button>
+                                <button
+                                    onClick={handleAnswerNow}
+                                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all active:scale-95 duration-200 interaction-base interaction-press min-w-[60px] whitespace-nowrap shrink-0 ${isManualRecording ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' : 'overlay-chip-surface overlay-text-interactive hover:text-emerald-400 hover:bg-emerald-500/10'}`}
+                                    style={isManualRecording ? undefined : appearance.chipStyle}
+                                >
+                                    {isManualRecording ? (<><div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> Stop</>) : (<><Zap className="w-3 h-3 opacity-70" /> Answer</>)}
+                                </button>
+                            </div>
 
 
 
@@ -2138,6 +2250,94 @@ Provide only the answer, nothing else.`;
                                 />
                             ) : null}
 
+                            {/* Inline model selector — shown only when chat is empty */}
+                            {messages.length === 0 && !isManualRecording && !isProcessing && (
+                                <div className="flex justify-center px-4 pt-4 pb-2 no-drag">
+                                    <div ref={modelSelectorRef} style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={() => setModelSelectorOpen(o => !o)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: 7,
+                                                padding: '6px 12px', borderRadius: 99,
+                                                background: isLightTheme ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)',
+                                                border: `1px solid ${isLightTheme ? 'rgba(0,0,0,0.09)' : 'rgba(255,255,255,0.10)'}`,
+                                                cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                                                color: isLightTheme ? 'rgba(0,0,0,0.65)' : 'rgba(226,229,237,0.75)',
+                                                transition: 'background 0.12s',
+                                            }}
+                                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = isLightTheme ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.11)'; }}
+                                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = isLightTheme ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)'; }}
+                                        >
+                                            <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, display: 'inline-block', backgroundColor: providerDotColor(availableModels.find(m => m.id === currentModel)?.provider, availableModels.find(m => m.id === currentModel)?.type) }} />
+                                            <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {availableModels.find(m => m.id === currentModel)?.name ?? currentModel}
+                                            </span>
+                                            <ChevronDown style={{ width: 11, height: 11, opacity: 0.5, flexShrink: 0, transform: modelSelectorOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                                        </button>
+
+                                        {modelSelectorOpen && availableModels.length > 0 && (
+                                            <div style={{
+                                                position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)',
+                                                width: 200, borderRadius: 14, padding: 6,
+                                                background: '#0d0f14',
+                                                border: '1px solid rgba(255,255,255,0.09)',
+                                                zIndex: 100, display: 'flex', flexDirection: 'column', gap: 1,
+                                                maxHeight: 240, overflowY: 'auto',
+                                            }}>
+                                                {/* Cloud section */}
+                                                {(() => {
+                                                    const cloud = availableModels.filter(m => m.type === 'cloud' || m.type === 'custom');
+                                                    const local = availableModels.filter(m => m.type === 'ollama' || m.type === 'local');
+                                                    return <>
+                                                        {cloud.length > 0 && <>
+                                                            {local.length > 0 && <div style={{ padding: '4px 10px 2px', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(226,229,237,0.25)' }}>Cloud</div>}
+                                                            {cloud.map(m => (
+                                                                <button key={m.id} onClick={() => { handleModelSelect(m.id); setModelSelectorOpen(false); }} style={{
+                                                                    width: '100%', textAlign: 'left', padding: '7px 10px', borderRadius: 9,
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                                                                    background: currentModel === m.id ? 'rgba(255,255,255,0.09)' : 'transparent',
+                                                                    border: currentModel === m.id ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+                                                                    cursor: 'pointer', color: currentModel === m.id ? '#e2e5ed' : 'rgba(226,229,237,0.65)',
+                                                                    fontSize: 12, fontWeight: 500,
+                                                                }} onMouseEnter={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                                                                   onMouseLeave={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
+                                                                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: providerDotColor(m.provider, m.type), flexShrink: 0 }} />
+                                                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
+                                                                    </span>
+                                                                    {currentModel === m.id && <Check style={{ width: 12, height: 12, flexShrink: 0, color: 'rgba(226,229,237,0.65)' }} />}
+                                                                </button>
+                                                            ))}
+                                                        </>}
+                                                        {cloud.length > 0 && local.length > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '3px 6px' }} />}
+                                                        {local.length > 0 && <>
+                                                            {cloud.length > 0 && <div style={{ padding: '4px 10px 2px', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(226,229,237,0.25)' }}>Local</div>}
+                                                            {local.map(m => (
+                                                                <button key={m.id} onClick={() => { handleModelSelect(m.id); setModelSelectorOpen(false); }} style={{
+                                                                    width: '100%', textAlign: 'left', padding: '7px 10px', borderRadius: 9,
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                                                                    background: currentModel === m.id ? 'rgba(255,255,255,0.09)' : 'transparent',
+                                                                    border: currentModel === m.id ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+                                                                    cursor: 'pointer', color: currentModel === m.id ? '#e2e5ed' : 'rgba(226,229,237,0.65)',
+                                                                    fontSize: 12, fontWeight: 500,
+                                                                }} onMouseEnter={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                                                                   onMouseLeave={e => { if (currentModel !== m.id) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
+                                                                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: providerDotColor(m.provider, m.type), flexShrink: 0 }} />
+                                                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
+                                                                    </span>
+                                                                    {currentModel === m.id && <Check style={{ width: 12, height: 12, flexShrink: 0, color: 'rgba(226,229,237,0.65)' }} />}
+                                                                </button>
+                                                            ))}
+                                                        </>}
+                                                    </>;
+                                                })()}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Chat History - Only show if there are messages OR active states */}
                             {(messages.length > 0 || isManualRecording || isProcessing) && (
                                 <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[clamp(300px,35vh,450px)] no-drag" style={{ scrollbarWidth: 'none' }}>
@@ -2147,8 +2347,8 @@ Provide only the answer, nothing else.`;
                       ${msg.role === 'user' ? 'max-w-[72.25%] px-[13.6px] py-[10.2px]' : 'max-w-[85%] px-4 py-3'} text-[14px] leading-relaxed relative group whitespace-pre-wrap
                       ${msg.role === 'user'
                                                     ? (isLightTheme
-                                                        ? 'bg-blue-500/10 backdrop-blur-md border border-blue-500/20 text-blue-900 rounded-[20px] rounded-tr-[4px] shadow-sm font-medium'
-                                                        : 'bg-blue-600/20 backdrop-blur-md border border-blue-500/30 text-blue-100 rounded-[20px] rounded-tr-[4px] shadow-sm font-medium')
+                                                        ? 'bg-black/[0.06] backdrop-blur-md border border-black/[0.09] text-slate-800 rounded-[20px] rounded-tr-[4px] shadow-sm font-medium'
+                                                        : 'bg-white/[0.07] backdrop-blur-md border border-white/[0.10] text-[#e2e5ed] rounded-[20px] rounded-tr-[4px] font-medium')
                                                     : ''
                                                 }
                       ${msg.role === 'system'
@@ -2189,30 +2389,29 @@ Provide only the answer, nothing else.`;
 
                                     {/* Active Recording State with Live Transcription */}
                                     {isManualRecording && (
-                                        <div className="flex flex-col items-end gap-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                            {/* Live transcription preview */}
+                                        <div className="flex flex-col items-end gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                             {(manualTranscript || voiceInput) && (
-                                                <div className="max-w-[85%] px-3.5 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-[18px] rounded-tr-[4px]">
-                                                    <span className="text-[13px] text-emerald-300">
+                                                <div className="max-w-[85%] px-3.5 py-2.5 bg-white/[0.05] border border-white/[0.09] rounded-[14px] rounded-tr-[4px]">
+                                                    <span className="text-[13px] overlay-text-secondary italic">
                                                         {voiceInput}{voiceInput && manualTranscript ? ' ' : ''}{manualTranscript}
                                                     </span>
                                                 </div>
                                             )}
-                                            <div className="px-3 py-2 flex gap-1.5 items-center">
-                                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                                <span className="text-[10px] text-emerald-400/70 ml-1">Listening...</span>
+                                            <div className="flex items-center gap-[3px] px-1 py-1">
+                                                <div className="w-[3px] h-[10px] rounded-full bg-white/40 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }} />
+                                                <div className="w-[3px] h-[10px] rounded-full bg-white/40 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '180ms' }} />
+                                                <div className="w-[3px] h-[10px] rounded-full bg-white/40 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '360ms' }} />
+                                                <span className="text-[10px] text-white/30 ml-1.5 tracking-wide">Listening…</span>
                                             </div>
                                         </div>
                                     )}
 
                                     {isProcessing && (
                                         <div className="flex justify-start">
-                                            <div className="px-3 py-2 flex gap-1.5">
-                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                            <div className="flex items-center gap-[3px] px-1 py-2">
+                                                <div className="w-[3px] h-[8px] rounded-full bg-white/30 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }} />
+                                                <div className="w-[3px] h-[8px] rounded-full bg-white/30 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '180ms' }} />
+                                                <div className="w-[3px] h-[8px] rounded-full bg-white/30 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '360ms' }} />
                                             </div>
                                         </div>
                                     )}
@@ -2220,45 +2419,10 @@ Provide only the answer, nothing else.`;
                                 </div>
                             )}
 
-                            {/* Quick Actions - Minimal & Clean */}
-                            <div className={`flex flex-nowrap justify-center items-center gap-1.5 px-4 pb-3 overflow-x-hidden ${rollingTranscript && showTranscript ? 'pt-1' : 'pt-3'}`}>
-                                <button onClick={handleWhatToSay} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
-                                    <Pencil className="w-3 h-3 opacity-70" /> What to answer?
-                                </button>
-                                <button onClick={handleClarify} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
-                                    <MessageSquare className="w-3 h-3 opacity-70" /> Clarify
-                                </button>
-                                <button onClick={actionButtonMode === 'brainstorm' ? handleBrainstorm : handleRecap} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
-                                    {actionButtonMode === 'brainstorm'
-                                        ? <><Lightbulb className="w-3 h-3 opacity-70" /> Brainstorm</>
-                                        : <><RefreshCw className="w-3 h-3 opacity-70" /> Recap</>
-                                    }
-                                </button>
-                                <button onClick={handleFollowUpQuestions} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
-                                    <HelpCircle className="w-3 h-3 opacity-70" /> Follow Up Question
-                                </button>
-                                <button
-                                    onClick={handleAnswerNow}
-                                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all active:scale-95 duration-200 interaction-base interaction-press min-w-[74px] whitespace-nowrap shrink-0 ${isManualRecording
-                                        ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20'
-                                        : 'overlay-chip-surface overlay-text-interactive hover:text-emerald-500 hover:bg-emerald-500/10'
-                                        }`}
-                                    style={isManualRecording ? undefined : appearance.chipStyle}
-                                >
-                                    {isManualRecording ? (
-                                        <>
-                                            <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                                            Stop
-                                        </>
-                                    ) : (
-                                        <><Zap className="w-3 h-3 opacity-70" /> Answer</>
-                                    )}
-                                </button>
-                            </div>
 
-                            {/* Input Area */}
-                            <div className="p-3 pt-0">
-                                {/* Latent Context Preview (Attached Screenshot) */}
+                            {/* ── INPUT ─────────────────────────────────────────────── */}
+                            <div className="px-3 py-2.5 no-drag shrink-0">
+                                {/* Attached Screenshots Preview */}
                                 {attachedContext.length > 0 && (
                                     <div className={`mb-2 rounded-lg p-2 transition-all duration-200 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
                                         <div className="flex items-center justify-between mb-1.5">
@@ -2296,22 +2460,19 @@ Provide only the answer, nothing else.`;
                                     </div>
                                 )}
 
-                                <div className="relative group">
+                                <div className="relative">
                                     <input
                                         ref={textInputRef}
                                         type="text"
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-
-                                        className={`w-full border focus:ring-1 rounded-xl pl-3 pr-10 py-2.5 focus:outline-none transition-all duration-200 ease-sculpted text-[13px] leading-relaxed ${inputClass}`}
+                                        className={`w-full border focus:ring-1 rounded-xl pl-3 pr-10 py-2 focus:outline-none transition-all duration-200 ease-sculpted text-[13px] leading-relaxed ${inputClass}`}
                                         style={appearance.inputStyle}
                                     />
-
-                                    {/* Custom Rich Placeholder */}
                                     {!inputValue && (
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none text-[13px] overlay-text-muted">
-                                            <span>Ask anything on screen or conversation, or</span>
+                                            <span>Ask anything, or</span>
                                             <div className="flex items-center gap-1 opacity-80">
                                                 {(shortcuts.selectiveScreenshot || ['⌘', 'Shift', 'H']).map((key, i) => (
                                                     <React.Fragment key={i}>
@@ -2320,138 +2481,16 @@ Provide only the answer, nothing else.`;
                                                     </React.Fragment>
                                                 ))}
                                             </div>
-                                            <span>for selective screenshot</span>
+                                            <span>for screenshot</span>
                                         </div>
                                     )}
-
-                                    {!inputValue && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none opacity-20">
-                                            <span className="text-[10px]">↵</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Bottom Row */}
-                                <div className="flex items-center justify-between mt-3 px-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <button
-                                            onClick={(e) => {
-                                                // Calculate position for detached window
-                                                if (!contentRef.current) return;
-                                                const contentRect = contentRef.current.getBoundingClientRect();
-                                                const buttonRect = e.currentTarget.getBoundingClientRect();
-                                                const GAP = 8;
-
-                                                const x = window.screenX + buttonRect.left;
-                                                const y = window.screenY + contentRect.bottom + GAP;
-
-                                                window.electronAPI.toggleModelSelector({ x, y });
-                                            }}
-                                            className={`
-                                                flex items-center gap-2 px-3 py-1.5
-                                                border rounded-lg transition-colors
-                                                text-xs font-medium w-[140px]
-                                                interaction-base interaction-press
-                                                ${controlSurfaceClass}
-                                            `}
-                                            style={appearance.controlStyle}
-                                        >
-                                            <span className="truncate min-w-0 flex-1">
-                                                {(() => {
-                                                    const m = currentModel;
-                                                    if (m.startsWith('ollama-')) return m.replace('ollama-', '');
-                                                    if (m === 'gemini-3.1-flash-lite-preview') return 'Gemini 3.1 Flash';
-                                                    if (m === 'gemini-3.1-pro-preview') return 'Gemini 3.1 Pro';
-                                                    if (m === 'llama-3.3-70b-versatile') return 'Groq Llama 3.3';
-                                                    if (m === 'gpt-5.4') return 'GPT 5.4';
-                                                    if (m === 'claude-sonnet-4-6') return 'Sonnet 4.6';
-                                                    return m;
-                                                })()}
-                                            </span>
-                                            <ChevronDown size={14} className="shrink-0 transition-transform" />
-                                        </button>
-
-                                        <div className="w-px h-3 mx-1" style={appearance.dividerStyle} />
-
-                                        <div className="relative">
-                                            <button
-                                                onClick={(e) => {
-                                                    if (isSettingsOpen) {
-                                                        // If open, just close it (toggle will handle logic but we can be explicit or just toggle)
-                                                        // Actually toggle-settings-window handles hiding if visible, so logic is same.
-                                                        window.electronAPI.toggleSettingsWindow();
-                                                        return;
-                                                    }
-
-                                                    if (!contentRef.current) return;
-
-                                                    const contentRect = contentRef.current.getBoundingClientRect();
-                                                    const buttonRect = e.currentTarget.getBoundingClientRect();
-                                                    const POPUP_WIDTH = 270; // Matches SettingsWindowHelper actual width
-                                                    const GAP = 8; // Same gap as between TopPill and main body (gap-2 = 8px)
-
-                                                    // X: Left-aligned relative to the Settings Button
-                                                    const x = window.screenX + buttonRect.left;
-
-                                                    // Y: Below the main content + gap
-                                                    const y = window.screenY + contentRect.bottom + GAP;
-
-                                                    window.electronAPI.toggleSettingsWindow({ x, y });
-                                                }}
-                                                className={`
-                                            w-7 h-7 flex items-center justify-center rounded-lg
-                                            interaction-base interaction-press
-                                            ${isSettingsOpen
-                                                    ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary'
-                                                    : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}
-                                        `}
-
-                                                style={appearance.iconStyle}
-                                            >
-                                                <SlidersHorizontal className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-
-
-
-                                        {/* Mouse Passthrough Toggle */}
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => {
-                                                    const newState = !isMousePassthrough;
-                                                    setIsMousePassthrough(newState);
-                                                    window.electronAPI?.setOverlayMousePassthrough?.(newState);
-                                                }}
-                                                className={`
-                                                    w-7 h-7 flex items-center justify-center rounded-lg
-                                                    interaction-base interaction-press
-                                                    ${isMousePassthrough
-                                                        ? 'overlay-icon-surface overlay-icon-surface-hover text-sky-400 opacity-100'
-                                                        : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}
-                                                `}
-
-                                                style={appearance.iconStyle}
-                                            >
-                                                <PointerOff className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-
-                                    </div>
-
                                     <button
                                         onClick={handleManualSubmit}
                                         disabled={!inputValue.trim()}
-                                    className={`
-                                    w-7 h-7 rounded-full flex items-center justify-center
-                                    interaction-base interaction-press
-                                    ${inputValue.trim()
-                                                ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]'
-                                                : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'
-                                            }
-                                `}
-                                    style={inputValue.trim() ? undefined : appearance.iconStyle}
+                                        className={`absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center interaction-base interaction-press ${inputValue.trim() ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]' : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'}`}
+                                        style={inputValue.trim() ? undefined : appearance.iconStyle}
                                     >
-                                        <ArrowRight className="w-3.5 h-3.5" />
+                                        <ArrowRight className="w-3 h-3" />
                                     </button>
                                 </div>
                             </div>
@@ -2463,4 +2502,4 @@ Provide only the answer, nothing else.`;
     );
 };
 
-export default NativelyInterface;
+export default LiveLensInterface;

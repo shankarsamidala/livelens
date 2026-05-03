@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Mic, MicOff } from "lucide-react";
 import icon from "../icon.png";
 import type { OverlayAppearance } from "../../lib/overlayAppearance";
 
@@ -8,6 +8,8 @@ interface TopPillProps {
     onQuit: () => void;
     appearance: OverlayAppearance;
     onLogoClick?: () => void;
+    isMicActive?: boolean;
+    onMicToggle?: () => void;
 }
 
 export default function TopPill({
@@ -16,6 +18,8 @@ export default function TopPill({
     onQuit,
     appearance,
     onLogoClick,
+    isMicActive = false,
+    onMicToggle,
 }: TopPillProps) {
     return (
         <div className="flex justify-center mt-2 select-none z-50">
@@ -47,7 +51,7 @@ export default function TopPill({
                 >
                     <img
                         src={icon}
-                        alt="Natively"
+                        alt="LiveLens"
                         className="w-[24px] h-[24px] object-contain opacity-95 scale-105 force-black-icon"
                         draggable="false"
                         onDragStart={(e) => e.preventDefault()}
@@ -81,6 +85,31 @@ export default function TopPill({
                     </span>
                     <span className="tracking-wide opacity-80 group-hover:opacity-100">{expanded ? "Hide" : "Show"}</span>
                 </button>
+
+                {/* MIC TOGGLE BUTTON */}
+                {onMicToggle && (
+                    <button
+                        onClick={onMicToggle}
+                        title={isMicActive ? "Disable mic" : "Enable mic"}
+                        className={`
+              w-8 h-8
+              rounded-full
+              flex items-center justify-center
+              interaction-base interaction-press
+              transition-colors duration-200
+              ${isMicActive
+                                ? 'bg-[rgba(0,255,65,0.15)] text-[#00ff41] hover:bg-[rgba(0,255,65,0.25)]'
+                                : 'overlay-icon-surface overlay-text-primary hover:bg-[rgba(0,255,65,0.08)] hover:text-[rgba(0,255,65,0.70)]'
+                            }
+            `}
+                        style={isMicActive ? undefined : appearance.iconStyle}
+                    >
+                        {isMicActive
+                            ? <Mic className="w-3.5 h-3.5" />
+                            : <MicOff className="w-3.5 h-3.5 opacity-60" />
+                        }
+                    </button>
+                )}
 
                 {/* STOP / QUIT BUTTON */}
                 <button
