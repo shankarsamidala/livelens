@@ -214,11 +214,10 @@ export const AIProvidersSettings: React.FC = () => {
     const ensureOllamaStartup = async () => {
         setOllamaStatus('checking');
         try {
-            // @ts-ignore
-            const result = await window.electronAPI?.invoke?.('ensure-ollama-running');
+            const result = await window.electronAPI?.ensureOllamaRunning?.();
             if (result && result.success) {
-                // It's running (or just started), now fetch models
-                checkOllama(true);
+                // Give Ollama a moment to fully accept connections before probing
+                setTimeout(() => checkOllama(true), 1500);
             } else {
                 setOllamaStatus('not-found');
             }
@@ -228,39 +227,27 @@ export const AIProvidersSettings: React.FC = () => {
         }
     };
 
+    // Uses getOllamaSetupStatus so we can distinguish "running but no models" from "not running"
     const checkOllama = async (_isInitial = true) => {
-        // Don't override 'checking' if we are already in smart-start mode
-        // if (isInitial) setOllamaStatus('checking'); 
-
         try {
-            // @ts-ignore
-            const models = await window.electronAPI?.getAvailableOllamaModels?.();
-            if (models && models.length > 0) {
-                setOllamaModels(models);
+            const status = await window.electronAPI?.getOllamaSetupStatus?.();
+            if (status?.running) {
+                setOllamaModels(status.models || []);
                 setOllamaStatus('detected');
             } else {
-                // Silent failure on background checks
-                // Only set not-found if we haven't detected it yet
-                if (ollamaStatus !== 'detected') {
-                    setOllamaStatus('not-found');
-                }
+                setOllamaStatus(prev => prev === 'detected' ? 'detected' : 'not-found');
             }
         } catch (e) {
-            // console.warn(`Ollama check failed:`, e);
-            if (ollamaStatus !== 'detected') {
-                setOllamaStatus('not-found');
-            }
+            setOllamaStatus(prev => prev === 'detected' ? 'detected' : 'not-found');
         }
     };
 
     const handleFixOllama = async () => {
         setOllamaStatus('fixing');
         try {
-            // @ts-ignore
-            const result = await window.electronAPI?.invoke?.('force-restart-ollama');
+            const result = await window.electronAPI?.ensureOllamaRunning?.();
             if (result && result.success) {
                 setOllamaRestarted(true);
-                // Wait for server to be ready
                 setTimeout(() => checkOllama(false), 2000);
             } else {
                 setOllamaStatus('not-found');
@@ -344,16 +331,6 @@ export const AIProvidersSettings: React.FC = () => {
         }
     };
 
-    const openKeyUrl = (provider: string) => {
-        const urls: Record<string, string> = {
-            gemini: 'https://aistudio.google.com/app/apikey',
-            groq: 'https://console.groq.com/keys',
-            openai: 'https://platform.openai.com/api-keys',
-            claude: 'https://console.anthropic.com/settings/keys'
-        };
-        // @ts-ignore
-        window.electronAPI?.openExternal(urls[provider]);
-    };
 
 
     // --- Custom Provider Handlers ---
@@ -656,28 +633,33 @@ export const AIProvidersSettings: React.FC = () => {
                         </div>
                     )}
 
-                    {ollamaStatus === 'detected' && ollamaModels.length > 0 && (
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-xs text-green-400 mb-3">
-                                <CheckCircle size={14} />
-                                <span>Ollama connected</span>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-2">
-                                {ollamaModels.map(model => (
-                                    <div key={model} className="flex items-center justify-between p-2 bg-bg-input rounded-lg border border-border-subtle">
-                                        <span className="text-xs text-text-primary font-mono">{model}</span>
-                                        <span className="text-[10px] text-bg-elevated bg-text-secondary px-1.5 py-0.5 rounded-full font-bold">LOCAL</span>
+                    {ollamaStatus === 'detected' && (() => {
+                        const llmModels = ollamaModels.filter(m =>
+                            !m.startsWith('nomic-') && !m.startsWith('mxbai-') && !m.includes('embed')
+                        );
+                        return (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-xs text-green-400 mb-1">
+                                    <CheckCircle size={14} />
+                                    <span>Ollama connected</span>
+                                </div>
+                                {llmModels.length > 0 ? (
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {llmModels.map(model => (
+                                            <div key={model} className="flex items-center justify-between p-2 bg-bg-input rounded-lg border border-border-subtle">
+                                                <span className="text-xs text-text-primary font-mono">{model}</span>
+                                                <span className="text-[10px] text-bg-elevated bg-text-secondary px-1.5 py-0.5 rounded-full font-bold">LOCAL</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="text-xs text-text-secondary p-2 bg-bg-input rounded-lg border border-border-subtle">
+                                        No chat models installed yet. Run <span className="font-mono text-[#d97757]">ollama pull llama3.2</span> in Terminal to add one.
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    )}
-                    {ollamaStatus === 'detected' && ollamaModels.length === 0 && (
-                        <div className="text-xs text-text-secondary">
-                            Ollama is running but no models found. Run `ollama pull llama3` to get started.
-                        </div>
-                    )}
+                        );
+                    })()}
                 </div>
             </div>
 

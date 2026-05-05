@@ -55,13 +55,11 @@ const ModelSelectorWindow = () => {
                     let oModels = await window.electronAPI?.getAvailableOllamaModels?.();
                     if (!oModels || oModels.length === 0) {
                         try {
-                            // @ts-ignore
-                            if (window.electronAPI?.forceRestartOllama) {
-                                // @ts-ignore
-                                await window.electronAPI.forceRestartOllama();
-                                await new Promise(resolve => setTimeout(resolve, 1500));
-                                oModels = await window.electronAPI?.getAvailableOllamaModels?.();
-                            }
+                            // Use ensureOllamaRunning (soft start) instead of forceRestartOllama
+                            // (which does kill -9 and aborts any in-progress model pulls)
+                            await window.electronAPI?.ensureOllamaRunning?.();
+                            await new Promise(resolve => setTimeout(resolve, 1500));
+                            oModels = await window.electronAPI?.getAvailableOllamaModels?.();
                         } catch (e) { console.warn("Retrying Ollama failed", e); }
                     }
                     if (oModels) ollamaModels = oModels;

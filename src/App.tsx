@@ -15,6 +15,7 @@ import { FreeTrialBanner }      from "./components/trial/FreeTrialBanner"
 import { FreeTrialModal }       from "./components/trial/FreeTrialModal"
 import { TrialPromoToaster }    from "./components/trial/TrialPromoToaster"
 import { PermissionsToaster }   from "./components/onboarding/PermissionsToaster"
+import { OllamaSetupToaster }  from "./components/onboarding/OllamaSetupToaster"
 import { AlertCircle } from "lucide-react"
 import { clampOverlayOpacity, OVERLAY_OPACITY_DEFAULT, getDefaultOverlayOpacity } from "./lib/overlayAppearance"
 import {
@@ -128,6 +129,7 @@ const App: React.FC = () => {
 
   // ── Onboarding / promo toasters ───────────────────────────
   const [showPermissionsToaster, setShowPermissionsToaster] = useState(false);
+  const [showOllamaSetup,        setShowOllamaSetup]        = useState(false);
   const [showTrialPromo,         setShowTrialPromo]         = useState(false);
 
   // ── Free Trial global state ────────────────────────────────
@@ -249,12 +251,13 @@ const App: React.FC = () => {
 
     // ── Onboarding toasters ──────────────────────────────────
     if (isLauncherWindow || isDefault) {
-      const permsShown = localStorage.getItem('natively_perms_shown_v1');
+      const permsShown   = localStorage.getItem('natively_perms_shown_v1');
+      const ollamaDone   = localStorage.getItem('natively_ollama_setup_done');
       if (!permsShown) {
-        // First ever launch — show permissions toaster
         setShowPermissionsToaster(true);
+      } else if (!ollamaDone) {
+        setShowOllamaSetup(true);
       } else {
-        // Subsequent launches — trial promo will self-gate via TrialPromoToaster
         setShowTrialPromo(true);
       }
     }
@@ -608,7 +611,23 @@ const App: React.FC = () => {
         onDismiss={() => {
           localStorage.setItem('natively_perms_shown_v1', '1');
           setShowPermissionsToaster(false);
-          // After permissions, allow trial promo on next launch
+          const ollamaDone = localStorage.getItem('natively_ollama_setup_done');
+          if (!ollamaDone) {
+            setShowOllamaSetup(true);
+          } else {
+            setShowTrialPromo(true);
+          }
+        }}
+      />
+
+      {/* Ollama setup wizard — shown after permissions on first install */}
+      <OllamaSetupToaster
+        isOpen={showOllamaSetup}
+        onDismiss={() => {
+          setShowOllamaSetup(false);
+          // Don't chain into TrialPromoToaster here — its 10-second internal delay
+          // would leave the user on a blank Launcher. The promo will show naturally
+          // on the next launch via the normal onboarding gate.
         }}
       />
 

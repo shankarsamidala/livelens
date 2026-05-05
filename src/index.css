@@ -22,71 +22,95 @@
   /* System Fonts - SF Pro */
   --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 
-  /* --- TERMINAL THEME (DEFAULT: DARK) — pure black + neon green --- */
-  --bg-sidebar:      #000000;
-  --bg-main:         #000000;
-  --bg-card:         #030803;
-  --bg-toggle-switch:#071007;
-  --bg-item-surface: #050d05;
-  --bg-item-active:  #0a160a;
+  /* --- CLAUDE BRAND DARK — #141413 black + #d97757 orange + #faf9f5 off-white --- */
+  --bg-sidebar:      #141413;
+  --bg-main:         #141413;
+  --bg-card:         #1a1917;
+  --bg-toggle-switch:#242220;
+  --bg-item-surface: #1e1c1a;
+  --bg-item-active:  rgba(217,119,87,0.12);
 
-  --bg-primary:    #000000;
-  --bg-secondary:  #010301;
-  --bg-elevated:   #050d05;
-  --bg-input:      #030803;
+  --bg-primary:    #141413;
+  --bg-secondary:  #1a1917;
+  --bg-elevated:   #1e1c1a;
+  --bg-input:      #1a1917;
 
-  --text-primary:   #00ff41;
-  --text-secondary: rgba(0, 255, 65, 0.75);
-  --text-tertiary:  rgba(0, 255, 65, 0.55);
+  --text-primary:   #faf9f5;
+  --text-secondary: rgba(250,249,245,0.70);
+  --text-tertiary:  rgba(250,249,245,0.45);
 
-  --border-subtle: rgba(0, 255, 65, 0.14);
-  --border-muted:  rgba(0, 255, 65, 0.22);
+  --border-subtle: rgba(250,249,245,0.08);
+  --border-muted:  rgba(250,249,245,0.13);
 
-  --accent-primary: #00ff41;
-  --accent-muted:   rgba(0, 255, 65, 0.15);
+  --accent-primary: #d97757;
+  --accent-muted:   rgba(217,119,87,0.15);
 
-  --bg-component: #030803;
+  --bg-component: #1a1917;
 
-  --overlay-bg: rgba(0, 0, 0, 0.94);
+  --overlay-bg: rgba(20,20,19,0.94);
 
-  /* ── PREMIUM DARK — charcoal + off-white + indigo accent ── */
+  /* ── OVERLAY SYSTEM — dark glass on #141413 base ── */
   --overlay-opacity: 0.65;
-  --overlay-border: rgba(255, 255, 255, 0.09);
-  --overlay-border-soft: rgba(255, 255, 255, 0.06);
-  --overlay-panel-bg: rgb(13 15 20 / calc(0.88 + (var(--overlay-opacity) * 0.07)));
-  --overlay-pill-bg: rgb(13 15 20 / calc(0.86 + (var(--overlay-opacity) * 0.07)));
-  --overlay-transcript-bg: rgba(255, 255, 255, 0.03);
-  --overlay-chip-bg: rgba(255, 255, 255, 0.06);
-  --overlay-chip-hover-bg: rgba(255, 255, 255, 0.10);
-  --overlay-input-bg: rgba(255, 255, 255, 0.04);
-  --overlay-input-hover-bg: rgba(255, 255, 255, 0.07);
-  --overlay-input-focus-bg: rgba(255, 255, 255, 0.09);
-  --overlay-control-bg: rgba(255, 255, 255, 0.05);
-  --overlay-control-hover-bg: rgba(255, 255, 255, 0.09);
-  --overlay-code-bg: rgba(0, 0, 0, 0.38);
-  --overlay-code-border: rgba(255, 255, 255, 0.09);
-  --overlay-code-header-bg: rgba(255, 255, 255, 0.04);
-  --overlay-inline-code-bg: rgba(255, 255, 255, 0.09);
-  --overlay-icon-bg: rgba(255, 255, 255, 0.05);
-  --overlay-icon-hover-bg: rgba(255, 255, 255, 0.10);
-  --overlay-panel-shadow: rgba(0, 0, 0, 0.55);
-  --overlay-pill-shadow: rgba(0, 0, 0, 0.40);
-  --overlay-text-primary: #e2e5ed;
-  --overlay-text-secondary: rgba(226, 229, 237, 0.60);
-  --overlay-text-muted: rgba(226, 229, 237, 0.38);
-  --overlay-text-placeholder: rgba(226, 229, 237, 0.28);
+  --overlay-border: rgba(250,249,245,0.09);
+  --overlay-border-soft: rgba(250,249,245,0.06);
+  --overlay-panel-bg: rgb(20 20 19 / calc(0.88 + (var(--overlay-opacity) * 0.07)));
+  --overlay-pill-bg: rgb(20 20 19 / calc(0.86 + (var(--overlay-opacity) * 0.07)));
+  --overlay-transcript-bg: rgba(250,249,245,0.03);
+  --overlay-chip-bg: rgba(250,249,245,0.06);
+  --overlay-chip-hover-bg: rgba(250,249,245,0.10);
+  --overlay-input-bg: rgba(250,249,245,0.04);
+  --overlay-input-hover-bg: rgba(250,249,245,0.07);
+  --overlay-input-focus-bg: rgba(217,119,87,0.08);
+  --overlay-control-bg: rgba(250,249,245,0.05);
+  --overlay-control-hover-bg: rgba(250,249,245,0.09);
+  --overlay-code-bg: rgba(0,0,0,0.38);
+  --overlay-code-border: rgba(250,249,245,0.09);
+  --overlay-code-header-bg: rgba(250,249,245,0.04);
+  --overlay-inline-code-bg: rgba(217,119,87,0.12);
+  --overlay-icon-bg: rgba(250,249,245,0.05);
+  --overlay-icon-hover-bg: rgba(250,249,245,0.10);
+  --overlay-panel-shadow: rgba(0,0,0,0.55);
+  --overlay-pill-shadow: rgba(0,0,0,0.40);
+  --overlay-text-primary: #faf9f5;
+  --overlay-text-secondary: rgba(250,249,245,0.60);
+  --overlay-text-muted: rgba(250,249,245,0.38);
+  --overlay-text-placeholder: rgba(250,249,245,0.28);
   --overlay-text-strong: #ffffff;
   --overlay-shell-blur: calc(4px + (var(--overlay-opacity) * 20px));
   --overlay-pill-blur: calc(3px + (var(--overlay-opacity) * 13px));
   --overlay-transcript-blur: calc(var(--overlay-opacity) * 5px);
 
-  /* Primary Action Button Defaults */
-  --btn-primary-bg: rgba(130, 166, 255, 0.15);
-  --btn-primary-hover: rgba(130, 166, 255, 0.25);
-  --btn-primary-disabled-bg: rgba(255, 255, 255, 0.05);
-  --btn-primary-disabled-border: rgba(255, 255, 255, 0.08);
-  --btn-primary-disabled-text: rgba(226, 229, 237, 0.25);
-  --btn-primary-shadow-color: rgba(130, 166, 255, 0.12);
+  /* Primary Action Button */
+  --btn-primary-bg: rgba(217,119,87,0.18);
+  --btn-primary-hover: rgba(217,119,87,0.28);
+  --btn-primary-disabled-bg: rgba(250,249,245,0.05);
+  --btn-primary-disabled-border: rgba(250,249,245,0.08);
+  --btn-primary-disabled-text: rgba(250,249,245,0.25);
+  --btn-primary-shadow-color: rgba(217,119,87,0.15);
+}
+
+/* Force all CSS vars back to Claude dark palette for inline settings panel */
+.force-dark-panel {
+  --bg-primary:       #141413;
+  --bg-secondary:     #1a1917;
+  --bg-main:          #141413;
+  --bg-sidebar:       #141413;
+  --bg-elevated:      #1e1c1a;
+  --bg-card:          rgba(250,249,245,0.03);
+  --bg-input:         rgba(250,249,245,0.05);
+  --bg-item-surface:  rgba(250,249,245,0.04);
+  --bg-item-active:   rgba(217,119,87,0.10);
+  --bg-toggle-switch: rgba(250,249,245,0.12);
+  --bg-subtle:        rgba(250,249,245,0.05);
+  --bg-component:     rgba(250,249,245,0.05);
+  --text-primary:     #faf9f5;
+  --text-secondary:   rgba(250,249,245,0.60);
+  --text-tertiary:    rgba(250,249,245,0.35);
+  --border-subtle:    rgba(250,249,245,0.07);
+  --border-muted:     rgba(250,249,245,0.10);
+  --accent-primary:   #d97757;
+  --accent-secondary: #c4623e;
+  --accent-muted:     rgba(217,119,87,0.15);
 }
 
 [data-theme='light'] {
@@ -119,7 +143,7 @@
   /* ── Interactive elements ── */
   --bg-component:      #F3F4F6;   /* Secondary button fill (gray-100)             */
   --bg-item-surface:   #EAECEF;   /* Row hover — clearly visible against canvas   */
-  --bg-item-active:    rgba(37, 99, 235, 0.09); /* Blue-tinted selection (Linear/Notion style) */
+  --bg-item-active:    rgba(217,119,87,0.09);   /* Orange-tinted selection */
   --bg-toggle-switch:  #D1D5DB;   /* Toggle off-state track (gray-300)            */
 
   /* ── Typography — Tailwind gray scale, proven for readability ── */
@@ -132,8 +156,8 @@
   --border-muted:      rgba(0, 0, 0, 0.11);   /* inputs, tables                   */
 
   /* ── Accent ── */
-  --accent-primary:    #2563EB;   /* blue-600 — accessible, confident             */
-  --accent-muted:      rgba(37, 99, 235, 0.10);
+  --accent-primary:    #d97757;   /* Claude orange                                */
+  --accent-muted:      rgba(217,119,87,0.12);
 
   --bg-component:      #F3F4F6;
 
@@ -149,13 +173,13 @@
   --overlay-chip-hover-bg:   rgba(243, 244, 246, 0.32);
   --overlay-input-bg:        rgba(255, 255, 255, 0.24);
   --overlay-input-hover-bg:  rgba(255, 255, 255, 0.38);
-  --overlay-input-focus-bg:  rgba(239, 246, 255, 0.46);
+  --overlay-input-focus-bg:  rgba(217,119,87,0.08);
   --overlay-control-bg:      rgba(255, 255, 255, 0.24);
   --overlay-control-hover-bg:rgba(243, 244, 246, 0.38);
   --overlay-code-bg:         rgba(249, 250, 251, 0.22);
   --overlay-code-border:     rgba(0, 0, 0, 0.08);
   --overlay-code-header-bg:  rgba(243, 244, 246, 0.28);
-  --overlay-inline-code-bg:  rgba(219, 234, 254, 0.42);
+  --overlay-inline-code-bg:  rgba(217,119,87,0.14);
   --overlay-icon-bg:         rgba(255, 255, 255, 0.22);
   --overlay-icon-hover-bg:   rgba(243, 244, 246, 0.36);
   --overlay-panel-shadow:    rgb(0 0 0 / calc(0.04 + (var(--overlay-opacity) * 0.08)));
@@ -170,8 +194,8 @@
   --overlay-transcript-blur: calc(var(--overlay-opacity) * 5px);
 
   /* Primary Action Button (Light) */
-  --btn-primary-bg: #2563EB; /* blue-600 */
-  --btn-primary-hover: #1d4ed8; /* blue-700 */
+  --btn-primary-bg: #d97757;
+  --btn-primary-hover: #c4623e;
   --btn-primary-disabled-bg: var(--bg-input); /* #F9FAFB */
   --btn-primary-disabled-border: var(--border-subtle);
   --btn-primary-disabled-text: var(--text-tertiary);
@@ -262,15 +286,15 @@ body {
 /* Liquid Glass Effect Base - Refined Matte Look */
 /* Used for floating elements on top of the vibrant background */
 .liquid-glass {
-  background: rgba(0, 6, 1, 0.88);
+  background: rgba(20, 20, 19, 0.88);
   backdrop-filter: blur(24px) saturate(120%);
   -webkit-backdrop-filter: blur(24px) saturate(120%);
-  border: 1px solid rgba(0, 255, 65, 0.14);
+  border: 1px solid rgba(217,119,87,0.14);
   border-radius: 1.25rem;
   box-shadow:
     0 20px 40px -10px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(0, 255, 65, 0.10),
-    inset 0 1px 0 rgba(0, 255, 65, 0.06);
+    0 0 0 1px rgba(217,119,87,0.08),
+    inset 0 1px 0 rgba(250,249,245,0.06);
   position: relative;
   overflow: hidden;
 }
@@ -528,10 +552,10 @@ body {
    Overrides any [data-theme='light'] rules on the parent <html> element.
    Without this, light-mode document theme bleeds into the overlay.       */
 .terminal-scope {
-  --overlay-text-primary:     #e2e5ed;
-  --overlay-text-secondary:   rgba(226, 229, 237, 0.60);
-  --overlay-text-muted:       rgba(226, 229, 237, 0.38);
-  --overlay-text-placeholder: rgba(226, 229, 237, 0.28);
+  --overlay-text-primary:     #faf9f5;
+  --overlay-text-secondary:   rgba(250,249,245,0.60);
+  --overlay-text-muted:       rgba(250,249,245,0.38);
+  --overlay-text-placeholder: rgba(250,249,245,0.28);
   --overlay-text-strong:      #ffffff;
   --overlay-border:           rgba(255, 255, 255, 0.09);
   --overlay-border-soft:      rgba(255, 255, 255, 0.06);
@@ -552,7 +576,7 @@ body {
 
 /* Input caret — overlay only */
 .terminal-scope .overlay-input-text {
-  caret-color: #83a6ff;
+  caret-color: #d97757;
 }
 
 /* ── Premium dark: overrides scoped ONLY to the overlay (.terminal-scope) ── */
@@ -605,13 +629,13 @@ body {
 }
 
 .terminal-scope .markdown-content code {
-  color: #c3ceff;
-  background: rgba(130, 166, 255, 0.10);
+  color: #e8a882;
+  background: rgba(217,119,87,0.12);
 }
 
 .terminal-scope .markdown-content a {
-  color: #83a6ff;
-  text-decoration-color: rgba(130, 166, 255, 0.40);
+  color: #d97757;
+  text-decoration-color: rgba(217,119,87,0.40);
 }
 
 /* Listening / waveform bar animation */

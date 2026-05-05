@@ -39,6 +39,7 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
   const [chatLoading, setChatLoading] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const chatInputRef = useRef<HTMLInputElement>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [currentModel, setCurrentModel] = useState<string>('gemini-3.1-flash-lite-preview')
@@ -160,6 +161,10 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
     }
   }
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
   // Load persisted default model on mount (each session starts with the default)
   useEffect(() => {
     const loadDefaultModel = async () => {
@@ -244,6 +249,8 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
     const unsubscribe = window.electronAPI.onScreenshotTaken(async () => {
       // Refetch screenshots to update the queue
       const updatedScreenshots = await refetch();
+      // Auto-open chat so the user sees the analysis results
+      setIsChatOpen(true);
       // Show loading in chat
       setChatLoading(true);
       try {
@@ -300,6 +307,25 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
     }
   }
 
+  const handleSolve = async () => {
+    if (screenshots.length === 0) return;
+    setIsChatOpen(true);
+    setChatLoading(true);
+    const paths = screenshots.map(s => s.path);
+    const count = paths.length;
+    setChatMessages(msgs => [...msgs, { role: 'user', text: `✨ Solve ${count} screenshot${count > 1 ? 's' : ''}` }]);
+    setChatMessages(msgs => [...msgs, { role: 'gemini', text: '...' }]);
+    try {
+      await window.electronAPI.streamGeminiChat(
+        `Describe ${count > 1 ? 'these images' : 'this image'} and solve any problem in ${count > 1 ? 'them' : 'it'}.`,
+        paths
+      );
+    } catch (err) {
+      setChatMessages(msgs => [...msgs, { role: 'gemini', text: 'Error: ' + String(err) }]);
+      setChatLoading(false);
+    }
+  }
+
   const handleModelChange = (modelId: string) => {
     setCurrentModel(modelId)
     window.electronAPI.setModel(modelId).catch(console.error);
@@ -339,6 +365,7 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
               onSettingsToggle={handleSettingsToggle}
               onCodeHint={handleCodeHint}
               onBrainstorm={handleBrainstorm}
+              onSolve={handleSolve}
             />
           </div>
           {/* Conditional Settings Interface */}
@@ -440,6 +467,7 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
                     </div>
                   </div>
                 )}
+                <div ref={chatEndRef} />
               </div>
               <form
                 className="flex gap-2 items-center glass-content"

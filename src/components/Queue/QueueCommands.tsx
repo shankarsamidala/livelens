@@ -9,6 +9,7 @@ interface QueueCommandsProps {
   onSettingsToggle: () => void
   onCodeHint?: () => void
   onBrainstorm?: () => void
+  onSolve?: () => void
 }
 
 interface Transcript {
@@ -23,7 +24,8 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
   onChatToggle,
   onSettingsToggle,
   onCodeHint,
-  onBrainstorm
+  onBrainstorm,
+  onSolve
 }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -145,7 +147,14 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
         {/* Solve Command */}
         {screenshots.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-[11px] leading-none">Solve</span>
+            <button
+              className="bg-white/10 hover:bg-white/20 transition-colors rounded-md px-2 py-1 text-[11px] leading-none text-white/70 flex items-center gap-1"
+              onClick={onSolve}
+              type="button"
+              title="Solve the problem in the screenshot (⌘↵)"
+            >
+              ✨ Solve
+            </button>
             <div className="flex gap-1">
               <button className="bg-white/10 hover:bg-white/20 transition-colors rounded-md px-1.5 py-1 text-[11px] leading-none text-white/70">
                 ⌘

@@ -1465,7 +1465,7 @@ Provide only the answer, nothing else.`;
             const parts = msg.text.split(/(```[\s\S]*?```)/g);
             return (
                 <div className={`rounded-lg p-3 my-1 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-violet-600' : 'text-purple-300'}`}>
+                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-[#c4623e]' : 'text-[#e8a882]'}`}>
                         <Code className="w-3.5 h-3.5" />
                         <span>Code Solution</span>
                     </div>
@@ -1524,8 +1524,8 @@ Provide only the answer, nothing else.`;
                                             h1: ({ node, ...props }: any) => <h1 className="text-lg font-bold mb-2 mt-3 overlay-text-strong" {...props} />,
                                             h2: ({ node, ...props }: any) => <h2 className="text-base font-bold mb-2 mt-3 overlay-text-strong" {...props} />,
                                             h3: ({ node, ...props }: any) => <h3 className="text-sm font-bold mb-1 mt-2 overlay-text-primary" {...props} />,
-                                            code: ({ node, ...props }: any) => <code className={`overlay-inline-code-surface rounded px-1 py-0.5 text-xs font-mono whitespace-pre-wrap ${isLightTheme ? 'text-violet-700' : 'text-purple-200'}`} {...props} />,
-                                            blockquote: ({ node, ...props }: any) => <blockquote className={`border-l-2 pl-3 italic my-2 ${isLightTheme ? 'border-violet-500/30 text-slate-600' : 'border-[rgba(0,255,65,0.30)] overlay-text-secondary'}`} {...props} />,
+                                            code: ({ node, ...props }: any) => <code className={`overlay-inline-code-surface rounded px-1 py-0.5 text-xs font-mono whitespace-pre-wrap ${isLightTheme ? 'text-[#c4623e]' : 'text-[#e8a882]'}`} {...props} />,
+                                            blockquote: ({ node, ...props }: any) => <blockquote className={`border-l-2 pl-3 italic my-2 ${isLightTheme ? 'border-[#d97757]/30 text-slate-600' : 'border-[rgba(217,119,87,0.30)] overlay-text-secondary'}`} {...props} />,
                                             a: ({ node, ...props }: any) => <a className={`hover:underline ${isLightTheme ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`} target="_blank" rel="noopener noreferrer" {...props} />,
                                         }}
                                     >
@@ -1564,14 +1564,14 @@ Provide only the answer, nothing else.`;
         if (msg.intent === 'recap') {
             return (
                 <div className={`rounded-lg p-3 my-1 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-indigo-700' : 'text-indigo-300'}`}>
+                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-[#c4623e]' : 'text-[#e8a882]'}`}>
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Recap</span>
                     </div>
                     <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'overlay-text-primary'}`}>
                         <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{
                             p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
-                            strong: ({ node, ...props }: any) => <strong className={`font-bold ${isLightTheme ? 'text-indigo-800' : 'text-indigo-100'}`} {...props} />,
+                            strong: ({ node, ...props }: any) => <strong className={`font-bold ${isLightTheme ? 'text-[#b05530]' : 'text-[#faf9f5]'}`} {...props} />,
                             ul: ({ node, ...props }: any) => <ul className="list-disc ml-4 mb-2" {...props} />,
                             li: ({ node, ...props }: any) => <li className="pl-1" {...props} />,
                         }}>
@@ -2054,7 +2054,7 @@ Provide only the answer, nothing else.`;
                                         <img src={icon} alt="LiveLens" className="w-[18px] h-[18px] object-contain force-black-icon" draggable="false" onDragStart={(e) => e.preventDefault()} />
                                     </button>
                                     <button
-                                        onClick={(e) => {
+                                        onClick={() => {
                                             if (!contentRef.current) return;
                                             const contentRect = contentRef.current.getBoundingClientRect();
                                             window.electronAPI.toggleModelSelector({
@@ -2084,7 +2084,7 @@ Provide only the answer, nothing else.`;
                                 {/* Right: Settings, Mouse, Mic, divider, Hide, Stop */}
                                 <div className="flex items-center gap-0.5 no-drag">
                                     <button
-                                        onClick={(e) => {
+                                        onClick={() => {
                                             if (isSettingsOpen) { window.electronAPI.toggleSettingsWindow(); return; }
                                             if (!contentRef.current) return;
                                             const contentRect = contentRef.current.getBoundingClientRect();

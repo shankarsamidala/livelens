@@ -75,6 +75,11 @@ export interface ElectronAPI {
   getCurrentLlmConfig: () => Promise<{ provider: "ollama" | "gemini"; model: string; isOllama: boolean }>
   getAvailableOllamaModels: () => Promise<string[]>
   switchToOllama: (model?: string, url?: string) => Promise<{ success: boolean; error?: string }>
+  checkOllamaInstalled: () => Promise<{ installed: boolean }>
+  openOllamaDownload: () => Promise<{ success: boolean }>
+  getOllamaSetupStatus: () => Promise<{ installed: boolean; running: boolean; models: string[]; platform: string }>
+  pullOllamaModel: (model: string) => Promise<{ success: boolean; error?: string }>
+  ensureOllamaRunning: () => Promise<{ success: boolean; message?: string }>
   switchToGemini: (apiKey?: string, modelId?: string) => Promise<{ success: boolean; error?: string }>
   testLlmConnection: (provider: 'gemini' | 'groq' | 'openai' | 'claude', apiKey?: string) => Promise<{ success: boolean; error?: string }>
   selectServiceAccount: () => Promise<{ success: boolean; path?: string; cancelled?: boolean; error?: string }>

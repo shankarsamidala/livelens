@@ -81,14 +81,16 @@ interface RowProps {
     onClick?: () => void;
     disabled?: boolean;
     hoverBgOverride?: string;
+    title?: string;
 }
-const Row = ({ isLight, children, onClick, disabled, hoverBgOverride }: RowProps) => {
+const Row = ({ isLight, children, onClick, disabled, hoverBgOverride, title }: RowProps) => {
     const [hovered, setHovered] = useState(false);
     return (
         <div
             onClick={disabled ? undefined : onClick}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            title={title}
             style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -440,13 +442,13 @@ const SettingsPopup = () => {
                 {hasProfile && (
                     <Row isLight={isLight} disabled={!isPremium}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
-                            <User style={Ic({ color: profileActive ? '#83a6ff' : undefined, isLight })} />
+                            <User style={Ic({ color: profileActive ? '#d97757' : undefined, isLight })} />
                             <Label active={profileActive} isLight={isLight}>Profile Mode</Label>
                         </div>
                         <Toggle
                             on={profileActive}
-                            onColor="#83a6ff"
-                            onShadow="0 2px 10px rgba(131,166,255,0.25)"
+                            onColor="#d97757"
+                            onShadow="0 2px 10px rgba(217,119,87,0.30)"
                             isLight={isLight}
                             disabled={!isPremium}
                             onClick={async () => {

@@ -806,6 +806,65 @@ export function initializeIpcHandlers(appState: AppState): void {
     }
   });
 
+  safeHandle("check-ollama-installed", async () => {
+    return new Promise<{ installed: boolean }>((resolve) => {
+      const { exec } = require('child_process');
+      exec('ollama --version', (err: any) => resolve({ installed: !err }));
+    });
+  });
+
+  safeHandle("open-ollama-download", async () => {
+    const url = process.platform === 'win32'
+      ? 'https://ollama.com/download/windows'
+      : 'https://ollama.com/download/mac';
+    shell.openExternal(url);
+    return { success: true };
+  });
+
+  safeHandle("get-ollama-setup-status", async () => {
+    const installed = await new Promise<boolean>((resolve) => {
+      const { exec } = require('child_process');
+      exec('ollama --version', (err: any) => resolve(!err));
+    });
+
+    let running = false;
+    try {
+      const res = await fetch('http://127.0.0.1:11434/api/tags', {
+        signal: AbortSignal.timeout(2000),
+      });
+      running = res.ok;
+    } catch { }
+
+    let models: string[] = [];
+    if (running) {
+      try {
+        const res = await fetch('http://127.0.0.1:11434/api/tags');
+        const data = await res.json();
+        models = (data.models || []).map((m: any) => m.name as string);
+      } catch { }
+    }
+
+    return { installed, running, models, platform: process.platform };
+  });
+
+  safeHandle("pull-ollama-model", async (_event, model: string) => {
+    try {
+      const { OllamaBootstrap } = require('./rag/OllamaBootstrap');
+      const bootstrap = new OllamaBootstrap();
+      const windows = BrowserWindow.getAllWindows();
+      const broadcast = (channel: string, data?: any) => {
+        windows.forEach(win => { if (!win.isDestroyed()) win.webContents.send(channel, data); });
+      };
+      await bootstrap.pullModel(model, (status: string, percent: number) => {
+        broadcast('ollama:pull-progress', { status, percent });
+      });
+      broadcast('ollama:pull-complete');
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
   safeHandle("switch-to-gemini", async (_, apiKey?: string, modelId?: string) => {
     try {
       const llmHelper = appState.processingHelper.getLLMHelper();
