@@ -3,7 +3,7 @@
  * Configuration for STT providers (Google gRPC, REST, WebSocket)
  */
 
-export type SttProviderId = 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'natively';
+export type SttProviderId = 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'natively' | 'whisper-local';
 
 export interface SttProviderConfig {
     id: SttProviderId;
@@ -117,9 +117,18 @@ export const STT_PROVIDERS: Record<SttProviderId, SttProviderConfig> = {
         id: 'natively',
         name: 'LiveLens Pro (Managed)',
         description: 'All-in-one managed STT via LiveLens API',
-        endpoint: '', 
+        endpoint: '',
         model: '',
         uploadType: 'websocket',
+        authHeader: () => ({}),
+        responseContentPath: '',
+    },
+    'whisper-local': {
+        id: 'whisper-local',
+        name: 'Whisper (Local / Offline)',
+        description: 'On-device transcription — no API key, no internet required',
+        endpoint: '',
+        model: '',
         authHeader: () => ({}),
         responseContentPath: '',
     },

@@ -106,8 +106,13 @@ export interface ElectronAPI {
   onTrialEnded:   (cb: (data: { choice: string }) => void) => () => void
 
   // STT Provider Management
-  setSttProvider: (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively') => Promise<{ success: boolean; error?: string }>
+  setSttProvider: (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local') => Promise<{ success: boolean; error?: string }>
   getSttProvider: () => Promise<string>
+  getWhisperModelSize: () => Promise<'tiny' | 'base' | 'small' | 'medium'>
+  setWhisperModelSize: (size: 'tiny' | 'base' | 'small' | 'medium') => Promise<{ success: boolean; error?: string }>
+  checkWhisperModel: (modelSize: 'tiny' | 'base' | 'small' | 'medium') => Promise<{ downloaded: boolean }>
+  downloadWhisperModel: (modelSize: 'tiny' | 'base' | 'small' | 'medium') => Promise<{ success: boolean; error?: string }>
+  onWhisperDownloadProgress: (callback: (info: { file?: string; progress?: number; loaded?: number; total?: number; done?: boolean; modelSize?: string }) => void) => () => void
   setGroqSttApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
   setOpenAiSttApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
   setDeepgramApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
@@ -212,6 +217,10 @@ export interface ElectronAPI {
   onIntelligenceError: (callback: (data: { error: string, mode: string }) => void) => () => void;
   // Session Management
   onSessionReset: (callback: () => void) => () => void;
+
+  // Analysis Mode (Queue screenshot analysis)
+  setAnalysisMode: (mode: string) => Promise<{ success: boolean }>
+  getAnalysisMode: () => Promise<string>
 
   // Streaming listeners
   streamGeminiChat: (message: string, imagePaths?: string[], context?: string, options?: { skipSystemPrompt?: boolean, ignoreKnowledgeMode?: boolean }) => Promise<void>

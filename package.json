@@ -38,7 +38,8 @@
     ],
     "asarUnpack": [
       "**/*.node",
-      "**/*.dylib"
+      "**/*.dylib",
+      "**/node_modules/@xenova/**"
     ],
     "directories": {
       "output": "release",

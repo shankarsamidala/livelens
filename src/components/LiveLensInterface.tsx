@@ -68,6 +68,30 @@ interface Message {
     };
 }
 
+const CopyBtn: React.FC<{ code: string }> = ({ code }) => {
+    const [copied, setCopied] = React.useState(false);
+    return (
+        <button
+            onClick={() => { navigator.clipboard.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }); }}
+            className="opacity-40 hover:opacity-100 transition-opacity p-0.5 rounded"
+            title="Copy code"
+        >
+            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+        </button>
+    );
+};
+
+const ANALYSIS_MODES = [
+    { id: 'general',       icon: '💬', label: 'General',       description: 'Describe and solve whatever is visible' },
+    { id: 'dsa',           icon: '🧩', label: 'DSA',           description: 'Naive → optimal, code, complexity' },
+    { id: 'system-design', icon: '🏗️', label: 'System Design', description: 'Architecture, capacity, trade-offs' },
+    { id: 'debug',         icon: '🐛', label: 'Debug',         description: 'Find bug, explain it, fix it' },
+    { id: 'behavioral',    icon: '🎯', label: 'Behavioral',    description: 'STAR-method first-person answer' },
+    { id: 'sales',         icon: '💼', label: 'Sales',         description: 'Objections, discovery, closing' },
+    { id: 'data-science',  icon: '📊', label: 'Data Science',  description: 'Analysis, ML approach, Python-first' },
+    { id: 'devops',        icon: '⚙️', label: 'DevOps',        description: 'Infrastructure, CI/CD, containers' },
+] as const;
+
 interface LiveLensInterfaceProps {
     onEndMeeting?: () => void;
     overlayOpacity?: number;
@@ -150,6 +174,13 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         return () => unsub?.();
     }, []);
 
+    // Analysis mode + opacity slider
+    const [analysisMode, setAnalysisModeState] = useState('general');
+    const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
+    const modeDropdownRef = useRef<HTMLDivElement>(null);
+    const [localOpacity, setLocalOpacity] = useState(overlayOpacity ?? 0.9);
+    const [opacityText, setOpacityText] = useState(String(Math.round((overlayOpacity ?? 0.9) * 100)));
+
     // Model Selection State
     const [currentModel, setCurrentModel] = useState<string>('gemini-3-flash-preview');
     // Dynamic Action Button Mode (Recap vs Brainstorm)
@@ -168,11 +199,34 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         return () => { unsubscribe?.(); };
     }, []);
 
+    // Sync local opacity when parent prop changes (e.g. from Settings)
+    useEffect(() => {
+        const v = overlayOpacity ?? OVERLAY_OPACITY_DEFAULT;
+        setLocalOpacity(v);
+        setOpacityText(String(Math.round(v * 100)));
+    }, [overlayOpacity]);
+
+    // Load analysis mode on mount
+    useEffect(() => {
+        window.electronAPI.getAnalysisMode().then(m => { if (m) setAnalysisModeState(m); }).catch(() => {});
+    }, []);
+
+    // Close mode dropdown on outside click
+    useEffect(() => {
+        if (!modeDropdownOpen) return;
+        const handle = (e: MouseEvent) => {
+            if (modeDropdownRef.current && !modeDropdownRef.current.contains(e.target as Node))
+                setModeDropdownOpen(false);
+        };
+        document.addEventListener('mousedown', handle);
+        return () => document.removeEventListener('mousedown', handle);
+    }, [modeDropdownOpen]);
+
     const codeTheme = isLightTheme ? oneLight : vscDarkPlus;
     const codeLineNumberColor = isLightTheme ? 'rgba(15,23,42,0.35)' : 'rgba(255,255,255,0.2)';
     const appearance = useMemo(
-        () => getOverlayAppearance(overlayOpacity, 'dark'),
-        [overlayOpacity]
+        () => getOverlayAppearance(localOpacity, 'dark'),
+        [localOpacity]
     );
     const overlayPanelClass = 'overlay-text-primary';
     const subtleSurfaceClass = 'overlay-subtle-surface';
@@ -198,6 +252,47 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                 .catch((err: any) => console.error("Failed to fetch default model:", err));
         }
     }, []);
+
+    const handleModeSelect = async (modeId: string) => {
+        setAnalysisModeState(modeId);
+        setModeDropdownOpen(false);
+        await window.electronAPI.setAnalysisMode(modeId).catch(() => {});
+    };
+
+    const handleOpacityChange = (value: number) => {
+        setLocalOpacity(value);
+        // Persist for next session — visual effect comes from CSS opacity on the panel directly
+        window.electronAPI.setOverlayOpacity(value).catch(() => {});
+    };
+
+    const handleSolve = async () => {
+        if (attachedContext.length === 0 || isProcessing) return;
+        const currentAttachments = [...attachedContext];
+        setAttachedContext([]);
+        const modeLabel = ANALYSIS_MODES.find(m => m.id === analysisMode)?.label ?? 'General';
+        const now = Date.now();
+        setMessages(prev => [...prev,
+            { id: String(now),     role: 'user',   text: `✨ Solve · ${modeLabel}`, hasScreenshot: true, screenshotPreview: currentAttachments[0]?.preview },
+            { id: String(now + 1), role: 'system', text: '', isStreaming: true }
+        ]);
+        setIsExpanded(true);
+        setIsProcessing(true);
+        requestStartTimeRef.current = Date.now();
+        try {
+            await window.electronAPI.streamGeminiChat(
+                'Analyze and solve the problem in this screenshot.',
+                currentAttachments.map(s => s.path),
+                conversationContext
+            );
+        } catch (err) {
+            setIsProcessing(false);
+            setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.isStreaming) return [...prev.slice(0, -1), { id: String(Date.now()), role: 'system', text: `❌ Error: ${err}` }];
+                return prev;
+            });
+        }
+    };
 
     const handleModelSelect = (modelId: string) => {
         setCurrentModel(modelId);
@@ -1479,10 +1574,11 @@ Provide only the answer, nothing else.`;
                                     return (
                                         <div key={i} className={`my-3 rounded-xl overflow-hidden border shadow-lg ${codeBlockClass}`} style={appearance.codeBlockStyle}>
                                             {/* Minimalist Apple Header */}
-                                            <div className={`px-3 py-1.5 border-b ${codeHeaderClass}`} style={appearance.codeHeaderStyle}>
+                                            <div className={`flex items-center justify-between px-3 py-1.5 border-b ${codeHeaderClass}`} style={appearance.codeHeaderStyle}>
                                                 <span className={`text-[10px] uppercase tracking-widest font-semibold font-mono ${codeHeaderTextClass}`}>
                                                     {lang || 'CODE'}
                                                 </span>
+                                                <CopyBtn code={code} />
                                             </div>
                                             <div className="bg-transparent">
                                                 <SyntaxHighlighter
@@ -1633,10 +1729,11 @@ Provide only the answer, nothing else.`;
                                     return (
                                         <div key={i} className={`my-3 rounded-xl overflow-hidden border shadow-lg ${codeBlockClass}`} style={appearance.codeBlockStyle}>
                                             {/* Minimalist Apple Header */}
-                                            <div className={`px-3 py-1.5 border-b ${codeHeaderClass}`} style={appearance.codeHeaderStyle}>
+                                            <div className={`flex items-center justify-between px-3 py-1.5 border-b ${codeHeaderClass}`} style={appearance.codeHeaderStyle}>
                                                 <span className={`text-[10px] uppercase tracking-widest font-semibold font-mono ${codeHeaderTextClass}`}>
                                                     {lang || 'CODE'}
                                                 </span>
+                                                <CopyBtn code={code} />
                                             </div>
 
                                             <div className="bg-transparent">
@@ -2038,7 +2135,7 @@ Provide only the answer, nothing else.`;
                     >
                         <div
                             className={`relative w-[600px] max-w-full backdrop-blur-2xl border rounded-[20px] overflow-hidden flex flex-col draggable-area overlay-shell-surface ${overlayPanelClass}`}
-                            style={appearance.shellStyle}
+                            style={{ ...appearance.shellStyle, opacity: localOpacity }}
                         >
 
                             {/* ── TOP BAR ───────────────────────────────────────────── */}
@@ -2081,8 +2178,35 @@ Provide only the answer, nothing else.`;
                                     </button>
                                 </div>
 
-                                {/* Right: Settings, Mouse, Mic, divider, Hide, Stop */}
+                                {/* Right: Opacity, Settings, Mouse, Mic, divider, Hide, Stop */}
                                 <div className="flex items-center gap-0.5 no-drag">
+                                    {/* Opacity control — matches model selector style */}
+                                    <div className={`flex items-center gap-1 px-2 py-1 border rounded-lg ${controlSurfaceClass}`} style={appearance.controlStyle} title="Opacity (↑↓ to adjust)">
+                                        <svg className="w-3 h-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                                        </svg>
+                                        <input
+                                            type="number" min={10} max={100} step={1}
+                                            value={opacityText}
+                                            onChange={e => setOpacityText(e.target.value)}
+                                            onBlur={e => {
+                                                const v = Math.min(100, Math.max(10, Number(e.target.value) || 10));
+                                                setOpacityText(String(v));
+                                                handleOpacityChange(v / 100);
+                                            }}
+                                            onKeyDown={e => {
+                                                e.stopPropagation();
+                                                if (e.key === 'Enter') {
+                                                    const v = Math.min(100, Math.max(10, Number((e.target as HTMLInputElement).value) || 10));
+                                                    setOpacityText(String(v));
+                                                    handleOpacityChange(v / 100);
+                                                    (e.target as HTMLInputElement).blur();
+                                                }
+                                            }}
+                                            className="w-7 text-center text-[11px] bg-transparent border-0 outline-none overlay-text-interactive tabular-nums [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
+                                    </div>
+                                    <div className="w-px h-3.5 mx-0.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
                                         onClick={() => {
                                             if (isSettingsOpen) { window.electronAPI.toggleSettingsWindow(); return; }
@@ -2136,7 +2260,7 @@ Provide only the answer, nothing else.`;
                             </div>
 
                             {/* ── QUICK ACTIONS ROW ─────────────────────────────────── */}
-                            <div className="flex flex-nowrap items-center gap-1.5 px-3 py-2 overflow-x-auto no-drag scrollbar-hide shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="flex flex-nowrap items-center gap-1.5 px-3 py-2 overflow-x-auto no-drag scrollbar-hide shrink-0" style={{ borderBottom: 'none' }}>
                                 <button onClick={handleWhatToSay} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
                                     <Pencil className="w-3 h-3 opacity-70" /> What to answer?
                                 </button>
@@ -2157,8 +2281,6 @@ Provide only the answer, nothing else.`;
                                     {isManualRecording ? (<><div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> Stop</>) : (<><Zap className="w-3 h-3 opacity-70" /> Answer</>)}
                                 </button>
                             </div>
-
-
 
                             {/* System Audio Permission Warning Banner */}
                             {systemAudioWarning && (
@@ -2335,38 +2457,67 @@ Provide only the answer, nothing else.`;
                                 {/* Attached Screenshots Preview */}
                                 {attachedContext.length > 0 && (
                                     <div className={`mb-2 rounded-lg p-2 transition-all duration-200 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <span className="text-[11px] font-medium overlay-text-primary">
-                                                {attachedContext.length} screenshot{attachedContext.length > 1 ? 's' : ''} attached
+                                        {/* Header: count + mode selector + solve + clear */}
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                            <span className="text-[11px] font-medium overlay-text-primary flex-1">
+                                                {attachedContext.length} screenshot{attachedContext.length > 1 ? 's' : ''}
                                             </span>
-                                            <button
-                                                onClick={() => setAttachedContext([])}
+                                            {/* Mode dropdown */}
+                                            <div ref={modeDropdownRef} className="relative">
+                                                {modeDropdownOpen && (
+                                                    <div className={`absolute bottom-full right-0 mb-1.5 w-52 rounded-xl border overflow-hidden z-50 shadow-2xl overlay-shell-surface`} style={appearance.shellStyle}>
+                                                        {ANALYSIS_MODES.map(m => (
+                                                            <button key={m.id} onClick={() => handleModeSelect(m.id)}
+                                                                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors overlay-text-primary overlay-icon-surface-hover ${analysisMode === m.id ? 'overlay-subtle-surface' : ''}`}
+                                                                style={analysisMode === m.id ? appearance.subtleStyle : undefined}>
+                                                                <span className="text-xs shrink-0">{m.icon}</span>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-[11px] font-medium overlay-text-primary">{m.label}</div>
+                                                                    <div className="text-[9px] overlay-text-muted truncate">{m.description}</div>
+                                                                </div>
+                                                                {analysisMode === m.id && (
+                                                                    <svg className="w-2.5 h-2.5 overlay-text-interactive shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                                                                    </svg>
+                                                                )}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <button onClick={() => setModeDropdownOpen(o => !o)}
+                                                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] border transition-colors ${controlSurfaceClass}`}
+                                                    style={appearance.controlStyle}>
+                                                    <span>{ANALYSIS_MODES.find(m => m.id === analysisMode)?.icon ?? '💬'}</span>
+                                                    <span>{ANALYSIS_MODES.find(m => m.id === analysisMode)?.label ?? 'General'}</span>
+                                                    <ChevronDown className={`w-2.5 h-2.5 transition-transform opacity-50 ${modeDropdownOpen ? 'rotate-180' : ''}`} />
+                                                </button>
+                                            </div>
+                                            {/* Solve */}
+                                            <button onClick={handleSolve} disabled={isProcessing}
+                                                className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#007AFF]/90 hover:bg-[#007AFF] text-white text-[10px] font-medium transition-colors disabled:opacity-50 shrink-0">
+                                                <Zap className="w-2.5 h-2.5" /> Solve
+                                            </button>
+                                            {/* Clear */}
+                                            <button onClick={() => setAttachedContext([])}
                                                 className="p-1 rounded-full transition-colors overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
-                                                title="Remove all"
-                                                style={appearance.iconStyle}
-                                            >
-                                                <X className="w-3.5 h-3.5" />
+                                                title="Remove all" style={appearance.iconStyle}>
+                                                <X className="w-3 h-3" />
                                             </button>
                                         </div>
+                                        {/* Thumbnails */}
                                         <div className="flex gap-1.5 overflow-x-auto max-w-full pb-1">
                                             {attachedContext.map((ctx, idx) => (
                                                 <div key={ctx.path} className="relative group/thumb flex-shrink-0">
-                                                    <img
-                                                        src={ctx.preview}
-                                                        alt={`Screenshot ${idx + 1}`}
-                                                        className={`h-10 w-auto rounded border ${isLightTheme ? 'border-black/15' : 'border-white/20'}`}
-                                                    />
-                                                    <button
-                                                        onClick={() => setAttachedContext(prev => prev.filter((_, i) => i !== idx))}
+                                                    <img src={ctx.preview} alt={`Screenshot ${idx + 1}`}
+                                                        className={`h-10 w-auto rounded border ${isLightTheme ? 'border-black/15' : 'border-white/20'}`}/>
+                                                    <button onClick={() => setAttachedContext(prev => prev.filter((_, i) => i !== idx))}
                                                         className="absolute -top-1 -right-1 w-4 h-4 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
-                                                        title="Remove"
-                                                    >
-                                                        <X className="w-2.5 h-2.5 text-white" />
+                                                        title="Remove">
+                                                        <X className="w-2.5 h-2.5 text-white"/>
                                                     </button>
                                                 </div>
                                             ))}
                                         </div>
-                                        <span className="text-[10px] overlay-text-muted">Ask a question or click Answer</span>
                                     </div>
                                 )}
 

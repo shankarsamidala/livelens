@@ -18,6 +18,17 @@ import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+const ANALYSIS_MODES = [
+  { id: 'general',       icon: '💬', label: 'General',       description: 'Describe and solve whatever is visible' },
+  { id: 'dsa',           icon: '🧩', label: 'DSA',           description: 'Naive → optimal, code, complexity' },
+  { id: 'system-design', icon: '🏗️', label: 'System Design', description: 'Architecture, capacity, trade-offs' },
+  { id: 'debug',         icon: '🐛', label: 'Debug',         description: 'Find bug, explain it, fix it' },
+  { id: 'behavioral',    icon: '🎯', label: 'Behavioral',    description: 'STAR-method first-person answer' },
+  { id: 'sales',         icon: '💼', label: 'Sales',         description: 'Objections, discovery, closing' },
+  { id: 'data-science',  icon: '📊', label: 'Data Science',  description: 'Analysis, ML approach, Python-first' },
+  { id: 'devops',        icon: '⚙️', label: 'DevOps',        description: 'Infrastructure, CI/CD, containers' },
+] as const;
+
 interface QueueProps {
   setView: React.Dispatch<React.SetStateAction<"queue" | "solutions" | "debug">>
 }
@@ -43,6 +54,10 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [currentModel, setCurrentModel] = useState<string>('gemini-3.1-flash-lite-preview')
+
+  const [analysisMode, setAnalysisModeState] = useState('general')
+  const [modeDropdownOpen, setModeDropdownOpen] = useState(false)
+  const modeDropdownRef = useRef<HTMLDivElement>(null)
 
   const barRef = useRef<HTMLDivElement>(null)
 
@@ -183,6 +198,31 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
     };
     loadDefaultModel();
   }, []);
+
+  // Load persisted analysis mode on mount
+  useEffect(() => {
+    window.electronAPI.getAnalysisMode().then(mode => {
+      if (mode) setAnalysisModeState(mode);
+    }).catch(() => {});
+  }, []);
+
+  // Close mode dropdown on outside click
+  useEffect(() => {
+    if (!modeDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (modeDropdownRef.current && !modeDropdownRef.current.contains(e.target as Node)) {
+        setModeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [modeDropdownOpen]);
+
+  const handleModeSelect = async (modeId: string) => {
+    setAnalysisModeState(modeId);
+    setModeDropdownOpen(false);
+    await window.electronAPI.setAnalysisMode(modeId).catch(() => {});
+  };
 
   // Listen for default model changes from Settings
   useEffect(() => {
@@ -496,6 +536,42 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
                   </svg>
                 </button>
               </form>
+
+              {/* Analysis Mode Dropdown */}
+              <div ref={modeDropdownRef} className="relative mt-2">
+                {modeDropdownOpen && (
+                  <div className="absolute bottom-full left-0 mb-1 w-56 rounded-xl bg-white/90 backdrop-blur-md border border-gray-200/60 shadow-xl overflow-hidden z-50">
+                    {ANALYSIS_MODES.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => handleModeSelect(m.id)}
+                        className={`w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-gray-100/80 transition-colors ${analysisMode === m.id ? 'bg-gray-100/60' : ''}`}
+                      >
+                        <span className="text-sm mt-0.5">{m.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium text-gray-800">{m.label}</div>
+                          <div className="text-[10px] text-gray-500 truncate">{m.description}</div>
+                        </div>
+                        {analysisMode === m.id && (
+                          <svg className="w-3 h-3 text-gray-600 mt-1 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setModeDropdownOpen(o => !o)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 text-gray-700 text-xs transition-all duration-150 backdrop-blur-sm"
+                >
+                  <span>{ANALYSIS_MODES.find(m => m.id === analysisMode)?.icon ?? '💬'}</span>
+                  <span className="font-medium">{ANALYSIS_MODES.find(m => m.id === analysisMode)?.label ?? 'General'}</span>
+                  <svg className={`w-3 h-3 text-gray-500 transition-transform ${modeDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
         </div>

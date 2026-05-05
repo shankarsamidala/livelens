@@ -164,6 +164,7 @@ import { SonioxStreamingSTT } from "./audio/SonioxStreamingSTT"
 import { ElevenLabsStreamingSTT } from "./audio/ElevenLabsStreamingSTT"
 import { OpenAIStreamingSTT } from "./audio/OpenAIStreamingSTT"
 import { LiveLensProSTT } from "./audio/LiveLensProSTT"
+import { WhisperLocalSTT } from "./audio/WhisperLocalSTT"
 import { ThemeManager } from "./ThemeManager"
 import { RAGManager } from "./rag/RAGManager"
 import { DatabaseManager } from "./db/DatabaseManager"
@@ -913,6 +914,13 @@ export class AppState {
         console.warn(`[Main] No API key for ${sttProvider} STT, falling back to GoogleSTT`);
         stt = new GoogleSTT(speaker);
       }
+    } else if (sttProvider === 'whisper-local') {
+      const modelSize = CredentialsManager.getInstance().getWhisperModelSize();
+      console.log(`[Main] Using WhisperLocalSTT (model: ${modelSize}) for ${speaker}`);
+      const whisperStt = new WhisperLocalSTT(modelSize);
+      // start() loads/downloads the model; fire-and-forget — write() buffers until ready
+      whisperStt.start().catch(err => console.error('[Main] WhisperLocalSTT start error:', err));
+      stt = whisperStt as unknown as STTProvider;
     } else {
       stt = new GoogleSTT(speaker);
     }

@@ -509,13 +509,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                         </svg>
                     </NavBtn>
 
-                    {/* Queue */}
-                    <NavBtn label="Queue" active={activeView === 'queue'} onClick={() => setActiveView('queue')}>
-                        <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                        </svg>
-                    </NavBtn>
 
                     {/* Solutions */}
                     <NavBtn label="Solutions" active={activeView === 'solutions'} onClick={() => setActiveView('solutions')}>
@@ -549,16 +542,7 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                 )}
 
                 <AnimatePresence mode="wait">
-                    {activeView === 'settings' ? null : activeView === 'queue' ? (
-                        <motion.div key="queue" className="flex-1 flex flex-col items-center justify-center gap-3"
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                            <svg viewBox="0 0 24 24" width={28} height={28} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e2e5ed]/20">
-                                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                            </svg>
-                            <p className="text-[12px] text-[#e2e5ed]/25">Queue — coming soon</p>
-                        </motion.div>
-                    ) : activeView === 'solutions' ? (
+                    {activeView === 'settings' ? null : activeView === 'solutions' ? (
                         <motion.div key="solutions" className="flex-1 flex flex-col items-center justify-center gap-3"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
                             <svg viewBox="0 0 24 24" width={28} height={28} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e2e5ed]/20">

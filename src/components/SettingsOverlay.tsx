@@ -853,7 +853,10 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
     const [useExperimentalSck, setUseExperimentalSck] = useState(false);
 
     // STT Provider settings
-    const [sttProvider, setSttProvider] = useState<'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively'>('none');
+    const [sttProvider, setSttProvider] = useState<'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local'>('none');
+    const [whisperModelSize, setWhisperModelSize] = useState<'tiny' | 'base' | 'small' | 'medium'>('small');
+    const [whisperDownload, setWhisperDownload] = useState<{ active: boolean; file: string; progress: number } | null>(null);
+    const [whisperDownloaded, setWhisperDownloaded] = useState(false);
     const [groqSttModel, setGroqSttModel] = useState('whisper-large-v3-turbo');
     const [sttGroqKey, setSttGroqKey] = useState('');
     const [sttOpenaiKey, setSttOpenaiKey] = useState('');
@@ -912,6 +915,11 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                     setHasStoredSonioxKey(creds.hasSonioxKey || false);
                     setHasStoredTavilyKey(creds.hasTavilyKey || false);
                     setHasLiveLensKey(creds.hasLiveLensKey || false);
+                    // Whisper local
+                    const wSize = (await window.electronAPI?.getWhisperModelSize?.()) ?? 'small';
+                    setWhisperModelSize(wSize as any);
+                    const wCheck = await window.electronAPI?.checkWhisperModel?.(wSize as any);
+                    setWhisperDownloaded(wCheck?.downloaded ?? false);
                     // Populate key fields so switching providers doesn't make saved keys appear gone
                     if (creds.sttGroqKey) setSttGroqKey(creds.sttGroqKey);
                     if (creds.sttOpenaiKey) setSttOpenaiKey(creds.sttOpenaiKey);
@@ -954,7 +962,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
         return () => unsubscribe();
     }, []); // mount-once: isOpen is checked inside the callback
 
-    const handleSttProviderChange = async (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively') => {
+    const handleSttProviderChange = async (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local') => {
         setSttProvider(provider);
         setIsSttDropdownOpen(false);
         setSttTestStatus('idle');
@@ -1093,7 +1101,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
     };
 
     const handleTestSttConnection = async () => {
-        if (sttProvider === 'none' || sttProvider === 'google' || sttProvider === 'natively') return;
+        if (sttProvider === 'none' || sttProvider === 'google' || sttProvider === 'natively' || sttProvider === 'whisper-local') return;
         const keyMap: Record<string, string> = {
             groq: sttGroqKey, openai: sttOpenaiKey, deepgram: sttDeepgramKey,
             elevenlabs: sttElevenLabsKey, azure: sttAzureKey, ibmwatson: sttIbmKey,
@@ -2941,6 +2949,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                             { id: 'azure', label: 'Azure Speech', badge: hasStoredAzureKey ? 'Saved' : null, desc: 'Microsoft Cognitive Services STT', color: 'cyan', icon: <Mic size={14} /> },
                                                             { id: 'ibmwatson', label: 'IBM Watson', badge: hasStoredIbmWatsonKey ? 'Saved' : null, desc: 'IBM Watson cloud STT service', color: 'indigo', icon: <Mic size={14} /> },
                                                             { id: 'soniox', label: 'Soniox', badge: hasStoredSonioxKey ? 'Saved' : null, recommended: true, desc: '60+ languages, multilingual, domain context', color: 'cyan', icon: <Mic size={14} /> },
+                                                            { id: 'whisper-local', label: 'Whisper Local', badge: null, desc: 'On-device · no API key · offline', color: 'green', icon: <Mic size={14} /> },
                                                         ]}
                                                     />
                                                 </div>
@@ -2980,6 +2989,78 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                                 </div>
                                             )}
 
+                                            {/* Whisper Local Model Selector */}
+                                            {sttProvider === 'whisper-local' && (
+                                                <div className="bg-bg-card rounded-xl border border-border-subtle p-4 space-y-3">
+                                                    <label className="text-xs font-medium text-text-secondary block">Model Size</label>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {([
+                                                            { id: 'tiny',   label: 'Tiny',   desc: '75 MB · fastest' },
+                                                            { id: 'base',   label: 'Base',   desc: '142 MB · fast' },
+                                                            { id: 'small',  label: 'Small',  desc: '466 MB · recommended' },
+                                                            { id: 'medium', label: 'Medium', desc: '1.5 GB · best accuracy' },
+                                                        ] as const).map((m) => (
+                                                            <button
+                                                                key={m.id}
+                                                                onClick={async () => {
+                                                                    setWhisperModelSize(m.id);
+                                                                    await window.electronAPI?.setWhisperModelSize?.(m.id);
+                                                                    const check = await window.electronAPI?.checkWhisperModel?.(m.id);
+                                                                    setWhisperDownloaded(check?.downloaded ?? false);
+                                                                }}
+                                                                className={`rounded-lg px-3 py-2.5 text-left transition-all duration-200 ease-in-out active:scale-[0.98] ${whisperModelSize === m.id ? 'bg-accent-primary text-white shadow-md' : 'bg-bg-input hover:bg-bg-elevated text-text-primary'}`}
+                                                            >
+                                                                <span className="text-sm font-medium block">{m.label}</span>
+                                                                <span className={`text-[11px] transition-colors ${whisperModelSize === m.id ? 'text-white/70' : 'text-text-tertiary'}`}>{m.desc}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Download button */}
+                                                    <div className="pt-1">
+                                                        {whisperDownload?.active ? (
+                                                            <div className="space-y-1.5">
+                                                                <div className="flex justify-between text-[11px] text-text-secondary">
+                                                                    <span className="truncate max-w-[200px]">{whisperDownload.file || 'Downloading…'}</span>
+                                                                    <span>{whisperDownload.progress}%</span>
+                                                                </div>
+                                                                <div className="w-full bg-bg-input rounded-full h-1.5">
+                                                                    <div className="bg-accent-primary h-1.5 rounded-full transition-all" style={{ width: `${whisperDownload.progress}%` }} />
+                                                                </div>
+                                                            </div>
+                                                        ) : whisperDownloaded ? (
+                                                            <p className="text-[11px] text-accent-primary font-medium">✓ Model ready</p>
+                                                        ) : (
+                                                            <button
+                                                                onClick={async () => {
+                                                                    setWhisperDownload({ active: true, file: '', progress: 0 });
+                                                                    const unsub = window.electronAPI?.onWhisperDownloadProgress?.((info) => {
+                                                                        if (info.done) {
+                                                                            setWhisperDownload(null);
+                                                                            setWhisperDownloaded(true);
+                                                                            unsub?.();
+                                                                        } else {
+                                                                            setWhisperDownload({ active: true, file: info.file || '', progress: info.progress || 0 });
+                                                                        }
+                                                                    });
+                                                                    const result = await window.electronAPI?.downloadWhisperModel?.(whisperModelSize);
+                                                                    if (!result?.success) {
+                                                                        setWhisperDownload(null);
+                                                                        unsub?.();
+                                                                    }
+                                                                }}
+                                                                className="w-full py-2 rounded-lg bg-accent-primary hover:bg-accent-secondary text-white text-xs font-medium transition-colors"
+                                                            >
+                                                                Download {whisperModelSize} model
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-text-tertiary">
+                                                        Model files are stored in your app data folder. First transcription loads the model (~5s for small).
+                                                    </p>
+                                                </div>
+                                            )}
+
                                             {/* Google Cloud Service Account */}
                                             {sttProvider === 'google' && (
                                                 <div className="bg-bg-card rounded-xl border border-border-subtle p-4">
@@ -3010,7 +3091,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                             )}
 
                                             {/* API Key Input (non-Google providers) */}
-                                            {sttProvider !== 'google' && (
+                                            {sttProvider !== 'google' && sttProvider !== 'whisper-local' && (
                                                 <div className="bg-bg-card rounded-xl border border-border-subtle p-4 space-y-3">
                                                     <label className="text-xs font-medium text-text-secondary block">
                                                         {sttProvider === 'groq' ? 'Groq' : sttProvider === 'openai' ? 'OpenAI STT' : sttProvider === 'elevenlabs' ? 'ElevenLabs' : sttProvider === 'azure' ? 'Azure' : sttProvider === 'ibmwatson' ? 'IBM Watson' : sttProvider === 'soniox' ? 'Soniox' : 'Deepgram'} API Key

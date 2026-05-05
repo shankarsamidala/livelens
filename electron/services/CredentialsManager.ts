@@ -33,7 +33,8 @@ export interface StoredCredentials {
     defaultModel?: string;
     nativelyApiKey?: string;
     // STT Provider settings
-    sttProvider?: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively';
+    sttProvider?: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local';
+    whisperModelSize?: 'tiny' | 'base' | 'small' | 'medium';
     groqSttApiKey?: string;
     groqSttModel?: string;
     openAiSttApiKey?: string;
@@ -112,7 +113,17 @@ export class CredentialsManager {
         return this.credentials.customProviders || [];
     }
 
-    public getSttProvider(): 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' {
+    public getWhisperModelSize(): 'tiny' | 'base' | 'small' | 'medium' {
+        return this.credentials.whisperModelSize || 'small';
+    }
+
+    public setWhisperModelSize(size: 'tiny' | 'base' | 'small' | 'medium'): void {
+        this.credentials.whisperModelSize = size;
+        this.saveCredentials();
+        console.log(`[CredentialsManager] Whisper model size set to: ${size}`);
+    }
+
+    public getSttProvider(): 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local' {
         const provider = this.credentials.sttProvider || 'none';
         // Self-heal: if provider is 'none' but a LiveLens key exists, the user is in a
         // broken state (key cleared then re-entered via a path that skipped auto-promote,
@@ -223,7 +234,7 @@ export class CredentialsManager {
         console.log('[CredentialsManager] Google Service Account path updated');
     }
 
-    public setSttProvider(provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively'): void {
+    public setSttProvider(provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local'): void {
         this.credentials.sttProvider = provider;
         this.saveCredentials();
         console.log(`[CredentialsManager] STT Provider set to: ${provider}`);

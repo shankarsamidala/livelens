@@ -248,6 +248,10 @@ export function initializeIpcHandlers(appState: AppState): void {
     try {
       const screenshotPath = await appState.takeScreenshot()
       const preview = await appState.getImagePreview(screenshotPath)
+      // Broadcast to all windows so the Queue window can react (refetch + auto-open chat)
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (!win.isDestroyed()) win.webContents.send("screenshot-taken", { path: screenshotPath, preview });
+      });
       return { path: screenshotPath, preview }
     } catch (error) {
       // console.error("Error taking screenshot:", error)
@@ -259,6 +263,9 @@ export function initializeIpcHandlers(appState: AppState): void {
     try {
       const screenshotPath = await appState.takeSelectiveScreenshot()
       const preview = await appState.getImagePreview(screenshotPath)
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (!win.isDestroyed()) win.webContents.send("screenshot-taken", { path: screenshotPath, preview });
+      });
       return { path: screenshotPath, preview }
     } catch (error) {
       // EC-04 fix: cast unknown error to Error before accessing .message
@@ -428,6 +435,17 @@ export function initializeIpcHandlers(appState: AppState): void {
     }
   });
 
+  // ── Analysis Mode (screenshot queue) ───────────────────────────────────────
+  // Session-only state: no DB needed. Mode resets to 'general' on app restart.
+  let _analysisMode = 'general';
+
+  safeHandle("set-analysis-mode", (_event, mode: string) => {
+    _analysisMode = mode;
+    return { success: true };
+  });
+
+  safeHandle("get-analysis-mode", () => _analysisMode);
+
   // Streaming IPC Handler
   // SECURITY FIX (P0-1): Monotonic stream ID prevents interleaved tokens from concurrent stream requests.
   // Each new invocation increments the ID; any in-flight iteration bails as soon as it detects
@@ -469,8 +487,19 @@ export function initializeIpcHandlers(appState: AppState): void {
       }
 
       try {
+        // When the call carries image paths, inject the analysis mode system prompt
+        // so the vision LLM knows exactly how to interpret the screenshots.
+        let systemPromptOverride: string | undefined;
+        if (options?.skipSystemPrompt) {
+          systemPromptOverride = "";
+        } else if (imagePaths && imagePaths.length > 0 && _analysisMode !== 'general') {
+          const { getAnalysisModePrompt } = require('./llm/AnalysisModes');
+          systemPromptOverride = getAnalysisModePrompt(_analysisMode);
+          console.log(`[IPC] gemini-chat-stream: injecting analysis mode prompt for '${_analysisMode}'`);
+        }
+
         // USE streamChat which handles routing
-        const stream = llmHelper.streamChat(message, imagePaths, context, options?.skipSystemPrompt ? "" : undefined, options?.ignoreKnowledgeMode);
+        const stream = llmHelper.streamChat(message, imagePaths, context, systemPromptOverride, options?.ignoreKnowledgeMode);
 
         for await (const token of stream) {
           // Bail if a newer stream has taken over (user triggered a new request)
@@ -1561,7 +1590,7 @@ export function initializeIpcHandlers(appState: AppState): void {
   // STT Provider Management Handlers
   // ==========================================
 
-  safeHandle("set-stt-provider", async (_, provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively') => {
+  safeHandle("set-stt-provider", async (_, provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local') => {
     try {
       const { CredentialsManager } = require('./services/CredentialsManager');
       CredentialsManager.getInstance().setSttProvider(provider);
@@ -1587,6 +1616,44 @@ export function initializeIpcHandlers(appState: AppState): void {
       return CredentialsManager.getInstance().getSttProvider();
     } catch (error: any) {
       return 'none';
+    }
+  });
+
+  safeHandle("check-whisper-model", async (_, modelSize: 'tiny' | 'base' | 'small' | 'medium') => {
+    const { WhisperLocalSTT } = require('./audio/WhisperLocalSTT');
+    return { downloaded: WhisperLocalSTT.isModelDownloaded(modelSize) };
+  });
+
+  safeHandle("get-whisper-model-size", async () => {
+    const { CredentialsManager } = require('./services/CredentialsManager');
+    return CredentialsManager.getInstance().getWhisperModelSize();
+  });
+
+  safeHandle("set-whisper-model-size", async (_, size: 'tiny' | 'base' | 'small' | 'medium') => {
+    try {
+      const { CredentialsManager } = require('./services/CredentialsManager');
+      CredentialsManager.getInstance().setWhisperModelSize(size);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  safeHandle("download-whisper-model", async (_, modelSize: 'tiny' | 'base' | 'small' | 'medium') => {
+    try {
+      const { WhisperLocalSTT } = require('./audio/WhisperLocalSTT');
+      await WhisperLocalSTT.downloadModel(modelSize, (info: any) => {
+        BrowserWindow.getAllWindows().forEach(win => {
+          if (!win.isDestroyed()) win.webContents.send('whisper-download-progress', info);
+        });
+      });
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (!win.isDestroyed()) win.webContents.send('whisper-download-progress', { done: true, modelSize });
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('[IPC] download-whisper-model error:', error);
+      return { success: false, error: error.message };
     }
   });
 

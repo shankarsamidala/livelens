@@ -72,8 +72,13 @@ interface ElectronAPI {
   onModesActiveCleared: (cb: () => void) => () => void
 
   // STT Provider Management
-  setSttProvider: (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively') => Promise<{ success: boolean; error?: string }>
+  setSttProvider: (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local') => Promise<{ success: boolean; error?: string }>
   getSttProvider: () => Promise<string>
+  getWhisperModelSize: () => Promise<'tiny' | 'base' | 'small' | 'medium'>
+  setWhisperModelSize: (size: 'tiny' | 'base' | 'small' | 'medium') => Promise<{ success: boolean; error?: string }>
+  checkWhisperModel: (modelSize: 'tiny' | 'base' | 'small' | 'medium') => Promise<{ downloaded: boolean }>
+  downloadWhisperModel: (modelSize: 'tiny' | 'base' | 'small' | 'medium') => Promise<{ success: boolean; error?: string }>
+  onWhisperDownloadProgress: (callback: (info: { file?: string; progress?: number; loaded?: number; total?: number; done?: boolean; modelSize?: string }) => void) => () => void
   setGroqSttApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
   setOpenAiSttApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
   setDeepgramApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>
@@ -156,6 +161,10 @@ interface ElectronAPI {
   // Groq Fast Text Mode
   getGroqFastTextMode: () => Promise<{ enabled: boolean }>
   setGroqFastTextMode: (enabled: boolean) => Promise<{ success: boolean; error?: string }>
+
+  // Analysis Mode (Queue screenshot analysis)
+  setAnalysisMode: (mode: string) => Promise<{ success: boolean }>
+  getAnalysisMode: () => Promise<string>
 
   // Demo
   seedDemo: () => Promise<{ success: boolean }>
@@ -578,8 +587,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 
   // STT Provider Management
-  setSttProvider: (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively') => ipcRenderer.invoke("set-stt-provider", provider),
+  setSttProvider: (provider: 'none' | 'google' | 'groq' | 'openai' | 'deepgram' | 'elevenlabs' | 'azure' | 'ibmwatson' | 'soniox' | 'natively' | 'whisper-local') => ipcRenderer.invoke("set-stt-provider", provider),
   getSttProvider: () => ipcRenderer.invoke("get-stt-provider"),
+  getWhisperModelSize: () => ipcRenderer.invoke("get-whisper-model-size"),
+  setWhisperModelSize: (size: 'tiny' | 'base' | 'small' | 'medium') => ipcRenderer.invoke("set-whisper-model-size", size),
+  checkWhisperModel: (modelSize: 'tiny' | 'base' | 'small' | 'medium') => ipcRenderer.invoke("check-whisper-model", modelSize),
+  downloadWhisperModel: (modelSize: 'tiny' | 'base' | 'small' | 'medium') => ipcRenderer.invoke("download-whisper-model", modelSize),
+  onWhisperDownloadProgress: (callback: (info: any) => void) => {
+    const subscription = (_: any, info: any) => callback(info);
+    ipcRenderer.on("whisper-download-progress", subscription);
+    return () => ipcRenderer.removeListener("whisper-download-progress", subscription);
+  },
   setGroqSttApiKey: (apiKey: string) => ipcRenderer.invoke("set-groq-stt-api-key", apiKey),
   setOpenAiSttApiKey: (apiKey: string) => ipcRenderer.invoke("set-openai-stt-api-key", apiKey),
   setDeepgramApiKey: (apiKey: string) => ipcRenderer.invoke("set-deepgram-api-key", apiKey),
@@ -887,6 +905,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Groq Fast Text Mode
   getGroqFastTextMode: () => ipcRenderer.invoke('get-groq-fast-text-mode'),
   setGroqFastTextMode: (enabled: boolean) => ipcRenderer.invoke('set-groq-fast-text-mode', enabled),
+
+  // Analysis Mode (Queue screenshot analysis)
+  setAnalysisMode: (mode: string) => ipcRenderer.invoke('set-analysis-mode', mode),
+  getAnalysisMode: () => ipcRenderer.invoke('get-analysis-mode'),
 
   // Demo
   seedDemo: () => ipcRenderer.invoke('seed-demo'),
