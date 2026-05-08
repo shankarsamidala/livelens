@@ -42,12 +42,12 @@ const ACC = {
     cardGlow:    '0 0 32px rgba(139,92,246,0.09)',
     hoverBorder: 'rgba(139,92,246,0.52)',
     hoverGlow:   '0 0 52px rgba(139,92,246,0.22), 0 16px 40px rgba(0,0,0,0.55)',
-    btnBg:       'linear-gradient(135deg,#8B5CF6,#7C3AED,#6D28D9)',
-    btnShadow:   '0 0 0 1px rgba(109,40,217,0.4),0 6px 22px rgba(139,92,246,0.32),inset 0 1px 0 rgba(255,255,255,0.14)',
+    btnBg:       'linear-gradient(135deg,#d97757,#c4623e,#b05530)',
+    btnShadow:   '0 0 0 1px rgba(180,85,48,0.4),0 6px 22px rgba(217,119,87,0.32),inset 0 1px 0 rgba(255,255,255,0.14)',
     btnColor:    '#fff',
-    bandBg:      'rgba(139,92,246,0.2)',
-    bandText:    'rgba(196,181,253,0.92)',
-    dot:         '#A78BFA',
+    bandBg:      'rgba(217,119,87,0.2)',
+    bandText:    'rgba(253,210,196,0.92)',
+    dot:         '#d97757',
   },
   indigo: {
     iconColor:   '#818CF8',
@@ -56,12 +56,12 @@ const ACC = {
     cardGlow:    'none',
     hoverBorder: 'rgba(99,102,241,0.42)',
     hoverGlow:   '0 0 40px rgba(99,102,241,0.15), 0 12px 32px rgba(0,0,0,0.5)',
-    btnBg:       'rgba(99,102,241,0.75)',
-    btnShadow:   'inset 0 1px 0 rgba(255,255,255,0.1)',
+    btnBg:       'linear-gradient(135deg,#d97757,#c4623e)',
+    btnShadow:   '0 0 0 1px rgba(180,85,48,0.3),inset 0 1px 0 rgba(255,255,255,0.1)',
     btnColor:    '#fff',
     bandBg:      '',
     bandText:    '',
-    dot:         '#818CF8',
+    dot:         '#d97757',
   },
   amber: {
     iconColor:   '#FBBF24',
@@ -408,56 +408,6 @@ function TierCard({ title, price, period, icon: Icon, spec, accent, badge, badge
         }}
       >
         Start {title} <ArrowRight size={10} strokeWidth={2.3} />
-      </button>
-    </div>
-  );
-}
-
-// ─── Slim card (Standard) ────────────────────────────────────
-// Single horizontal row — lift + border on hover.
-
-function SlimCard({ title, price, icon: Icon, spec, accent, onClick }: {
-  title:string; price:string; icon:React.ElementType;
-  spec:string; accent:'slate'; onClick:()=>void;
-}) {
-  const a = ACC[accent];
-  const [hov, setHov] = useState(false);
-  const reduced = useReducedMotion() ?? false;
-
-  return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        borderRadius:'11px', padding:'10px 13px',
-        border:`1px solid ${hov ? a.hoverBorder : a.cardBorder}`,
-        background: hov ? 'rgba(148,163,184,0.07)' : a.cardBg,
-        boxShadow: hov ? a.hoverGlow : 'none',
-        transform: hov && !reduced ? 'translateY(-1px)' : 'translateY(0)',
-        transition:`transform 200ms ${EASE}, border-color 200ms ${EASE}, box-shadow 200ms ${EASE}, background 200ms ${EASE}`,
-        display:'flex', alignItems:'center', gap:'10px', cursor:'pointer',
-      }}
-    >
-      <Icon size={12} strokeWidth={1.75} color={hov ? 'rgba(148,163,184,1)' : a.iconColor} style={{flexShrink:0}} />
-      <div style={{flex:1,minWidth:0,display:'flex',alignItems:'baseline',gap:'8px'}}>
-        <span style={{fontSize:'12.5px',fontWeight:630,color:C.t1,letterSpacing:'-.015em',flexShrink:0}}>{title}</span>
-        <span style={{fontSize:'10px',color:C.t4,flexShrink:0}}>{price}</span>
-        <span style={{fontSize:'10px',color:C.t4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{spec}</span>
-      </div>
-      <button
-        onClick={onClick}
-        style={{
-          flexShrink:0, height:'28px', padding:'0 12px',
-          borderRadius:'7px', border:`1px solid ${hov ? a.hoverBorder : a.cardBorder}`,
-          cursor:'pointer', fontFamily:F,
-          background: hov ? 'rgba(148,163,184,0.16)' : a.btnBg,
-          fontSize:'11.5px', fontWeight:630,
-          color: hov ? 'rgba(226,232,240,0.95)' : a.btnColor,
-          transition:`background 200ms ${EASE}, border-color 200ms ${EASE}, color 200ms ${EASE}`,
-          display:'flex', alignItems:'center', gap:'4px',
-        }}
-      >
-        Start <ArrowRight size={9} strokeWidth={2.3} />
       </button>
     </div>
   );

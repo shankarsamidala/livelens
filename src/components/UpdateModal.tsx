@@ -35,7 +35,7 @@ const CopyBlock = ({ command }: { command: string }) => {
     };
     return (
         <div className="flex items-center justify-between bg-black/20 rounded-lg pl-3 pr-1.5 py-1.5 border border-white/[0.03] group hover:border-white/10 transition-colors mt-1.5 mb-2.5 w-full">
-            <code className="text-[10px] font-mono text-blue-400 truncate mr-2 select-all overflow-hidden whitespace-nowrap">
+            <code className="text-[10px] font-mono text-[#d97757] truncate mr-2 select-all overflow-hidden whitespace-nowrap">
                 {command}
             </code>
             <button
@@ -244,7 +244,7 @@ const UpdateModal: React.FC<UpdateModalProps> = ({
 
                                     {/* Code Block with Copy */}
                                     <div className="flex items-center justify-between bg-black/20 rounded-lg pl-3 pr-1.5 py-1.5 border border-white/[0.03] group hover:border-white/10 transition-colors">
-                                        <code className="text-[10px] font-mono text-blue-400 truncate mr-2 select-all">
+                                        <code className="text-[10px] font-mono text-[#d97757] truncate mr-2 select-all">
                                             xattr -cr /Applications/LiveLens.app
                                         </code>
                                         <button
@@ -268,7 +268,7 @@ const UpdateModal: React.FC<UpdateModalProps> = ({
                                             initial={{ width: 0 }}
                                             animate={{ width: `${downloadProgress}%` }}
                                             transition={{ ease: "linear", duration: 0.2 }}
-                                            className="h-full bg-[#007AFF] rounded-full shadow-[0_0_10px_rgba(0,122,255,0.5)]"
+                                            className="h-full bg-[#d97757] rounded-full shadow-[0_0_10px_rgba(217,119,87,0.5)]"
                                         />
                                     </div>
                                     <p className="text-[11px] font-medium text-white/30 tabular-nums">
@@ -337,31 +337,28 @@ const UpdateModal: React.FC<UpdateModalProps> = ({
                                 </div>
 
                                 {/* Footer Actions */}
-                                <div className="flex items-center justify-between flex-shrink-0">
-                                    {/* Secondary Action - Left Aligned, Plain Text */}
-                                    <button
-                                        onClick={onDismiss}
-                                        className="text-[13px] font-medium text-white/40 hover:text-white/70 transition-colors"
-                                    >
-                                        Not Now
-                                    </button>
-
-                                    {/* Primary Action - Right Aligned, System Blue */}
+                                <div className="flex flex-col items-center gap-2.5 flex-shrink-0">
                                     {status === 'ready' ? (
                                         <button
                                             onClick={() => window.electronAPI.restartAndInstall()}
-                                            className="px-5 py-[6px] bg-[#007AFF] hover:bg-[#0062CC] text-white text-[13px] font-medium rounded-lg shadow-sm transition-colors"
+                                            className="w-full px-5 py-[9px] bg-[#d97757] hover:bg-[#c4623e] text-white text-[13px] font-medium rounded-lg shadow-sm transition-colors"
                                         >
                                             Restart & Install
                                         </button>
                                     ) : (
                                         <button
                                             onClick={handleUpdateClick}
-                                            className="px-5 py-[6px] bg-[#007AFF] hover:bg-[#0062CC] text-white text-[13px] font-medium rounded-lg shadow-sm transition-colors"
+                                            className="w-full px-5 py-[9px] bg-[#d97757] hover:bg-[#c4623e] text-white text-[13px] font-medium rounded-lg shadow-sm transition-colors"
                                         >
                                             Update Now
                                         </button>
                                     )}
+                                    <button
+                                        onClick={onDismiss}
+                                        className="text-[12px] font-medium text-white/30 hover:text-white/60 transition-colors"
+                                    >
+                                        Not Now
+                                    </button>
                                 </div>
                             </div>
                         )}

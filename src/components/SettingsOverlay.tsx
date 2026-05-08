@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import packageJson from '../../package.json';
 import {
-    X, Mic, Speaker, Monitor, Keyboard, User, LifeBuoy, LogOut, Upload,
+    X, Mic, Speaker, Monitor, Keyboard, User, LogOut, Upload,
     ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
     Camera, RotateCcw, Eye, Layout, MessageSquare, Crop,
     ChevronDown, ChevronUp, Check, BadgeCheck, Power, Palette, Calendar, Ghost, Sun, Moon, RefreshCw, Info, Globe, FlaskConical, Terminal, Settings, Activity, ExternalLink, Trash2,
@@ -1331,7 +1331,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                         <FlaskConical size={14} className="shrink-0" /> AI Providers
                                     </button>
                                     <button onClick={() => setActiveTab('natively-api')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'natively-api' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
-                                        <Zap size={14} className="shrink-0" /> LiveLens API
+                                        <Zap size={14} className="shrink-0" />
+                                        LiveLens API
                                     </button>
 
                                     {/* ── Input ── */}
@@ -1384,7 +1385,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 bg-bg-main overflow-y-auto p-8">
+                        <div className="flex-1 overflow-y-auto" style={{ background: '#0d0f14' }}>
+                        <div style={{ width: '100%', maxWidth: 760, margin: '0 auto', padding: '32px 32px 40px' }}>
                             {activeTab === 'general' && (
                                 <div className="space-y-6 animated fadeIn">
                                     <div className="space-y-3.5">
@@ -3522,6 +3524,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                             {activeTab === 'about' && (
                                 <AboutSection />
                             )}
+                        </div>
                         </div>
                     </div>
                     </motion.div>

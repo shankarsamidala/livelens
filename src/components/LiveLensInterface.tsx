@@ -1,39 +1,27 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import {
-    Sparkles,
     Pencil,
     MessageSquare,
     RefreshCw,
-    Settings,
-    ArrowUp,
     ArrowRight,
     HelpCircle,
-    ChevronUp,
     ChevronDown,
     Lightbulb,
-    CornerDownLeft,
     Mic,
     MicOff,
     Image,
-    Camera,
     X,
-    LogOut,
     Zap,
-    Edit3,
     SlidersHorizontal,
-    LayoutGrid,
-    Ghost,
-    Link,
     Code,
     Copy,
     Check,
-    PointerOff
+    PointerOff,
+    EyeOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-// import { ModelSelector } from './ui/ModelSelector'; // REMOVED
-import TopPill from './ui/TopPill';
 import RollingTranscript from './ui/RollingTranscript';
 import { NegotiationCoachingCard } from '../premium';
 import ReactMarkdown from 'react-markdown';
@@ -45,7 +33,15 @@ import { analytics, detectProviderType } from '../lib/analytics/analytics.servic
 import { useShortcuts } from '../hooks/useShortcuts';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
 import { getOverlayAppearance, OVERLAY_OPACITY_DEFAULT } from '../lib/overlayAppearance';
+import { STANDARD_CLOUD_MODELS, prettifyModelId } from '../utils/modelUtils';
 import icon from './icon.png';
+
+interface ModelOption {
+    id: string;
+    name: string;
+    type: 'cloud' | 'local' | 'custom' | 'ollama';
+    provider?: string;
+}
 
 interface Message {
     id: string;
@@ -103,7 +99,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const [inputValue, setInputValue] = useState('');
     const { shortcuts, isShortcutPressed } = useShortcuts();
     const [messages, setMessages] = useState<Message[]>([]);
-    const [isConnected, setIsConnected] = useState(false);
     const [sttUserStatus, setSttUserStatus] = useState<'connected' | 'reconnecting' | 'failed'>('connected');
     const [sttUserError, setSttUserError] = useState<string>('');
     const [sttUserProvider, setSttUserProvider] = useState<string>('');
@@ -111,7 +106,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const [sttInterviewerError, setSttInterviewerError] = useState<string>('');
     const [sttInterviewerProvider, setSttInterviewerProvider] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [conversationContext, setConversationContext] = useState<string>('');
     const [isManualRecording, setIsManualRecording] = useState(false);
     const isRecordingRef = useRef(false);  // Ref to track recording state (avoids stale closure)
@@ -154,25 +148,9 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
 
     // Settings State with Persistence
     const [isUndetectable, setIsUndetectable] = useState(false);
-    const [hideChatHidesWidget, setHideChatHidesWidget] = useState(() => {
-        const stored = localStorage.getItem('natively_hideChatHidesWidget');
-        return stored ? stored === 'true' : true;
-    });
+    const storedHideChatHidesWidget = localStorage.getItem('natively_hideChatHidesWidget');
+    const hideChatHidesWidget = storedHideChatHidesWidget ? storedHideChatHidesWidget === 'true' : true;
 
-    // Active mode name (shown as a badge near the Modes button)
-    const [activeModeLabel, setActiveModeLabel] = useState<string | null>(null);
-
-    useEffect(() => {
-        // Load initial active mode name
-        window.electronAPI?.modesGetActive?.()
-            .then((mode: { name: string } | null) => setActiveModeLabel(mode?.name ?? null))
-            .catch(() => {});
-        // Live-update whenever mode is activated/deactivated
-        const unsub = window.electronAPI?.onModeChanged?.((data: { id: string | null; name: string | null }) => {
-            setActiveModeLabel(data.name);
-        });
-        return () => unsub?.();
-    }, []);
 
     // Analysis mode + opacity slider
     const [analysisMode, setAnalysisModeState] = useState('general');
@@ -185,6 +163,14 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const [currentModel, setCurrentModel] = useState<string>('gemini-3-flash-preview');
     // Dynamic Action Button Mode (Recap vs Brainstorm)
     const [actionButtonMode, setActionButtonMode] = useState<'recap' | 'brainstorm'>('recap');
+
+    // Inline model selector dropdown
+    const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+    const modelSelectorRef = useRef<HTMLDivElement>(null);
+    const [availableModels, setAvailableModels] = useState<ModelOption[]>(() => {
+        try { return JSON.parse(localStorage.getItem('cached-models') || '[]'); } catch { return []; }
+    });
+    const [isLoadingModels, setIsLoadingModels] = useState(false);
 
     useEffect(() => {
         // Load persisted mode
@@ -292,13 +278,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                 return prev;
             });
         }
-    };
-
-    const handleModelSelect = (modelId: string) => {
-        setCurrentModel(modelId);
-        // Session-only: update runtime but don't persist as default
-        window.electronAPI.setModel(modelId)
-            .catch((err: any) => console.error("Failed to set model:", err));
     };
 
     // Listen for default model changes from Settings
@@ -429,14 +408,51 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setConversationContext(context);
     }, [messages]);
 
-    // Listen for settings window visibility changes
+    // Load available models for inline model selector
     useEffect(() => {
-        if (!window.electronAPI?.onSettingsVisibilityChange) return;
-        const unsubscribe = window.electronAPI.onSettingsVisibilityChange((isVisible) => {
-            setIsSettingsOpen(isVisible);
-        });
-        return () => unsubscribe();
+        const loadModels = async () => {
+            try {
+                setIsLoadingModels(true);
+                const creds = await window.electronAPI?.getStoredCredentials?.();
+                const customProviders = await window.electronAPI?.getCustomProviders?.() || [];
+                let ollamaModels: string[] = [];
+                try {
+                    const oModels = await window.electronAPI?.getAvailableOllamaModels?.();
+                    if (oModels) ollamaModels = oModels;
+                } catch { /* ignore */ }
+
+                const models: ModelOption[] = [];
+                if (creds?.hasLiveLensKey) models.push({ id: 'natively', name: 'LiveLens API', type: 'cloud', provider: 'natively' });
+                for (const [prov, cfg] of Object.entries(STANDARD_CLOUD_MODELS)) {
+                    if (!cfg.hasKeyCheck(creds)) continue;
+                    cfg.ids.forEach((id: string, i: number) => models.push({ id, name: cfg.names[i], type: 'cloud', provider: prov }));
+                    const pm = (creds as any)?.[cfg.pmKey];
+                    if (pm && !cfg.ids.includes(pm)) models.push({ id: pm, name: prettifyModelId(pm), type: 'cloud', provider: prov });
+                }
+                customProviders.forEach((p: any) => models.push({ id: p.id, name: p.name, type: 'custom' }));
+                ollamaModels.forEach((m: string) => models.push({ id: `ollama-${m}`, name: m, type: 'ollama' }));
+
+                localStorage.setItem('cached-models', JSON.stringify(models));
+                setAvailableModels(models);
+            } catch (err) {
+                console.error('Failed to load models:', err);
+            } finally {
+                setIsLoadingModels(false);
+            }
+        };
+        loadModels();
     }, []);
+
+    // Close model dropdown on outside click
+    useEffect(() => {
+        if (!modelDropdownOpen) return;
+        const handle = (e: MouseEvent) => {
+            if (modelSelectorRef.current && !modelSelectorRef.current.contains(e.target as Node))
+                setModelDropdownOpen(false);
+        };
+        document.addEventListener('mousedown', handle);
+        return () => document.removeEventListener('mousedown', handle);
+    }, [modelDropdownOpen]);
 
     // Sync Window Visibility with Expanded State
     useEffect(() => {
@@ -526,18 +542,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     // Connect to Native Audio Backend
     useEffect(() => {
         const cleanups: (() => void)[] = [];
-
-        // Connection Status
-        window.electronAPI.getNativeAudioStatus().then((status) => {
-            setIsConnected(status.connected);
-        }).catch(() => setIsConnected(false));
-
-        cleanups.push(window.electronAPI.onNativeAudioConnected(() => {
-            setIsConnected(true);
-        }));
-        cleanups.push(window.electronAPI.onNativeAudioDisconnected(() => {
-            setIsConnected(false);
-        }));
 
         // Real-time Transcripts
         cleanups.push(window.electronAPI.onNativeAudioTranscript((transcript) => {
@@ -1528,13 +1532,6 @@ Provide only the answer, nothing else.`;
         }
     };
 
-    const clearChat = () => {
-        setMessages([]);
-    };
-
-
-
-
     const renderMessageText = (msg: Message) => {
         // Negotiation coaching card takes priority
         if (msg.isNegotiationCoaching && msg.negotiationCoachingData) {
@@ -1836,7 +1833,7 @@ Provide only the answer, nothing else.`;
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            const { handleWhatToSay, handleFollowUp, handleFollowUpQuestions, handleRecap, handleAnswerNow, handleClarify, handleCodeHint, handleBrainstorm } = handlersRef.current;
+            const { handleWhatToSay, handleFollowUpQuestions, handleRecap, handleAnswerNow, handleClarify, handleCodeHint, handleBrainstorm } = handlersRef.current;
 
             // Chat Shortcuts (Scope: Local to Chat/Overlay usually, but we allow them here if focused)
             if (isShortcutPressed(e, 'whatToAnswer')) {
@@ -2150,32 +2147,92 @@ Provide only the answer, nothing else.`;
                                     >
                                         <img src={icon} alt="LiveLens" className="w-[18px] h-[18px] object-contain force-black-icon" draggable="false" onDragStart={(e) => e.preventDefault()} />
                                     </button>
-                                    <button
-                                        onClick={() => {
-                                            if (!contentRef.current) return;
-                                            const contentRect = contentRef.current.getBoundingClientRect();
-                                            window.electronAPI.toggleModelSelector({
-                                                offsetX: 0,
-                                                offsetY: contentRect.bottom + 8,
-                                            });
-                                        }}
-                                        className={`flex items-center gap-1.5 px-2.5 py-1 border rounded-lg text-[11px] font-medium max-w-[130px] interaction-base interaction-press ${controlSurfaceClass}`}
-                                        style={appearance.controlStyle}
-                                    >
-                                        <span className="truncate min-w-0 flex-1">
-                                            {(() => {
-                                                const m = currentModel;
-                                                if (m.startsWith('ollama-')) return m.replace('ollama-', '');
-                                                if (m === 'gemini-3.1-flash-lite-preview') return 'Gemini 3.1 Flash';
-                                                if (m === 'gemini-3.1-pro-preview') return 'Gemini 3.1 Pro';
-                                                if (m === 'llama-3.3-70b-versatile') return 'Groq Llama 3.3';
-                                                if (m === 'gpt-5.4') return 'GPT 5.4';
-                                                if (m === 'claude-sonnet-4-6') return 'Sonnet 4.6';
-                                                return m;
-                                            })()}
-                                        </span>
-                                        <ChevronDown size={12} className="shrink-0 opacity-50" />
-                                    </button>
+                                    <div ref={modelSelectorRef} className="relative">
+                                        <button
+                                            onClick={() => setModelDropdownOpen(o => !o)}
+                                            className={`flex items-center gap-1.5 px-2.5 py-1 border rounded-lg text-[11px] font-medium max-w-[130px] interaction-base interaction-press ${controlSurfaceClass}`}
+                                            style={appearance.controlStyle}
+                                        >
+                                            <span className="truncate min-w-0 flex-1">
+                                                {(() => {
+                                                    const m = currentModel;
+                                                    if (m.startsWith('ollama-')) return m.replace('ollama-', '');
+                                                    if (m === 'gemini-3.1-flash-lite-preview') return 'Gemini 3.1 Flash';
+                                                    if (m === 'gemini-3.1-pro-preview') return 'Gemini 3.1 Pro';
+                                                    if (m === 'llama-3.3-70b-versatile') return 'Groq Llama 3.3';
+                                                    if (m === 'gpt-5.4') return 'GPT 5.4';
+                                                    if (m === 'claude-sonnet-4-6') return 'Sonnet 4.6';
+                                                    return m;
+                                                })()}
+                                            </span>
+                                            <ChevronDown size={12} className={`shrink-0 opacity-50 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+                                        {/* Inline model dropdown */}
+                                        {modelDropdownOpen && (
+                                            <div
+                                                className="absolute top-full mt-1.5 left-0 z-[200] w-[210px] rounded-[13px] overflow-hidden shadow-2xl"
+                                                style={{ background: '#0d0f14', border: '1px solid rgba(255,255,255,0.09)' }}
+                                            >
+                                                <div className="p-1.5 flex flex-col gap-[2px] max-h-[260px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                                                    {isLoadingModels ? (
+                                                        <div className="flex items-center justify-center gap-2 py-3 text-[11px]" style={{ color: 'rgba(226,229,237,0.40)' }}>
+                                                            <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                                            Loading…
+                                                        </div>
+                                                    ) : availableModels.length === 0 ? (
+                                                        <div className="py-3 px-3 text-center text-[11px] leading-relaxed" style={{ color: 'rgba(226,229,237,0.35)' }}>
+                                                            No models connected.<br />Open Settings → AI Providers.
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {/* Cloud models */}
+                                                            {availableModels.filter(m => m.type === 'cloud' || m.type === 'custom').length > 0 && (
+                                                                <>
+                                                                    {availableModels.filter(m => m.type === 'ollama' || m.type === 'local').length > 0 && (
+                                                                        <div className="px-2.5 pt-1 pb-0.5 text-[9.5px] font-bold tracking-[0.09em] uppercase" style={{ color: 'rgba(226,229,237,0.25)' }}>Cloud</div>
+                                                                    )}
+                                                                    {availableModels.filter(m => m.type === 'cloud' || m.type === 'custom').map(model => (
+                                                                        <button key={model.id} onClick={() => { setCurrentModel(model.id); localStorage.setItem('cached-current-model', model.id); window.electronAPI?.setModel(model.id).catch(() => {}); setModelDropdownOpen(false); }}
+                                                                            className="w-full flex items-center gap-2 px-2.5 py-[7px] rounded-[8px] text-left transition-colors"
+                                                                            style={{ background: currentModel === model.id ? 'rgba(255,255,255,0.09)' : 'transparent', border: currentModel === model.id ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent' }}
+                                                                            onMouseEnter={e => { if (currentModel !== model.id) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                                                                            onMouseLeave={e => { if (currentModel !== model.id) e.currentTarget.style.background = 'transparent'; }}
+                                                                        >
+                                                                            <span className="text-[11px] font-medium truncate flex-1" style={{ color: currentModel === model.id ? '#e2e5ed' : 'rgba(226,229,237,0.65)' }}>{model.name}</span>
+                                                                            {currentModel === model.id && <Check size={11} style={{ color: 'rgba(226,229,237,0.65)', flexShrink: 0 }} />}
+                                                                        </button>
+                                                                    ))}
+                                                                </>
+                                                            )}
+                                                            {/* Divider */}
+                                                            {availableModels.filter(m => m.type === 'cloud' || m.type === 'custom').length > 0 && availableModels.filter(m => m.type === 'ollama' || m.type === 'local').length > 0 && (
+                                                                <div className="my-1 mx-1.5 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                                                            )}
+                                                            {/* Local models */}
+                                                            {availableModels.filter(m => m.type === 'ollama' || m.type === 'local').length > 0 && (
+                                                                <>
+                                                                    {availableModels.filter(m => m.type === 'cloud' || m.type === 'custom').length > 0 && (
+                                                                        <div className="px-2.5 pt-1 pb-0.5 text-[9.5px] font-bold tracking-[0.09em] uppercase" style={{ color: 'rgba(226,229,237,0.25)' }}>Local</div>
+                                                                    )}
+                                                                    {availableModels.filter(m => m.type === 'ollama' || m.type === 'local').map(model => (
+                                                                        <button key={model.id} onClick={() => { setCurrentModel(model.id); localStorage.setItem('cached-current-model', model.id); window.electronAPI?.setModel(model.id).catch(() => {}); setModelDropdownOpen(false); }}
+                                                                            className="w-full flex items-center gap-2 px-2.5 py-[7px] rounded-[8px] text-left transition-colors"
+                                                                            style={{ background: currentModel === model.id ? 'rgba(255,255,255,0.09)' : 'transparent', border: currentModel === model.id ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent' }}
+                                                                            onMouseEnter={e => { if (currentModel !== model.id) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                                                                            onMouseLeave={e => { if (currentModel !== model.id) e.currentTarget.style.background = 'transparent'; }}
+                                                                        >
+                                                                            <span className="text-[11px] font-medium truncate flex-1" style={{ color: currentModel === model.id ? '#e2e5ed' : 'rgba(226,229,237,0.65)' }}>{model.name}</span>
+                                                                            {currentModel === model.id && <Check size={11} style={{ color: 'rgba(226,229,237,0.65)', flexShrink: 0 }} />}
+                                                                        </button>
+                                                                    ))}
+                                                                </>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Right: Opacity, Settings, Mouse, Mic, divider, Hide, Stop */}
@@ -2209,15 +2266,10 @@ Provide only the answer, nothing else.`;
                                     <div className="w-px h-3.5 mx-0.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
                                         onClick={() => {
-                                            if (isSettingsOpen) { window.electronAPI.toggleSettingsWindow(); return; }
-                                            if (!contentRef.current) return;
-                                            const contentRect = contentRef.current.getBoundingClientRect();
-                                            window.electronAPI.toggleSettingsWindow({
-                                                offsetX: contentRect.right - 220,
-                                                offsetY: contentRect.bottom + 8,
-                                            });
+                                            window.electronAPI?.setWindowMode?.('launcher');
+                                            window.electronAPI?.openSettingsTab?.('general');
                                         }}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isSettingsOpen ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
                                         style={appearance.iconStyle}
                                         title="Settings"
                                     >
@@ -2231,14 +2283,6 @@ Provide only the answer, nothing else.`;
                                     >
                                         <PointerOff className="w-3.5 h-3.5" />
                                     </button>
-                                    <button
-                                        onClick={handleAnswerNow}
-                                        title={isManualRecording ? 'Stop mic' : 'Enable mic'}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press transition-colors duration-200 ${isManualRecording ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
-                                        style={isManualRecording ? undefined : appearance.iconStyle}
-                                    >
-                                        {isManualRecording ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5 opacity-60" />}
-                                    </button>
                                     <div className="w-px h-3.5 mx-1.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
                                         onClick={() => setIsExpanded(false)}
@@ -2246,7 +2290,7 @@ Provide only the answer, nothing else.`;
                                         style={appearance.iconStyle}
                                         title="Hide"
                                     >
-                                        <ChevronUp className="w-3.5 h-3.5" />
+                                        <EyeOff className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                         onClick={() => onEndMeeting ? onEndMeeting() : window.electronAPI.quitApp()}
@@ -2272,13 +2316,6 @@ Provide only the answer, nothing else.`;
                                 </button>
                                 <button onClick={handleFollowUpQuestions} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
                                     <HelpCircle className="w-3 h-3 opacity-70" /> Follow Up
-                                </button>
-                                <button
-                                    onClick={handleAnswerNow}
-                                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all active:scale-95 duration-200 interaction-base interaction-press min-w-[60px] whitespace-nowrap shrink-0 ${isManualRecording ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' : 'overlay-chip-surface overlay-text-interactive hover:text-emerald-400 hover:bg-emerald-500/10'}`}
-                                    style={isManualRecording ? undefined : appearance.chipStyle}
-                                >
-                                    {isManualRecording ? (<><div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> Stop</>) : (<><Zap className="w-3 h-3 opacity-70" /> Answer</>)}
                                 </button>
                             </div>
 
@@ -2528,7 +2565,7 @@ Provide only the answer, nothing else.`;
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                                        className={`w-full border focus:ring-1 rounded-xl pl-3 pr-10 py-2 focus:outline-none transition-all duration-200 ease-sculpted text-[13px] leading-relaxed ${inputClass}`}
+                                        className={`w-full border focus:ring-1 rounded-xl pl-3 pr-[60px] py-2 focus:outline-none transition-all duration-200 ease-sculpted text-[13px] leading-relaxed ${inputClass}`}
                                         style={appearance.inputStyle}
                                     />
                                     {!inputValue && (
@@ -2545,14 +2582,24 @@ Provide only the answer, nothing else.`;
                                             <span>for screenshot</span>
                                         </div>
                                     )}
-                                    <button
-                                        onClick={handleManualSubmit}
-                                        disabled={!inputValue.trim()}
-                                        className={`absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center interaction-base interaction-press ${inputValue.trim() ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]' : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'}`}
-                                        style={inputValue.trim() ? undefined : appearance.iconStyle}
-                                    >
-                                        <ArrowRight className="w-3 h-3" />
-                                    </button>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                        <button
+                                            onClick={handleAnswerNow}
+                                            title={isManualRecording ? 'Stop mic' : 'Enable mic'}
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center interaction-base interaction-press transition-colors duration-200 ${isManualRecording ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' : 'overlay-icon-surface overlay-text-muted hover:overlay-text-interactive'}`}
+                                            style={isManualRecording ? undefined : appearance.iconStyle}
+                                        >
+                                            {isManualRecording ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3 opacity-60" />}
+                                        </button>
+                                        <button
+                                            onClick={handleManualSubmit}
+                                            disabled={!inputValue.trim()}
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center interaction-base interaction-press ${inputValue.trim() ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]' : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'}`}
+                                            style={inputValue.trim() ? undefined : appearance.iconStyle}
+                                        >
+                                            <ArrowRight className="w-3 h-3" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

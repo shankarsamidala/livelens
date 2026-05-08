@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
 import { IoLogOutOutline } from "react-icons/io5"
-import { Dialog, DialogContent, DialogClose } from "../ui/dialog"
-
 interface QueueCommandsProps {
   onTooltipVisibilityChange: (visible: boolean, height: number) => void
   screenshots: Array<{ path: string; preview: string }>
@@ -10,12 +8,6 @@ interface QueueCommandsProps {
   onCodeHint?: () => void
   onBrainstorm?: () => void
   onSolve?: () => void
-}
-
-interface Transcript {
-  speaker: string
-  text: string
-  final: boolean
 }
 
 const QueueCommands: React.FC<QueueCommandsProps> = ({
@@ -29,16 +21,11 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
 }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const tooltipRef = useRef<HTMLDivElement>(null)
-  const [isRecording, setIsRecording] = useState(false)
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
+  const isRecording = false
   const [audioResult, setAudioResult] = useState<string | null>(null)
-  const chunks = useRef<Blob[]>([])
 
   // Native audio service state
   const [isNativeAudioConnected, setIsNativeAudioConnected] = useState(false)
-  const [transcripts, setTranscripts] = useState<Transcript[]>([])
-  const [latestSuggestion, setLatestSuggestion] = useState<string | null>(null)
-  const [isSuggestionLoading, setIsSuggestionLoading] = useState(false)
 
   // Subscribe to native audio events
   useEffect(() => {
@@ -69,26 +56,20 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
     // Transcript updates
     cleanupFns.push(window.electronAPI.onNativeAudioTranscript((transcript) => {
       console.log('[QueueCommands] Transcript:', transcript)
-      setTranscripts(prev => [...prev.slice(-10), transcript]) // Keep last 10
       setAudioResult(`[${transcript.speaker}] ${transcript.text}`)
     }))
 
     // Suggestion events
     cleanupFns.push(window.electronAPI.onSuggestionProcessingStart(() => {
       console.log('[QueueCommands] Generating suggestion...')
-      setIsSuggestionLoading(true)
     }))
 
     cleanupFns.push(window.electronAPI.onSuggestionGenerated((data) => {
       console.log('[QueueCommands] Suggestion received:', data)
-      setIsSuggestionLoading(false)
-      setLatestSuggestion(data.suggestion)
     }))
 
     cleanupFns.push(window.electronAPI.onSuggestionError((error) => {
       console.error('[QueueCommands] Suggestion error:', error)
-      setIsSuggestionLoading(false)
-      setLatestSuggestion(`Error: ${error.error}`)
     }))
 
     return () => cleanupFns.forEach(fn => fn())
@@ -115,7 +96,6 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
     // Toggle visibility of transcript display
     if (audioResult) {
       setAudioResult(null)
-      setLatestSuggestion(null)
     } else {
       setAudioResult(isNativeAudioConnected
         ? '🎤 Listening... speak into your microphone'

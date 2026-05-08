@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, X, ExternalLink } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface SupportToasterProps {
@@ -10,7 +10,6 @@ interface SupportToasterProps {
 
 export const SupportToaster: React.FC<SupportToasterProps> = ({ className }) => {
     const [isVisible, setIsVisible] = useState(false);
-    const [hasDonated, setHasDonated] = useState(false);
     const [isButtonHovered, setIsButtonHovered] = useState(false);
 
     useEffect(() => {
@@ -25,7 +24,6 @@ export const SupportToaster: React.FC<SupportToasterProps> = ({ className }) => 
 
                 const status = await window.electronAPI.getDonationStatus();
                 if (mounted) {
-                    setHasDonated(status.hasDonated);
                     if (status.shouldShow) {
                         setIsVisible(true);
                         window.electronAPI.markDonationToastShown();
@@ -64,7 +62,6 @@ export const SupportToaster: React.FC<SupportToasterProps> = ({ className }) => 
                 if (elapsed > 20000) { // 20 seconds
                     console.log("User returned from support link after >20s. Presuming donation.");
                     await window.electronAPI?.setDonationComplete();
-                    setHasDonated(true);
                     setIsVisible(false);
                 }
                 clickTimeRef.current = null;
@@ -121,7 +118,7 @@ export const SupportToaster: React.FC<SupportToasterProps> = ({ className }) => 
                                     `}
                                 </style>
 
-                                <div className="absolute inset-0 bg-[#FF6A5C] blur-[32px] opacity-15 rounded-full" />
+                                <div className="absolute inset-0 bg-[#d97757] blur-[32px] opacity-15 rounded-full" />
 
                                 {/* 1. The Liquid Container (Masked to Heart Shape) */}
                                 <div
@@ -143,7 +140,7 @@ export const SupportToaster: React.FC<SupportToasterProps> = ({ className }) => 
                                         initial={{ height: "0%" }}
                                         animate={{ height: isButtonHovered ? "100%" : "0%" }}
                                         transition={{ duration: 1.5, ease: "easeInOut" }}
-                                        className="absolute bottom-0 left-0 right-0 w-full bg-[#FF6A5C]"
+                                        className="absolute bottom-0 left-0 right-0 w-full bg-[#d97757]"
                                         style={{
                                             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='20' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 20 V10 Q25 0 50 10 T100 10 V20 H0 Z' fill='%23FF6A5C' /%3E%3C/svg%3E")`,
                                             backgroundSize: '32px 100%', // Match width of icon approx
@@ -165,7 +162,7 @@ export const SupportToaster: React.FC<SupportToasterProps> = ({ className }) => 
                                 {/* 2. Outline Overlay (Sit on top) */}
                                 <Heart
                                     size={32}
-                                    className="text-[#FF6A5C] drop-shadow-[0_0_12px_rgba(255,106,92,0.4)] relative z-20 pointer-events-none"
+                                    className="text-[#d97757] drop-shadow-[0_0_12px_rgba(217,119,87,0.4)] relative z-20 pointer-events-none"
                                     strokeWidth={1.5}
                                 />
                             </div>
@@ -195,9 +192,9 @@ export const SupportToaster: React.FC<SupportToasterProps> = ({ className }) => 
                                 onClick={handleSupport}
                                 onMouseEnter={() => setIsButtonHovered(true)}
                                 onMouseLeave={() => setIsButtonHovered(false)}
-                                className="group relative w-[320px] h-[48px] rounded-[16px] overflow-hidden transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] shadow-[0_4px_16px_rgba(255,106,92,0.1)] hover:shadow-[0_8px_24px_rgba(255,106,92,0.2)] mb-[16px] border border-white/5"
+                                className="group relative w-[320px] h-[48px] rounded-[16px] overflow-hidden transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] shadow-[0_4px_16px_rgba(217,119,87,0.1)] hover:shadow-[0_8px_24px_rgba(217,119,87,0.2)] mb-[16px] border border-white/5"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-b from-[#FF6A5C] to-[#E55B4D] opacity-100 transition-all" />
+                                <div className="absolute inset-0 bg-gradient-to-b from-[#d97757] to-[#c4623e] opacity-100 transition-all" />
                                 <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 <span className="relative z-10 text-[15px] font-[600] text-white/95 group-hover:text-white flex items-center justify-center gap-2 tracking-wide">
                                     Support the Builder

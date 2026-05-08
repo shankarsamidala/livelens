@@ -27,6 +27,10 @@ export class WindowHelper {
   private overlayBounds: Electron.Rectangle | null = null
   // Track current window mode (persists even when overlay is hidden via Cmd+B)
   private currentWindowMode: 'launcher' | 'overlay' = 'launcher'
+  // Compact mode
+  private isCompactMode: boolean = false
+  private compactWindow: BrowserWindow | null = null
+  private static readonly COMPACT_PILL_WIDTH = 500
 
   private appState: AppState
   private contentProtection: boolean = false
@@ -643,6 +647,91 @@ export class WindowHelper {
       this.overlayWindow.hide();
     }
   }
+
+  private createCompactWindow(): void {
+    if (this.compactWindow && !this.compactWindow.isDestroyed()) return;
+
+    const workArea = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+    const w = WindowHelper.COMPACT_PILL_WIDTH;
+    const x = Math.round(workArea.x + (workArea.width - w) / 2);
+    const y = workArea.y + 20;
+
+    this.compactWindow = new BrowserWindow({
+      width: w,
+      height: 48,
+      x,
+      y,
+      frame: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      hasShadow: false,
+      alwaysOnTop: true,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      movable: true,
+      skipTaskbar: true,
+      focusable: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'preload.js'),
+        scrollBounce: true,
+      },
+    });
+
+    if (process.platform === 'darwin') {
+      this.compactWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      this.compactWindow.setAlwaysOnTop(true, 'floating');
+    }
+
+    this.compactWindow.loadURL(`${startUrl}?window=compact`).catch(e => {
+      console.error('[WindowHelper] Failed to load compact URL:', e);
+    });
+
+    this.compactWindow.on('closed', () => {
+      this.compactWindow = null;
+      if (this.isCompactMode) this.exitCompactMode();
+    });
+  }
+
+  public setCompactMode(compact: boolean): void {
+    if (compact) {
+      this.enterCompactMode();
+    } else {
+      this.exitCompactMode();
+    }
+  }
+
+  private enterCompactMode(): void {
+    this.isCompactMode = true;
+    this.createCompactWindow();
+    // Hide launcher while compact window is active
+    this.launcherWindow?.hide();
+    this.compactWindow?.show();
+    this.compactWindow?.focus();
+    // Notify launcher renderer (in case it needs state sync)
+    this.launcherWindow?.webContents.send('compact-mode-changed', true);
+  }
+
+  private exitCompactMode(): void {
+    this.isCompactMode = false;
+    this.compactWindow?.hide();
+    // Show and focus launcher
+    if (this.launcherWindow && !this.launcherWindow.isDestroyed()) {
+      this.launcherWindow.show();
+      this.launcherWindow.focus();
+      this.launcherWindow.webContents.send('compact-mode-changed', false);
+    }
+  }
+
+  public setLauncherCompactHeight(height: number): void {
+    if (!this.isCompactMode || !this.compactWindow || this.compactWindow.isDestroyed()) return;
+    const bounds = this.compactWindow.getBounds();
+    this.compactWindow.setBounds({ ...bounds, height: Math.max(48, Math.ceil(height)) });
+  }
+
+  public getCompactWindow(): BrowserWindow | null { return this.compactWindow }
 
   // Simplified setWindowMode that just calls switchers
   public setWindowMode(mode: 'launcher' | 'overlay', inactive?: boolean): void {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, AlertCircle, CheckCircle, Save, ChevronDown, Check, RefreshCw, ExternalLink, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, AlertCircle, CheckCircle, Save, ChevronDown, Check, RefreshCw } from 'lucide-react';
 import { STANDARD_CLOUD_MODELS, prettifyModelId } from '../../utils/modelUtils';
 import { validateCurl } from '../../lib/curl-validator';
 import { ProviderCard } from './ProviderCard';
@@ -105,7 +105,7 @@ export const AIProvidersSettings: React.FC = () => {
     // --- Local (Ollama) ---
     const [ollamaModels, setOllamaModels] = useState<string[]>([]);
     const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'detected' | 'not-found' | 'fixing'>('checking');
-    const [ollamaRestarted, setOllamaRestarted] = useState(false);
+
     const [isRefreshingOllama, setIsRefreshingOllama] = useState(false);
 
     // --- Default Model ---
@@ -247,7 +247,6 @@ export const AIProvidersSettings: React.FC = () => {
         try {
             const result = await window.electronAPI?.ensureOllamaRunning?.();
             if (result && result.success) {
-                setOllamaRestarted(true);
                 setTimeout(() => checkOllama(false), 2000);
             } else {
                 setOllamaStatus('not-found');

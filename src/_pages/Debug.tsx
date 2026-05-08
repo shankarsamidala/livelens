@@ -53,13 +53,7 @@ type DiffLine = {
 }
 
 
-const syntaxHighlighterStyles = {
-  ".syntax-line": {
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-    overflowWrap: "break-word"
-  }
-} as const
+
 
 const CodeComparisonSection = ({
   oldCode,

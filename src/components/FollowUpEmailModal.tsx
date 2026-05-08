@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Mail, RotateCcw, ExternalLink, Loader2, Paperclip } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Meeting {
@@ -37,8 +37,6 @@ const FollowUpEmailModal: React.FC<FollowUpEmailModalProps> = ({ isOpen, onClose
 
     // State
     const [isGenerating, setIsGenerating] = useState(false);
-    const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false);
-
     // Mount effect - Initialize and Generate
     useEffect(() => {
         if (isOpen) {
@@ -128,17 +126,6 @@ const FollowUpEmailModal: React.FC<FollowUpEmailModalProps> = ({ isOpen, onClose
         await window.electronAPI?.invoke('open-external', gmailUrl);
         onClose();
     };
-
-    const handleSendDefault = async () => {
-        // @ts-ignore
-        await window.electronAPI?.invoke('open-mailto', {
-            to: recipientEmail,
-            subject: subject,
-            body: emailBody
-        });
-        onClose();
-    };
-
 
     if (!isOpen) return null;
 

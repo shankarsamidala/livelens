@@ -49,8 +49,10 @@ export class SettingsWindowHelper {
      */
     public preloadWindow(): void {
         if (!this.settingsWindow || this.settingsWindow.isDestroyed()) {
-            // Create window off-screen so it's ready but not visible
-            this.createWindow(-10000, -10000, false);
+            // No coordinates — rely solely on show:false to keep it hidden.
+            // Passing off-screen coords (e.g. -10000) risks macOS clamping the
+            // window to a visible edge and causing a brief white flash on first run.
+            this.createWindow(undefined, undefined, false);
         }
     }
 
@@ -218,14 +220,15 @@ export class SettingsWindowHelper {
         let newX = x;
         let newY = y;
 
-        if (x + width > bounds.x + bounds.width) {
-            newX = bounds.x + bounds.width - width;
-        }
-        if (y + height > bounds.y + bounds.height) {
-            newY = bounds.y + bounds.height - height;
-        }
+        // Clamp all four edges
+        if (x + width > bounds.x + bounds.width) newX = bounds.x + bounds.width - width;
+        if (y + height > bounds.y + bounds.height) newY = bounds.y + bounds.height - height;
+        if (newX < bounds.x) newX = bounds.x;
+        if (newY < bounds.y) newY = bounds.y;
 
-        this.settingsWindow.setPosition(newX, newY);
+        if (newX !== x || newY !== y) {
+            this.settingsWindow.setPosition(Math.round(newX), Math.round(newY));
+        }
     }
     private contentProtection: boolean = false; // Track state
 

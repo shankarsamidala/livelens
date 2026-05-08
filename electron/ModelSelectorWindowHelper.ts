@@ -40,7 +40,7 @@ export class ModelSelectorWindowHelper {
 
     public preloadWindow(): void {
         if (!this.window || this.window.isDestroyed()) {
-            this.createWindow(-10000, -10000, false);
+            this.createWindow(undefined, undefined, false);
         }
     }
 

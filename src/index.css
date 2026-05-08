@@ -274,7 +274,14 @@ body,
 
 body {
   margin: 0;
-  /* cursor: default; -> Removed to let app dictate cursor */
+}
+
+button, [role="button"], a {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 /* Scrollbar Styling - Minimal macOS Hidden style */
@@ -696,7 +703,15 @@ textarea,
 [role="button"],
 a {
   -webkit-app-region: no-drag;
-  cursor: default !important;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  cursor: text;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 /* Explicit cursor class when pointer is explicitly needed */

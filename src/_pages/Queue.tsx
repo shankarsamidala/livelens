@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useQuery } from "react-query"
-import ScreenshotQueue from "../components/Queue/ScreenshotQueue"
+
 import {
   Toast,
   ToastTitle,
@@ -90,24 +90,7 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
     setToastOpen(true)
   }
 
-  const handleDeleteScreenshot = async (index: number) => {
-    const screenshotToDelete = screenshots[index]
 
-    try {
-      const response = await window.electronAPI.deleteScreenshot(
-        screenshotToDelete.path
-      )
-
-      if (response.success) {
-        refetch()
-      } else {
-        console.error("Failed to delete screenshot:", response.error)
-        showToast("Error", "Failed to delete the screenshot file", "error")
-      }
-    } catch (error) {
-      console.error("Error deleting screenshot:", error)
-    }
-  }
 
   // Setup Streaming Listeners
   useEffect(() => {

@@ -526,32 +526,31 @@ export class ScreenshotHelper {
     let image = selectedSource.thumbnail;
 
     if (area) {
-      // Crop rect: area is in absolute screen coordinates. The returned thumbnail
-      // is in native device pixels (Electron scales it up internally), so we
-      // must apply scaleFactor to map from logical screen coords to pixel coords.
-      const cropX = Math.round((area.x - displayBounds.x) * scaleFactor);
-      const cropY = Math.round((area.y - displayBounds.y) * scaleFactor);
+      // Use the actual thumbnail dimensions to derive the ratio — do NOT use
+      // scaleFactor directly, because Electron may or may not honour the requested
+      // thumbnailSize and the returned size can differ across OS/driver versions.
+      const imgSize = image.getSize();
+      const ratioX = displayBounds.width  > 0 ? imgSize.width  / displayBounds.width  : 1;
+      const ratioY = displayBounds.height > 0 ? imgSize.height / displayBounds.height : 1;
+
+      console.log(`[ScreenshotHelper] Thumbnail size: ${imgSize.width}x${imgSize.height}, ratio: ${ratioX}x${ratioY}`);
+
+      const cropX = Math.round((area.x - displayBounds.x) * ratioX);
+      const cropY = Math.round((area.y - displayBounds.y) * ratioY);
 
       const croppedArea = {
         x: Math.max(0, cropX),
         y: Math.max(0, cropY),
-        width: Math.round(area.width * scaleFactor),
-        height: Math.round(area.height * scaleFactor)
+        width:  Math.round(area.width  * ratioX),
+        height: Math.round(area.height * ratioY),
       };
-      
-      console.log(`[ScreenshotHelper] Cropping relative to display: ${JSON.stringify(croppedArea)}`);
-      
-      // Ensure crop area is within image bounds
-      const imgWidth = image.getSize().width;
-      const imgHeight = image.getSize().height;
-      
-      if (croppedArea.x + croppedArea.width > imgWidth) {
-        croppedArea.width = imgWidth - croppedArea.x;
-      }
-      if (croppedArea.y + croppedArea.height > imgHeight) {
-        croppedArea.height = imgHeight - croppedArea.y;
-      }
-      
+
+      // Clamp to thumbnail bounds
+      croppedArea.width  = Math.min(croppedArea.width,  imgSize.width  - croppedArea.x);
+      croppedArea.height = Math.min(croppedArea.height, imgSize.height - croppedArea.y);
+
+      console.log(`[ScreenshotHelper] Crop area: ${JSON.stringify(croppedArea)}`);
+
       if (croppedArea.width > 0 && croppedArea.height > 0) {
         image = image.crop(croppedArea);
       } else {

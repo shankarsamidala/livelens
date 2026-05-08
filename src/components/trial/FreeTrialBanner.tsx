@@ -6,8 +6,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Zap, Mic, Search, ArrowUpRight } from 'lucide-react';
 
-const PLAN_PRO_URL = 'https://checkout.dodopayments.com/buy/pdt_0NcM6Aw0IWdspbsgUeCLA';
-
 interface TrialBannerProps {
     expiresAt:   string;            // ISO timestamp
     usage:       { ai: number; stt_seconds: number; search: number };

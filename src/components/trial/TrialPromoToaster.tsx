@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { X, ArrowRight, Zap, Mic, Search, Clock } from 'lucide-react';
+import { X, ArrowRight, Zap, Mic, Search } from 'lucide-react';
 
 const STORAGE_KEY      = 'natively_trial_promo_ts';
 const PERMS_KEY        = 'natively_perms_shown_v1';
@@ -19,11 +19,11 @@ const COOLDOWN_DAYS    = 7;
 // ─── Design tokens ────────────────────────────────────────────
 const T = {
   font:    '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
-  violet:  '#8B5CF6',
-  violetB: '#7C3AED',
-  violetD: '#5B21B6',
-  violetG: 'rgba(139,92,246,0.40)',
-  violet2: 'rgba(139,92,246,0.18)',
+  violet:  '#d97757',
+  violetB: '#c4623e',
+  violetD: '#b05530',
+  violetG: 'rgba(217,119,87,0.40)',
+  violet2: 'rgba(217,119,87,0.18)',
   t1: '#FFFFFF',
   t2: 'rgba(255,255,255,0.72)',
   t3: 'rgba(255,255,255,0.44)',
@@ -116,16 +116,16 @@ export const TrialPromoToaster: React.FC<Props> = ({
         }
         .trial-border {
           background: linear-gradient(145deg,
-            rgba(139,92,246,0.80),
-            rgba(109,40,217,0.65),
-            rgba(167,139,250,0.72),
-            rgba(139,92,246,0.80)
+            rgba(217,119,87,0.80),
+            rgba(180,85,48,0.65),
+            rgba(240,163,130,0.72),
+            rgba(217,119,87,0.80)
           );
           background-size: 300% 300%;
           animation: trial-border-flow 6s ease infinite;
         }
         .trial-border-reduced {
-          background: linear-gradient(145deg, rgba(139,92,246,0.65), rgba(109,40,217,0.5), rgba(167,139,250,0.58));
+          background: linear-gradient(145deg, rgba(217,119,87,0.65), rgba(180,85,48,0.5), rgba(240,163,130,0.58));
         }
       `}</style>
 
@@ -137,7 +137,7 @@ export const TrialPromoToaster: React.FC<Props> = ({
         style={{
           position: 'fixed', inset: 0, zIndex: 9998,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(139,92,246,0.08) 0%, rgba(0,0,0,0.84) 100%)',
+          background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(217,119,87,0.08) 0%, rgba(0,0,0,0.84) 100%)',
           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
         } as React.CSSProperties}
         onClick={e => { if (e.target === e.currentTarget) handleDismiss(); }}
@@ -150,7 +150,7 @@ export const TrialPromoToaster: React.FC<Props> = ({
           exit={   reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 14, filter: 'blur(4px)' }}
           transition={{ type: 'spring', stiffness: 290, damping: 25, mass: 0.82 }}
           className={reduced ? 'trial-border-reduced' : 'trial-border'}
-          style={{ padding: '1.5px', borderRadius: '23px', boxShadow: '0 48px 120px -20px rgba(0,0,0,0.95), 0 0 80px rgba(139,92,246,0.07)' }}
+          style={{ padding: '1.5px', borderRadius: '23px', boxShadow: '0 48px 120px -20px rgba(0,0,0,0.95), 0 0 80px rgba(217,119,87,0.07)' }}
         >
           <div style={{
             position: 'relative', width: '452px', borderRadius: '22px', overflow: 'hidden',
@@ -165,7 +165,7 @@ export const TrialPromoToaster: React.FC<Props> = ({
               <motion.div aria-hidden
                 animate={{ opacity: [0.1, 0.22, 0.1] }}
                 transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ position: 'absolute', top: '-110px', left: '50%', transform: 'translateX(-50%)', width: '460px', height: '320px', background: 'radial-gradient(ellipse, rgba(139,92,246,0.35) 0%, transparent 62%)', pointerEvents: 'none', zIndex: 1 }}
+                style={{ position: 'absolute', top: '-110px', left: '50%', transform: 'translateX(-50%)', width: '460px', height: '320px', background: 'radial-gradient(ellipse, rgba(217,119,87,0.35) 0%, transparent 62%)', pointerEvents: 'none', zIndex: 1 }}
               />
             )}
 
@@ -207,12 +207,12 @@ export const TrialPromoToaster: React.FC<Props> = ({
                       <span style={{
                         fontSize: '88px', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.055em',
                         color: T.violet, fontFamily: T.font,
-                        textShadow: `0 0 64px ${T.violetG}, 0 0 120px rgba(139,92,246,0.2)`,
+                        textShadow: `0 0 64px ${T.violetG}, 0 0 120px rgba(217,119,87,0.2)`,
                       }}>
                         10
                       </span>
                       <div style={{ paddingBottom: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: '2px' }}>
-                        <span style={{ fontSize: '16px', fontWeight: 700, color: 'rgba(167,139,250,0.9)', letterSpacing: '-0.02em', lineHeight: 1 }}>min</span>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: 'rgba(240,163,130,0.9)', letterSpacing: '-0.02em', lineHeight: 1 }}>min</span>
                         <span style={{ fontSize: '10px', fontWeight: 600, color: T.t4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>free</span>
                       </div>
                     </div>
@@ -241,8 +241,8 @@ export const TrialPromoToaster: React.FC<Props> = ({
                         position: 'relative', overflow: 'hidden',
                       }}>
                         {/* Violet top accent stripe */}
-                        <div aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, rgba(139,92,246,0.7), transparent 70%)' }} />
-                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: T.violet2, border: '1px solid rgba(139,92,246,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, rgba(217,119,87,0.7), transparent 70%)' }} />
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: T.violet2, border: '1px solid rgba(217,119,87,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Icon size={13} strokeWidth={1.8} color={T.violet} />
                         </div>
                         <div>
@@ -300,9 +300,9 @@ const VioletCTA: React.FC<{ label: string; onClick: () => void; disabled: boolea
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 22px', borderRadius: '14px', border: 'none',
         background: disabled
-          ? 'rgba(139,92,246,0.3)'
-          : 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 50%, #6D28D9 100%)',
-        boxShadow: disabled ? 'none' : `0 0 0 1px rgba(109,40,217,0.45), 0 10px 32px rgba(139,92,246,0.38), inset 0 1px 0 rgba(255,255,255,0.16)`,
+          ? 'rgba(217,119,87,0.3)'
+          : 'linear-gradient(135deg, #d97757 0%, #c4623e 50%, #b05530 100%)',
+        boxShadow: disabled ? 'none' : `0 0 0 1px rgba(180,85,48,0.45), 0 10px 32px rgba(217,119,87,0.38), inset 0 1px 0 rgba(255,255,255,0.16)`,
         cursor: disabled ? 'wait' : 'pointer', fontFamily: T.font, outline: 'none',
         opacity: disabled ? 0.65 : 1,
       }}

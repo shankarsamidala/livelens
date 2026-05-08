@@ -199,6 +199,9 @@ interface ElectronAPI {
   toggleAdvancedSettings: () => Promise<void>
   openSettingsTab: (tab: string) => Promise<void>
   onOpenSettingsTab: (callback: (tab: string) => void) => () => void
+  setCompactMode: (compact: boolean) => Promise<{ success: boolean }>
+  setLauncherCompactHeight: (height: number) => Promise<{ success: boolean }>
+  onCompactModeChanged: (callback: (compact: boolean) => void) => () => void
   setOverlayMousePassthrough: (enabled: boolean) => Promise<{ success: boolean }>
   toggleOverlayMousePassthrough: () => Promise<{ success: boolean; enabled: boolean }>
   getOverlayMousePassthrough: () => Promise<boolean>
@@ -749,6 +752,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // Window Mode
   setWindowMode: (mode: 'launcher' | 'overlay', inactive?: boolean) => ipcRenderer.invoke("set-window-mode", mode, inactive),
+  setCompactMode: (compact: boolean) => ipcRenderer.invoke("set-compact-mode", compact),
+  setLauncherCompactHeight: (height: number) => ipcRenderer.invoke("set-launcher-compact-height", height),
+  onCompactModeChanged: (callback: (compact: boolean) => void) => {
+    const sub = (_: any, compact: boolean) => callback(compact);
+    ipcRenderer.on('compact-mode-changed', sub);
+    return () => ipcRenderer.removeListener('compact-mode-changed', sub);
+  },
 
   // Intelligence Mode Events
   onIntelligenceAssistUpdate: (callback: (data: { insight: string }) => void) => {

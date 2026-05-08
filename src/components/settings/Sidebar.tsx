@@ -1,5 +1,5 @@
 import React from 'react';
-import { Monitor, Cpu, Info, Zap } from 'lucide-react';
+import { Monitor, Cpu, Zap } from 'lucide-react';
 
 interface SidebarProps {
     activeTab: 'general' | 'natively-api' | 'ai-providers' | 'about';

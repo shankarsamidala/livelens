@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { STANDARD_CLOUD_MODELS, prettifyModelId } from '../utils/modelUtils';
-import { useResolvedTheme } from '../hooks/useResolvedTheme';
+
 
 interface ModelOption {
     id: string;
@@ -154,7 +154,7 @@ const ModelSelectorWindow = () => {
 
     const sectionHeaderColor  = isLight ? 'rgba(0,0,0,0.30)'           : 'rgba(226,229,237,0.25)';
     const rowNameColor        = isLight ? 'rgba(0,0,0,0.55)'           : 'rgba(226,229,237,0.65)';
-    const rowNameHoverColor   = isLight ? 'rgba(0,0,0,0.85)'           : 'rgba(226,229,237,0.90)';
+
     const rowNameActiveColor  = isLight ? '#111'                        : '#e2e5ed';
     const rowHoverBg          = isLight ? 'rgba(0,0,0,0.04)'           : 'rgba(255,255,255,0.06)';
     const rowActiveBg         = isLight ? 'rgba(0,0,0,0.07)'           : 'rgba(255,255,255,0.09)';

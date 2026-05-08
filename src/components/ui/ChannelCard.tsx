@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { SttErrorCategory } from '../../lib/sttErrorMapper';
 
 interface ChannelCardProps {
@@ -39,15 +39,11 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
     name, status, provider, error, errorCategory,
     iconConnected, iconReconnecting, iconFailed,
 }) => {
-    const [copied, setCopied] = useState(false);
-
     const cleanedError = error?.replace(/\s*\(\d+ consecutive errors\):?/gi, '');
 
     const handleCopy = () => {
         if (cleanedError) {
             navigator.clipboard.writeText(cleanedError);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
         }
     };
 

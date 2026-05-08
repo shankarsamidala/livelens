@@ -61,11 +61,12 @@ const MODELS: ModelOption[] = [
 type Step = 'install' | 'start' | 'model' | 'done';
 
 interface Props {
-  isOpen:    boolean;
-  onDismiss: () => void;
+  isOpen:         boolean;
+  onDismiss:      () => void;
+  onUseProviders?: () => void;
 }
 
-export const OllamaSetupToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
+export const OllamaSetupToaster: React.FC<Props> = ({ isOpen, onDismiss, onUseProviders }) => {
   const [step,         setStep]         = useState<Step>('install');
   const [visible,      setVisible]      = useState(false);
   const [platform,     setPlatform]     = useState<string>('darwin');
@@ -301,6 +302,7 @@ export const OllamaSetupToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
                     onDownload={handleDownload}
                     onRecheck={handleRecheck}
                     onDismiss={handleDismiss}
+                    onUseProviders={onUseProviders}
                   />
                 )}
                 {step === 'start' && (
@@ -310,6 +312,7 @@ export const OllamaSetupToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
                     hasError={startError}
                     onStart={handleStartOllama}
                     onDismiss={handleDismiss}
+                    onUseProviders={onUseProviders}
                   />
                 )}
                 {step === 'model' && (
@@ -326,6 +329,7 @@ export const OllamaSetupToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
                     onPull={handlePull}
                     onContinue={handleModelStepContinue}
                     onDismiss={handleDismiss}
+                    onUseProviders={onUseProviders}
                   />
                 )}
                 {step === 'done' && (
@@ -362,12 +366,13 @@ function StepDots({ current }: { current: Step }) {
 const CURL_CMD = 'curl -fsSL https://ollama.com/install.sh | sh';
 
 // ─── Step 1: Install ───────────────────────────────────────────
-function StepInstall({ installed, platform, onDownload, onRecheck, onDismiss }: {
+function StepInstall({ installed, platform, onDownload, onRecheck, onDismiss, onUseProviders }: {
   installed: boolean | null;
   platform:  string;
   onDownload: () => void;
   onRecheck: () => void;
   onDismiss: () => void;
+  onUseProviders?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const isMac = platform === 'darwin';
@@ -510,17 +515,23 @@ function StepInstall({ installed, platform, onDownload, onRecheck, onDismiss }: 
           </button>
         )}
         {(installed === null || installed === true) && (
-          <button onClick={onDismiss} style={{
-            width: '100%', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            padding: '0 20px', borderRadius: '13px', border: `1px solid ${T.rule}`, cursor: 'pointer',
-            background: T.glass, fontFamily: T.font, transition: 'background 150ms',
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = T.glassMid}
-            onMouseLeave={e => e.currentTarget.style.background = T.glass}
-          >
-            <span style={{ fontSize: '14px', fontWeight: 540, color: T.t2 }}>Skip for now</span>
-            <ArrowRight size={15} strokeWidth={2.2} color={T.t3} />
-          </button>
+          <>
+            <button onClick={() => onUseProviders?.()} style={{
+              width: '100%', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '0 20px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg, #d97757 0%, #c4623e 50%, #b05530 100%)',
+              boxShadow: '0 0 0 1px rgba(217,119,87,0.5), 0 8px 28px rgba(217,119,87,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+              fontFamily: T.font, transition: 'opacity 0.2s',
+            }}>
+              <span style={{ fontSize: '14px', fontWeight: 640, color: '#fff', letterSpacing: '-0.01em' }}>Use AI Providers instead</span>
+            </button>
+            <button onClick={onDismiss} style={{
+              width: '100%', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: 'none', cursor: 'pointer', background: 'transparent', fontFamily: T.font,
+            }}>
+              <span style={{ fontSize: '12px', color: T.t4 }}>Skip for now</span>
+            </button>
+          </>
         )}
       </motion.div>
     </motion.div>
@@ -528,11 +539,12 @@ function StepInstall({ installed, platform, onDownload, onRecheck, onDismiss }: 
 }
 
 // ─── Step 2: Start ─────────────────────────────────────────────
-function StepStart({ starting, hasError, onStart, onDismiss }: {
+function StepStart({ starting, hasError, onStart, onDismiss, onUseProviders }: {
   starting: boolean;
   hasError: boolean;
   onStart: () => void;
   onDismiss: () => void;
+  onUseProviders?: () => void;
 }) {
   return (
     <motion.div variants={STAGGER} initial="hidden" animate="show" exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}
@@ -595,10 +607,18 @@ function StepStart({ starting, hasError, onStart, onDismiss }: {
             : <ArrowRight size={15} strokeWidth={2.2} color="#fff" />
           }
         </button>
+        <button onClick={() => onUseProviders?.()} style={{
+          width: '100%', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          padding: '0 20px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+          background: 'linear-gradient(135deg, #d97757 0%, #c4623e 50%, #b05530 100%)',
+          boxShadow: '0 0 0 1px rgba(217,119,87,0.5), 0 8px 28px rgba(217,119,87,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+          fontFamily: T.font, transition: 'opacity 0.2s',
+        }}>
+          <span style={{ fontSize: '14px', fontWeight: 640, color: '#fff', letterSpacing: '-0.01em' }}>Use AI Providers instead</span>
+        </button>
         <button onClick={onDismiss} style={{
-          width: '100%', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '0', borderRadius: '10px', border: 'none', cursor: 'pointer',
-          background: 'transparent', fontFamily: T.font,
+          width: '100%', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: 'none', cursor: 'pointer', background: 'transparent', fontFamily: T.font,
         }}>
           <span style={{ fontSize: '12px', color: T.t4 }}>Skip for now</span>
         </button>
@@ -608,7 +628,7 @@ function StepStart({ starting, hasError, onStart, onDismiss }: {
 }
 
 // ─── Step 3: Pick & pull model ─────────────────────────────────
-function StepModel({ existingModels, models, selectedModel, pullStatus, pullPercent, pullMessage, confirming, onSelect, onPull, onContinue, onDismiss }: {
+function StepModel({ existingModels, models, selectedModel, pullStatus, pullPercent, pullMessage, confirming, onSelect, onPull, onContinue, onDismiss, onUseProviders }: {
   existingModels:  string[];
   models:          ModelOption[];
   selectedModel:   string;
@@ -620,6 +640,7 @@ function StepModel({ existingModels, models, selectedModel, pullStatus, pullPerc
   onPull:          () => void;
   onContinue:      () => void;
   onDismiss:       () => void;
+  onUseProviders?: () => void;
 }) {
   const hasExisting = existingModels.some(m =>
     models.some(opt => m.startsWith(opt.id.split(':')[0]))
@@ -756,8 +777,17 @@ function StepModel({ existingModels, models, selectedModel, pullStatus, pullPerc
             }
           </button>
         )}
+        <button onClick={() => onUseProviders?.()} style={{
+          width: '100%', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          padding: '0 20px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+          background: 'linear-gradient(135deg, #d97757 0%, #c4623e 50%, #b05530 100%)',
+          boxShadow: '0 0 0 1px rgba(217,119,87,0.5), 0 8px 28px rgba(217,119,87,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+          fontFamily: T.font, transition: 'opacity 0.2s',
+        }}>
+          <span style={{ fontSize: '14px', fontWeight: 640, color: '#fff', letterSpacing: '-0.01em' }}>Use AI Providers instead</span>
+        </button>
         <button onClick={onDismiss} style={{
-          width: '100%', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '100%', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center',
           border: 'none', cursor: 'pointer', background: 'transparent', fontFamily: T.font,
         }}>
           <span style={{ fontSize: '12px', color: T.t4 }}>Skip for now</span>

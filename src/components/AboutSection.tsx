@@ -1,11 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import {
     Github, Twitter, Shield, Cpu, Database,
-    Heart, Linkedin, Instagram, Mail, MicOff, Star, Bug, Globe, Sparkles, Zap, Camera, LayoutGrid, User
+    Heart, Linkedin, Instagram, Mail, MicOff, Star, Bug, Globe, Zap, LayoutGrid, User
 } from 'lucide-react';
 import evinProfile from '../assets/evin.png';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
-import { getPlatformShortcut } from '../utils/platformUtils';
 
 interface AboutSectionProps { }
 

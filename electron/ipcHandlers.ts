@@ -232,6 +232,16 @@ export function initializeIpcHandlers(appState: AppState): void {
     return { success: true };
   })
 
+  safeHandle("set-compact-mode", async (_event, compact: boolean) => {
+    appState.getWindowHelper().setCompactMode(compact);
+    return { success: true };
+  })
+
+  safeHandle("set-launcher-compact-height", async (_event, height: number) => {
+    appState.getWindowHelper().setLauncherCompactHeight(height);
+    return { success: true };
+  })
+
 
   safeHandle("delete-screenshot", async (event, filePath: string) => {
     // Guard: only allow deletion of files within the app's own userData directory

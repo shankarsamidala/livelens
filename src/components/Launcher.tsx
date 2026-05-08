@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, ArrowLeft, MoreHorizontal, Settings, Trash2, Download, DownloadCloud, CheckCircle, AlertCircle, Home, LogOut } from 'lucide-react';
+import { ArrowRight, ArrowLeft, MoreHorizontal, Settings, Trash2, Download, DownloadCloud, CheckCircle, AlertCircle, Home, LogOut, LayoutGrid, Minimize2 } from 'lucide-react';
+
+const ANALYSIS_MODES = [
+    { id: 'general',       emoji: '💬', label: 'General',       description: 'Describe and solve whatever is visible on screen.',          color: 'rgba(106,155,204,0.13)', border: 'rgba(106,155,204,0.18)' },
+    { id: 'dsa',           emoji: '🧩', label: 'DSA',           description: 'Naive → optimal approach, code, and complexity analysis.',    color: 'rgba(167,139,250,0.13)', border: 'rgba(167,139,250,0.18)' },
+    { id: 'system-design', emoji: '🏗️', label: 'System Design', description: 'Architecture, capacity planning, and trade-off discussion.',  color: 'rgba(45,212,191,0.12)',  border: 'rgba(45,212,191,0.17)'  },
+    { id: 'debug',         emoji: '🐛', label: 'Debug',         description: 'Find the bug, explain the root cause, and provide a fix.',    color: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.17)' },
+    { id: 'behavioral',    emoji: '🎯', label: 'Behavioral',    description: 'STAR-method first-person answer for interview questions.',     color: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.17)'  },
+    { id: 'sales',         emoji: '💼', label: 'Sales',         description: 'Objection handling, discovery questions, and deal closing.',   color: 'rgba(74,222,128,0.10)',  border: 'rgba(74,222,128,0.15)'  },
+    { id: 'data-science',  emoji: '📊', label: 'Data Science',  description: 'Analysis approach, ML methodology, Python-first answers.',    color: 'rgba(251,146,60,0.12)',  border: 'rgba(251,146,60,0.17)'  },
+    { id: 'devops',        emoji: '⚙️', label: 'DevOps',        description: 'Infrastructure, CI/CD pipelines, and container strategy.',    color: 'rgba(148,163,184,0.10)', border: 'rgba(148,163,184,0.14)' },
+] as const;
 import SettingsOverlay from './SettingsOverlay';
 import { generateMeetingPDF } from '../utils/pdfGenerator';
 import icon from "./icon.png";
@@ -9,7 +20,6 @@ import GlobalChatOverlay from './GlobalChatOverlay';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analytics } from '../lib/analytics/analytics.service'; // Added analytics import
 import { useShortcuts } from '../hooks/useShortcuts';
-import { useResolvedTheme } from '../hooks/useResolvedTheme';
 import { isMac } from '../utils/platformUtils';
 import WindowControls from './WindowControls';
 
@@ -42,8 +52,6 @@ interface Meeting {
 interface LauncherProps {
     onStartMeeting: () => void;
     onOpenSettings: (tab?: string) => void;
-    onOpenModes?: () => void;
-    onPageChange?: (isMain: boolean) => void;
     ollamaPullStatus?: 'idle' | 'downloading' | 'complete' | 'failed';
     ollamaPullPercent?: number;
     ollamaPullMessage?: string;
@@ -95,11 +103,11 @@ const NavBtn: React.FC<{ label: string; active: boolean; onClick: () => void; ch
     </div>
 );
 
-const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onOpenModes, onPageChange, ollamaPullStatus = 'idle', ollamaPullPercent = 0, ollamaPullMessage = '' }) => {
-    const [activeView, setActiveView] = useState<'home' | 'history' | 'queue' | 'solutions' | 'settings'>('home');
-    const [settingsTab, setSettingsTab] = useState('general');
+const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, ollamaPullStatus = 'idle', ollamaPullPercent = 0, ollamaPullMessage = '' }) => {
+    const [activeView, setActiveView] = useState<'home' | 'modes' | 'settings'>('home');
+    const settingsTab = 'general';
+    const [currentMode, setCurrentMode] = useState<string>('general');
     const [meetings, setMeetings] = useState<Meeting[]>([]);
-    const [isDetectable, setIsDetectable] = useState(false);
     const [isMeetingActive, setIsMeetingActive] = useState(false);
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
@@ -107,7 +115,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
     const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false);
     const [submittedGlobalQuery, setSubmittedGlobalQuery] = useState('');
 
-    const [showModesOnboarding, setShowModesOnboarding] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     const fetchMeetings = () => {
@@ -119,7 +126,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
 
     // Keybinds
     const { isShortcutPressed } = useShortcuts();
-    const isLight = useResolvedTheme() === 'light';
     useEffect(() => {
         let mounted = true;
         console.log("Launcher mounted");
@@ -128,30 +134,12 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
             window.electronAPI.seedDemo().catch(err => console.error("Failed to seed demo:", err));
         }
 
-        // Onboarding Check
-        const hasSeenModesOnboarding = localStorage.getItem('natively_seen_modes_onboarding_v5');
-        if (!hasSeenModesOnboarding) {
-            setTimeout(() => {
-                if (mounted) setShowModesOnboarding(true);
-            }, 8000); // Increased delay so it doesn't overlap with other startup notifications
-        }
-
-        // Sync initial undetectable state
-        if (window.electronAPI?.getUndetectable) {
-            window.electronAPI.getUndetectable().then((undetectable) => {
-                if (mounted) setIsDetectable(!undetectable);
-            });
-        }
-
-        // Listen for undetectable changes
-        let removeUndetectableListener: (() => void) | undefined;
-        if (window.electronAPI?.onUndetectableChanged) {
-            removeUndetectableListener = window.electronAPI.onUndetectableChanged((undetectable) => {
-                setIsDetectable(!undetectable);
-            });
-        }
-
         fetchMeetings();
+
+        // Load persisted analysis mode
+        window.electronAPI?.getAnalysisMode?.()
+            .then((m: string) => { if (m && mounted) setCurrentMode(m); })
+            .catch(() => {});
 
         // Sync initial meeting active state — guarded so unmounted component isn't written to
         if (window.electronAPI?.getMeetingActive) {
@@ -177,7 +165,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
         return () => {
             mounted = false;
             if (removeMeetingsListener) removeMeetingsListener();
-            if (removeUndetectableListener) removeUndetectableListener();
             if (removeMeetingStateListener) removeMeetingStateListener();
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,12 +236,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
         return () => window.removeEventListener('click', handleClickOutside);
     }, []);
 
-    // Notify parent if we are on the main launcher list view
-    useEffect(() => {
-        if (onPageChange) {
-            onPageChange(!selectedMeeting && !isGlobalChatOpen);
-        }
-    }, [selectedMeeting, isGlobalChatOpen, onPageChange]);
 
     const handleOpenMeeting = async (meeting: Meeting) => {
         setForwardMeeting(null); // Clear forward history on new navigation
@@ -320,38 +301,10 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
     return (
         <div className="h-full w-full flex flex-col bg-[#080a0e] text-[#e2e5ed] font-sans overflow-hidden selection:bg-accent-secondary/30">
             {/* 1. Header (Static) */}
-            <header className="relative w-full h-[40px] shrink-0 flex items-center justify-between pl-0 drag-region select-none bg-[#0d0f14] border-b border-white/[0.07] z-[200]">
-                {/* Left: Spacing for Traffic Lights + Navigation Arrows */}
-                <div className="flex items-center gap-1 no-drag">
-                    {isMac && <div className="w-[70px]" />} {/* Traffic Light Spacer (macOS only) */}
-
-                    {/* Back Button */}
-                    <button
-                        onClick={selectedMeeting ? handleBack : undefined}
-                        disabled={!selectedMeeting}
-                        className={`
-                            transition-all duration-300 p-1 flex items-center justify-center mt-1 ml-2
-                            ${selectedMeeting
-                                ? 'text-[#e2e5ed]/50 hover:text-[#e2e5ed] hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]'
-                                : 'text-[#e2e5ed]/20 opacity-50 cursor-default'}
-                        `}
-                    >
-                        <ArrowLeft size={16} />
-                    </button>
-
-                    {/* Forward Button */}
-                    <button
-                        onClick={handleForward}
-                        disabled={!forwardMeeting}
-                        className={`
-                            transition-all duration-300 p-1 flex items-center justify-center mt-1
-                            ${forwardMeeting
-                                ? 'text-[#e2e5ed]/50 hover:text-[#e2e5ed] hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]'
-                                : 'text-[#e2e5ed]/20 opacity-0 cursor-default'}
-                        `}
-                    >
-                        <ArrowRight size={16} />
-                    </button>
+            <header className="relative w-full h-[48px] shrink-0 flex items-center justify-between pl-0 drag-region select-none bg-[#0d0f14] border-b border-white/[0.07] z-[200]">
+                {/* Left: Traffic light spacer (macOS only) */}
+                <div className="flex items-center no-drag">
+                    {isMac && <div className="w-[72px]" />}
                 </div>
 
 
@@ -364,8 +317,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                         setIsGlobalChatOpen(true);
                     }}
                     onLiteralSearch={(query) => {
-                        // For now, also use AI query for literal search
-                        // Could be enhanced to do fuzzy filtering in the UI
                         analytics.trackCommandExecuted('literal_search');
                         setSubmittedGlobalQuery(query);
                         setIsGlobalChatOpen(true);
@@ -379,112 +330,17 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                     }}
                 />
 
-                {/* Right: Actions */}
-                <div className={`flex items-center gap-1 no-drag shrink-0 ${isMac ? 'mr-1' : ''}`}>
-                    <div className="relative group/modes-btn select-none">
+                {/* Right: compact mode toggle (macOS) + Window controls (Windows) */}
+                <div className={`flex items-center no-drag shrink-0 gap-1 ${isMac ? 'mr-2' : ''}`}>
+                    {isMac && (
                         <button
-                            onClick={() => {
-                                setShowModesOnboarding(false);
-                                localStorage.setItem('natively_seen_modes_onboarding_v5', 'true');
-                                onOpenModes?.();
-                            }}
-                            title="Modes"
-                            className="p-2 text-[#e2e5ed]/50 hover:text-[#e2e5ed] transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                            onClick={() => window.electronAPI?.setCompactMode?.(true)}
+                            className="w-[26px] h-[26px] flex items-center justify-center rounded-[7px] border border-transparent text-[#e2e5ed]/30 hover:bg-white/[0.07] hover:border-white/[0.09] hover:text-[#e2e5ed]/70 transition-all duration-100"
+                            title="Compact mode"
                         >
-                            <svg width={18} height={18} viewBox="0 0 14 14" fill="none">
-                                <rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.9"/>
-                                <rect x="7.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.9"/>
-                                <rect x="1" y="7.5" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.9"/>
-                                <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.35"/>
-                            </svg>
+                            <Minimize2 size={12} />
                         </button>
-                        
-                        <AnimatePresence>
-                            {showModesOnboarding && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 6, scale: 0.96, filter: "blur(4px)" }}
-                                    animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                                    exit={{ opacity: 0, y: -2, scale: 0.98, filter: "blur(2px)", transition: { duration: 0.15, ease: "easeOut" } }}
-                                    transition={{ type: "spring", stiffness: 350, damping: 25, mass: 1 }}
-                                    className={`absolute top-[38px] right-2 w-[270px] rounded-[20px] p-4 z-[300] origin-top-right backdrop-blur-[40px] saturate-[180%] transform-gpu ${
-                                        isLight 
-                                        ? 'bg-white/70 shadow-[0_8px_30px_rgb(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)]' 
-                                        : 'bg-[#18181A]/70 shadow-[0_8px_30px_rgb(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.08)]'
-                                    }`}
-                                >
-                                    {/* Triangle Pointer */}
-                                    <div className={`absolute -top-[5px] right-[14px] w-2.5 h-2.5 rotate-45 rounded-tl-[3px] ${
-                                        isLight 
-                                        ? 'bg-white/70 border-t border-l border-black/5 backdrop-blur-[40px]' 
-                                        : 'bg-[#18181A]/70 border-t border-l border-white/5 backdrop-blur-[40px]'
-                                    }`} />
-                                    
-                                    <div className="relative flex gap-3">
-                                        <div className={`w-9 h-9 flex items-center justify-center shrink-0 rounded-full ${
-                                            isLight
-                                            ? 'bg-orange-500 bg-opacity-10 text-orange-500'
-                                            : 'bg-orange-500 bg-opacity-15 text-orange-400'
-                                        }`}>
-                                            <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
-                                                <rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.9"/>
-                                                <rect x="7.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.9"/>
-                                                <rect x="1" y="7.5" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.9"/>
-                                                <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1.5" fill="currentColor" opacity="0.4"/>
-                                            </svg>
-                                        </div>
-                                        <div className="flex-1 pt-[2px]">
-                                            <h3 className="text-[14px] font-semibold tracking-[-0.015em] mb-1 flex items-center gap-2">
-                                                <span className={isLight ? 'text-slate-900' : 'text-slate-100'}>Modes</span>
-                                                <span className={`text-[10px] font-medium px-1.5 py-[1px] rounded-[5px] ${
-                                                    isLight
-                                                    ? 'bg-orange-50 text-orange-600 border border-orange-100/50'
-                                                    : 'bg-orange-500/10 text-orange-400'
-                                                }`}>
-                                                    Beta
-                                                </span>
-                                            </h3>
-                                            <p className={`text-[12px] leading-[1.35] mb-3.5 tracking-[-0.01em] ${
-                                                isLight ? 'text-slate-500' : 'text-slate-400'
-                                            }`}>
-                                                Custom instructions and formulas designed for different meeting contexts.
-                                            </p>
-                                            <div className="flex justify-end gap-1.5 isolate">
-                                                <button 
-                                                    onClick={(e) => { 
-                                                        e.stopPropagation(); 
-                                                        setShowModesOnboarding(false); 
-                                                        localStorage.setItem('natively_seen_modes_onboarding_v5', 'true'); 
-                                                    }}
-                                                    className={`text-[12px] font-medium px-3.5 py-[6px] rounded-full transition-all active:scale-95 ${
-                                                        isLight
-                                                        ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
-                                                        : 'text-slate-400 hover:text-slate-100 hover:bg-white/10'
-                                                    }`}
-                                                >
-                                                    Dismiss
-                                                </button>
-                                                <button 
-                                                    onClick={(e) => { 
-                                                        e.stopPropagation(); 
-                                                        onOpenModes?.(); 
-                                                        setShowModesOnboarding(false); 
-                                                        localStorage.setItem('natively_seen_modes_onboarding_v5', 'true'); 
-                                                    }}
-                                                    className={`text-[12px] font-medium px-4 py-[6px] rounded-full transition-all active:scale-95 shadow-sm ${
-                                                        isLight
-                                                        ? 'bg-slate-900 text-white hover:bg-slate-800'
-                                                        : 'bg-slate-100 text-slate-900 hover:bg-white'
-                                                    }`}
-                                                >
-                                                    Try it out
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                    )}
                     {!isMac && <WindowControls />}
                 </div>
             </header>
@@ -502,19 +358,9 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                         <Home size={16} />
                     </NavBtn>
 
-                    {/* History */}
-                    <NavBtn label="History" active={activeView === 'history'} onClick={() => setActiveView('history')}>
-                        <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                    </NavBtn>
-
-
-                    {/* Solutions */}
-                    <NavBtn label="Solutions" active={activeView === 'solutions'} onClick={() => setActiveView('solutions')}>
-                        <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                        </svg>
+                    {/* Modes */}
+                    <NavBtn label="Modes" active={activeView === 'modes'} onClick={() => setActiveView('modes')}>
+                        <LayoutGrid size={16} />
                     </NavBtn>
 
                     <div className="flex-1" />
@@ -525,7 +371,7 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                     </NavBtn>
 
                     {/* Logout */}
-                    <NavBtn label="Logout" active={false} onClick={() => setShowLogoutConfirm(true)}>
+                    <NavBtn label="Quit" active={false} onClick={() => setShowLogoutConfirm(true)}>
                         <LogOut size={16} />
                     </NavBtn>
                 </div>
@@ -541,16 +387,130 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                     />
                 )}
 
+                {/* Inline Modes View */}
+                {activeView === 'modes' && (
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                            {/* .inner — exact match to prototype */}
+                            <div style={{ width: '100%', maxWidth: 760, margin: '0 auto', padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                                {/* Section header */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(226,229,237,0.25)' }}>Analysis Mode</span>
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 999, background: 'rgba(217,119,87,0.10)', border: '1px solid rgba(217,119,87,0.22)' }}>
+                                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#d97757', boxShadow: '0 0 5px rgba(217,119,87,0.7)', flexShrink: 0, display: 'inline-block' }} />
+                                        <span style={{ fontSize: 10.5, fontWeight: 600, color: '#d97757', whiteSpace: 'nowrap' }}>
+                                            {ANALYSIS_MODES.find(m => m.id === currentMode)?.label ?? 'General'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* 2-col card grid — exact match to prototype */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                    {ANALYSIS_MODES.map((mode) => {
+                                        const isActive = currentMode === mode.id;
+                                        return (
+                                            <button
+                                                key={mode.id}
+                                                onClick={async () => {
+                                                    setCurrentMode(mode.id);
+                                                    await window.electronAPI?.setAnalysisMode?.(mode.id).catch(() => {});
+                                                }}
+                                                className="group/modecard"
+                                                style={{
+                                                    position: 'relative',
+                                                    width: '100%',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: 10,
+                                                    padding: '14px 14px 13px',
+                                                    borderRadius: 12,
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    transition: 'background 0.12s, border-color 0.12s, transform 0.1s',
+                                                    background: isActive ? 'rgba(217,119,87,0.08)' : 'rgba(255,255,255,0.03)',
+                                                    border: isActive ? '1px solid rgba(217,119,87,0.22)' : '1px solid rgba(255,255,255,0.07)',
+                                                }}
+                                                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; } }}
+                                                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; } }}
+                                                onMouseDown={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(0.985)'; }}
+                                                onMouseUp={e => { (e.currentTarget as HTMLElement).style.transform = ''; }}
+                                            >
+                                                {/* Left accent bar */}
+                                                {isActive && (
+                                                    <span style={{ position: 'absolute', left: 0, top: 10, bottom: 10, width: 2.5, borderRadius: '0 2px 2px 0', background: '#d97757' }} />
+                                                )}
+
+                                                {/* Top row: emoji + check ring */}
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
+                                                    <div
+                                                        className="group-hover/modecard:scale-[1.06]"
+                                                        style={{
+                                                            width: 36, height: 36, borderRadius: 9,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: 17, flexShrink: 0,
+                                                            transition: 'transform 0.12s',
+                                                            background: mode.color, border: `1px solid ${mode.border}`,
+                                                        }}
+                                                    >
+                                                        {mode.emoji}
+                                                    </div>
+                                                    <div style={{
+                                                        width: 18, height: 18, borderRadius: '50%',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        flexShrink: 0, marginTop: 1, marginLeft: 'auto',
+                                                        transition: 'all 0.15s',
+                                                        background: isActive ? '#d97757' : 'transparent',
+                                                        border: isActive ? '1.5px solid #d97757' : '1.5px solid rgba(255,255,255,0.12)',
+                                                        boxShadow: isActive ? '0 0 10px rgba(217,119,87,0.4)' : 'none',
+                                                    }}>
+                                                        {isActive && (
+                                                            <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                                                                <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Label + description */}
+                                                <div>
+                                                    <div style={{
+                                                        fontSize: 13, fontWeight: 590, letterSpacing: '-0.01em',
+                                                        marginBottom: 3, transition: 'color 0.12s',
+                                                        color: isActive ? 'rgba(240,241,244,1)' : 'rgba(226,229,237,0.65)',
+                                                    }}>
+                                                        {mode.label}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: 11, lineHeight: 1.45,
+                                                        transition: 'color 0.12s',
+                                                        color: isActive ? 'rgba(226,229,237,0.40)' : 'rgba(226,229,237,0.25)',
+                                                    }}>
+                                                        {mode.description}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Footer hint */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 4 }}>
+                                    <svg style={{ width: 13, height: 13, flexShrink: 0, color: 'rgba(226,229,237,0.20)' }} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    <p style={{ fontSize: 10.5, color: 'rgba(226,229,237,0.22)', lineHeight: 1.4 }}>
+                                        Applies instantly. <span style={{ color: 'rgba(226,229,237,0.40)', fontWeight: 580 }}>What to answer?</span> and <span style={{ color: 'rgba(226,229,237,0.40)', fontWeight: 580 }}>Solve</span> will use this context.
+                                    </p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <AnimatePresence mode="wait">
-                    {activeView === 'settings' ? null : activeView === 'solutions' ? (
-                        <motion.div key="solutions" className="flex-1 flex flex-col items-center justify-center gap-3"
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                            <svg viewBox="0 0 24 24" width={28} height={28} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e2e5ed]/20">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                            </svg>
-                            <p className="text-[12px] text-[#e2e5ed]/25">Solutions — coming soon</p>
-                        </motion.div>
-                    ) : selectedMeeting && activeView === 'home' ? (
+                    {activeView === 'settings' || activeView === 'modes' ? null : selectedMeeting && activeView === 'home' ? (
                         <motion.div
                             key="details"
                             className="flex-1 overflow-hidden"
@@ -565,81 +525,52 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                                 onOpenSettings={onOpenSettings}
                             />
                         </motion.div>
-                    ) : activeView === 'history' ? (
-                        <motion.div
-                            key="history"
-                            className="flex-1 flex flex-col overflow-hidden"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                        >
-                            <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                                <div className="px-5 py-4">
-                                    <p className="text-[10.5px] font-bold tracking-[0.08em] uppercase text-[#e2e5ed]/25 px-1 pb-3">All Sessions</p>
-                                    {sortedGroups.map((label) => (
-                                        <div key={label} className="mb-3">
-                                            <div className="text-[10.5px] font-bold tracking-[0.08em] uppercase text-[#e2e5ed]/25 px-1 pb-[6px]">{label}</div>
-                                            <div className="rounded-[12px] border border-white/[0.07] overflow-hidden bg-white/[0.02]">
-                                                {groupedMeetings[label].map((m, idx) => (
-                                                    <div
-                                                        key={m.id}
-                                                        className={`group relative flex items-center gap-3 px-[14px] py-[10px] cursor-pointer hover:bg-white/[0.03] transition-colors ${idx < groupedMeetings[label].length - 1 ? 'border-b border-white/[0.05]' : ''}`}
-                                                        onClick={() => { setActiveView('home'); handleOpenMeeting(m); }}
-                                                    >
-                                                        <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 border ${m.active ? 'bg-[rgba(74,222,128,0.10)] border-[rgba(74,222,128,0.18)] text-[#4ade80]' : 'bg-white/[0.05] border-white/[0.08] text-[#e2e5ed]/35'}`}>
-                                                            <svg viewBox="0 0 24 24" className="w-[13px] h-[13px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className={`text-[13px] font-medium truncate ${m.title === 'Processing...' ? 'text-blue-400 italic animate-pulse' : 'text-[#e2e5ed]'}`}>{m.title}</div>
-                                                            <div className="text-[11px] text-[#e2e5ed]/38 mt-[1px]">{formatTime(m.date)}</div>
-                                                        </div>
-                                                        {m.active ? (
-                                                            <span className="text-[10px] font-semibold px-[7px] py-[2px] rounded-full bg-[rgba(74,222,128,0.10)] text-[#4ade80] border border-[rgba(74,222,128,0.18)] tracking-[0.04em] shrink-0">LIVE</span>
-                                                        ) : (
-                                                            <span className="text-[10.5px] text-[#e2e5ed]/30 shrink-0">{formatDurationPill(m.duration)}</span>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {meetings.length === 0 && (
-                                        <div className="text-[12px] text-[#e2e5ed]/25 px-1 pt-2">No recorded sessions yet.</div>
-                                    )}
-                                </div>
-                            </main>
-                        </motion.div>
                     ) : (
+                        /* ── Home View ── */
                         <motion.div
-                            key="launcher"
+                            key="home"
                             className="flex-1 flex flex-col overflow-hidden"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
                         >
-                            {/* ── Hero ── */}
-                            <section className="px-5 pt-5 pb-4 border-b border-white/[0.06] shrink-0">
-                                <div className="flex items-start justify-between mb-[18px]">
-                                    <div>
-                                        <h1 className="text-[20px] font-semibold text-[#e2e5ed] tracking-[-0.025em] leading-[1.2]">My LiveLens</h1>
-                                        <p className="text-[12px] text-[#e2e5ed]/40 mt-[3px]">
-                                            {meetings.length > 0 ? `${meetings.length} session${meetings.length !== 1 ? 's' : ''} recorded` : 'No sessions yet'}
-                                        </p>
-                                    </div>
-                                    <div className={`w-[7px] h-[7px] rounded-full mt-[6px] shrink-0 transition-colors ${isMeetingActive ? 'bg-[#4ade80] shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-[#e2e5ed]/20'}`} />
-                                </div>
+                            <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                                <div className="w-full max-w-[760px] mx-auto px-5 pt-5 pb-6 flex flex-col gap-5">
 
-                                {/* Ollama status bar — compact, only when active */}
+                                {/* Live session banner */}
+                                <AnimatePresence>
+                                    {isMeetingActive && (
+                                        <motion.button
+                                            initial={{ opacity: 0, y: -6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -6 }}
+                                            transition={{ duration: 0.2 }}
+                                            onClick={() => {
+                                                window.electronAPI?.setWindowMode?.('overlay', true);
+                                                analytics.trackCommandExecuted('resume_meeting_from_launcher');
+                                            }}
+                                            className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-[11px] bg-[rgba(74,222,128,0.07)] border border-[rgba(74,222,128,0.18)] text-[#4ade80] hover:bg-[rgba(74,222,128,0.11)] active:scale-[0.99] transition-all text-left shrink-0"
+                                        >
+                                            <span className="relative flex h-[7px] w-[7px] shrink-0">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ade80] opacity-70" />
+                                                <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-[#4ade80]" />
+                                            </span>
+                                            <span className="flex-1 text-[13px] font-medium">Session in progress</span>
+                                            <ArrowRight size={13} className="opacity-50 shrink-0" />
+                                        </motion.button>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Ollama download bar */}
                                 <AnimatePresence>
                                     {ollamaPullStatus !== 'idle' && (
                                         <motion.div
-                                            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                                            animate={{ opacity: 1, height: 'auto', marginBottom: 10 }}
-                                            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
                                             transition={{ duration: 0.2 }}
-                                            className="flex items-center gap-2 px-3 py-2 rounded-[8px] bg-white/[0.04] border border-white/[0.07] overflow-hidden"
+                                            className="flex items-center gap-2 px-3 py-2 rounded-[8px] bg-white/[0.04] border border-white/[0.07] overflow-hidden shrink-0"
                                         >
                                             {ollamaPullStatus === 'downloading' ? (
                                                 <DownloadCloud size={12} className="text-blue-400 animate-pulse shrink-0" />
@@ -660,150 +591,198 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, onO
                                     )}
                                 </AnimatePresence>
 
-                                {/* CTA button */}
+                                {/* Primary CTA */}
                                 <button
                                     onClick={() => {
-                                        if (isMeetingActive) {
-                                            window.electronAPI?.setWindowMode?.('overlay', true);
-                                            analytics.trackCommandExecuted('resume_meeting_from_launcher');
-                                        } else {
-                                            onStartMeeting();
-                                            analytics.trackCommandExecuted('start_natively_cta');
-                                        }
+                                        onStartMeeting();
+                                        analytics.trackCommandExecuted('start_natively_cta');
                                     }}
-                                    className={`w-full py-[11px] rounded-[11px] text-white text-[13.5px] font-semibold tracking-[-0.01em] flex items-center justify-center gap-2 border transition-opacity hover:opacity-[0.88] active:scale-[0.99] ${
-                                        isMeetingActive
-                                            ? 'bg-gradient-to-br from-[#065f46] to-[#047857] border-[rgba(74,222,128,0.18)] shadow-[0_4px_20px_rgba(5,150,105,0.25)]'
-                                            : 'bg-gradient-to-br from-[#d97757] to-[#b05530] border-[rgba(217,119,87,0.25)] shadow-[0_4px_20px_rgba(217,119,87,0.30)]'
-                                    }`}
+                                    disabled={isMeetingActive}
+                                    className="w-full flex items-center justify-between px-3 py-[14px] rounded-[12px] text-left transition-all duration-100 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                                    style={{ background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.18)' }}
+                                    onMouseEnter={e => { if (!isMeetingActive) e.currentTarget.style.background = 'rgba(217,119,87,0.13)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(217,119,87,0.08)'; }}
                                 >
-                                    {isMeetingActive ? (
-                                        <>
-                                            <span className="relative flex h-[8px] w-[8px] shrink-0">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60" />
-                                                <span className="relative inline-flex rounded-full h-[8px] w-[8px] bg-white" />
-                                            </span>
-                                            Meeting ongoing
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg viewBox="0 0 24 24" className="w-[13px] h-[13px] fill-white shrink-0"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                            Start LiveLens
-                                        </>
-                                    )}
-                                </button>
-                            </section>
-
-                            {/* ── Meeting list ── */}
-                            <main className="flex-1 overflow-y-auto custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                                <div className="px-5 py-4">
-                                    {sortedGroups.map((label) => (
-                                        <div key={label} className="mb-3">
-                                            <div className="text-[10.5px] font-bold tracking-[0.08em] uppercase text-[#e2e5ed]/25 px-1 pb-[6px]">{label}</div>
-                                            <div className="rounded-[12px] border border-white/[0.07] overflow-hidden bg-white/[0.02]">
-                                                {groupedMeetings[label].map((m, idx) => (
-                                                    <div
-                                                        key={m.id}
-                                                        className={`group relative flex items-center gap-3 px-[14px] py-[10px] cursor-pointer hover:bg-white/[0.03] transition-colors ${idx < groupedMeetings[label].length - 1 ? 'border-b border-white/[0.05]' : ''}`}
-                                                        onClick={() => handleOpenMeeting(m)}
-                                                    >
-                                                        {/* Icon */}
-                                                        <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 border ${
-                                                            m.active
-                                                                ? 'bg-[rgba(74,222,128,0.10)] border-[rgba(74,222,128,0.18)] text-[#4ade80]'
-                                                                : 'bg-white/[0.05] border-white/[0.08] text-[#e2e5ed]/35'
-                                                        }`}>
-                                                            <svg viewBox="0 0 24 24" className="w-[13px] h-[13px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                                                            </svg>
-                                                        </div>
-
-                                                        {/* Info */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className={`text-[13px] font-medium truncate ${m.title === 'Processing...' ? 'text-blue-400 italic animate-pulse' : 'text-[#e2e5ed]'}`}>
-                                                                {m.title}
-                                                            </div>
-                                                            <div className="text-[11px] text-[#e2e5ed]/38 mt-[1px]">{formatTime(m.date)}</div>
-                                                        </div>
-
-                                                        {/* Right: duration or LIVE badge or processing */}
-                                                        {m.title === 'Processing...' ? (
-                                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                                <svg className="animate-spin w-[11px] h-[11px] text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                                                                <span className="text-[10px] text-blue-400 font-medium">Finalizing</span>
-                                                            </div>
-                                                        ) : m.active ? (
-                                                            <span className="text-[10px] font-semibold px-[7px] py-[2px] rounded-full bg-[rgba(74,222,128,0.10)] text-[#4ade80] border border-[rgba(74,222,128,0.18)] tracking-[0.04em] shrink-0">LIVE</span>
-                                                        ) : (
-                                                            <span className="text-[10.5px] text-[#e2e5ed]/30 shrink-0 transition-opacity group-hover:opacity-0">{formatDurationPill(m.duration)}</span>
-                                                        )}
-
-                                                        {/* Context menu trigger — slides in on hover */}
-                                                        <div className="absolute right-[14px] top-1/2 -translate-y-1/2 opacity-0 translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
-                                                            <button
-                                                                className="p-1 text-[#e2e5ed]/40 hover:text-[#e2e5ed]/80 transition-colors"
-                                                                onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === m.id ? null : m.id); }}
-                                                            >
-                                                                <MoreHorizontal size={15} />
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Dropdown */}
-                                                        <AnimatePresence>
-                                                            {activeMenuId === m.id && (
-                                                                <motion.div
-                                                                    initial={{ opacity: 0, scale: 0.95, y: 6 }}
-                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                    exit={{ opacity: 0, scale: 0.95, y: 4 }}
-                                                                    transition={{ duration: 0.1 }}
-                                                                    className="absolute right-2 top-full mt-1 w-[90px] bg-[#1a1c22] border border-white/[0.10] rounded-[8px] shadow-2xl z-50 overflow-hidden"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                    onMouseEnter={() => setMenuEntered(true)}
-                                                                    onMouseLeave={() => { if (menuEntered) setActiveMenuId(null); }}
-                                                                >
-                                                                    <div className="p-1 flex flex-col gap-0.5">
-                                                                        <button
-                                                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] text-[#e2e5ed]/70 hover:text-[#e2e5ed] hover:bg-white/[0.06] rounded-[6px] transition-colors text-left"
-                                                                            onClick={async () => {
-                                                                                setActiveMenuId(null);
-                                                                                analytics.trackPdfExported();
-                                                                                if (window.electronAPI?.getMeetingDetails) {
-                                                                                    try {
-                                                                                        const full = await window.electronAPI.getMeetingDetails(m.id);
-                                                                                        generateMeetingPDF(full ?? m);
-                                                                                    } catch { generateMeetingPDF(m); }
-                                                                                } else { generateMeetingPDF(m); }
-                                                                            }}
-                                                                        >
-                                                                            <Download size={12} />Export
-                                                                        </button>
-                                                                        <button
-                                                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-[6px] transition-colors text-left"
-                                                                            onClick={async () => {
-                                                                                if (window.electronAPI?.deleteMeeting) {
-                                                                                    const ok = await window.electronAPI.deleteMeeting(m.id);
-                                                                                    if (ok) setMeetings(prev => prev.filter(x => x.id !== m.id));
-                                                                                }
-                                                                                setActiveMenuId(null);
-                                                                            }}
-                                                                        >
-                                                                            <Trash2 size={12} />Delete
-                                                                        </button>
-                                                                    </div>
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                    <div className="flex items-center gap-[11px]">
+                                        <div className="w-[38px] h-[38px] rounded-[10px] flex items-center justify-center shrink-0 bg-gradient-to-br from-[#d97757] to-[#b05530]">
+                                            <svg viewBox="0 0 24 24" className="w-[12px] h-[12px] fill-white shrink-0"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                         </div>
-                                    ))}
+                                        <div className="flex flex-col gap-[2px]">
+                                            <span className="text-[14px] font-[600] text-[#e2e5ed]/92 tracking-[-0.01em]">Start LiveLens</span>
+                                            <span className="text-[11.5px] text-[#e2e5ed]/35">Begin recording &amp; analysis</span>
+                                        </div>
+                                    </div>
+                                    <div className="w-[24px] h-[24px] rounded-[7px] flex items-center justify-center shrink-0" style={{ background: 'rgba(217,119,87,0.15)' }}>
+                                        <ArrowRight size={12} className="text-[#d97757]" />
+                                    </div>
+                                </button>
 
-                                    {meetings.length === 0 && (
-                                        <div className="text-[12px] text-[#e2e5ed]/25 px-1 pt-2">No recorded sessions yet.</div>
-                                    )}
-                                </div>
+                                {/* Stats row */}
+                                {meetings.length > 0 && (() => {
+                                    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                                    const thisWeek = meetings.filter(m => new Date(m.date).getTime() > weekAgo).length;
+                                    const totalMins = meetings.reduce((acc, m) => {
+                                        if (!m.duration) return acc;
+                                        const parts = m.duration.split(':');
+                                        return acc + (parseInt(parts[0]) || 0);
+                                    }, 0);
+                                    const avgMin = meetings.length ? Math.round(totalMins / meetings.length) : 0;
+                                    return (
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[
+                                                { label: 'Sessions', value: String(meetings.length), sub: 'All time' },
+                                                { label: 'This week', value: String(thisWeek), sub: 'Last 7 days' },
+                                                { label: 'Avg length', value: avgMin ? `${avgMin}m` : '—', sub: 'Per session' },
+                                            ].map(s => (
+                                                <div key={s.label} className="flex flex-col gap-[4px] px-[13px] py-[11px] rounded-[10px]"
+                                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                                    <span className="text-[10px] font-[700] tracking-[0.06em] uppercase text-[#e2e5ed]/25">{s.label}</span>
+                                                    <span className="text-[20px] font-[650] text-[#e2e5ed]/88 tracking-[-0.03em] leading-none">{s.value}</span>
+                                                    <span className="text-[10.5px] text-[#e2e5ed]/28">{s.sub}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Sessions list */}
+                                {meetings.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+                                        <div className="w-12 h-12 rounded-[14px] bg-white/[0.04] border border-white/[0.07] flex items-center justify-center">
+                                            <svg viewBox="0 0 24 24" className="w-[20px] h-[20px] text-[#e2e5ed]/20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                                <line x1="12" y1="19" x2="12" y2="23"/>
+                                                <line x1="8" y1="23" x2="16" y2="23"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-[13px] font-medium text-[#e2e5ed]/45 mb-1.5">No sessions yet</p>
+                                            <p className="text-[11.5px] text-[#e2e5ed]/25 leading-relaxed max-w-[190px]">
+                                                Press Start LiveLens to record and analyse your first conversation.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-0">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-[10.5px] font-[700] tracking-[0.08em] uppercase text-[#e2e5ed]/25">Sessions</span>
+                                            <span className="text-[10.5px] text-[#e2e5ed]/20 tabular-nums">{meetings.length}</span>
+                                        </div>
+
+                                        {sortedGroups.map((label) => (
+                                            <div key={label} className="mb-4">
+                                                <div className="text-[10px] font-[600] tracking-[0.07em] uppercase text-[#e2e5ed]/20 mb-1.5 px-[2px]">{label}</div>
+                                                <div className="flex flex-col gap-[2px]">
+                                                    {groupedMeetings[label].map((m) => (
+                                                        <div
+                                                            key={m.id}
+                                                            className="group relative flex items-start gap-3 px-[10px] py-[9px] rounded-[10px] cursor-pointer hover:bg-white/[0.04] active:bg-white/[0.06] transition-colors"
+                                                            onClick={() => handleOpenMeeting(m)}
+                                                        >
+                                                            <div className={`w-[30px] h-[30px] rounded-[8px] flex items-center justify-center shrink-0 border mt-[1px] ${
+                                                                m.active
+                                                                    ? 'bg-[rgba(74,222,128,0.10)] border-[rgba(74,222,128,0.18)] text-[#4ade80]'
+                                                                    : 'bg-white/[0.04] border-white/[0.08] text-[#e2e5ed]/25'
+                                                            }`}>
+                                                                <svg viewBox="0 0 24 24" className="w-[12px] h-[12px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                                                </svg>
+                                                            </div>
+
+                                                            <div className="flex-1 min-w-0 pr-7">
+                                                                <div className="flex items-baseline justify-between gap-2 mb-[3px]">
+                                                                    <span className={`text-[13px] font-medium leading-snug truncate ${
+                                                                        m.title === 'Processing...' ? 'text-blue-400 italic animate-pulse' : 'text-[#e2e5ed]/90'
+                                                                    }`}>
+                                                                        {m.title}
+                                                                    </span>
+                                                                    <span className="text-[10.5px] text-[#e2e5ed]/25 shrink-0 tabular-nums">{formatTime(m.date)}</span>
+                                                                </div>
+
+                                                                {m.summary && m.title !== 'Processing...' && (
+                                                                    <p className="text-[11.5px] text-[#e2e5ed]/33 leading-[1.4] line-clamp-1 mb-[5px]">
+                                                                        {m.summary}
+                                                                    </p>
+                                                                )}
+
+                                                                {/* Status row */}
+                                                                {m.active ? (
+                                                                    <span className="inline-flex text-[10px] font-semibold px-[6px] py-[2px] rounded-full bg-[rgba(74,222,128,0.10)] text-[#4ade80] border border-[rgba(74,222,128,0.18)] tracking-[0.04em]">LIVE</span>
+                                                                ) : m.title === 'Processing...' ? (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <svg className="animate-spin w-[10px] h-[10px] text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                                                        <span className="text-[10px] text-blue-400 font-medium">Finalizing</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-[10.5px] text-[#e2e5ed]/22 tabular-nums">{formatDurationPill(m.duration)}</span>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Context menu trigger */}
+                                                            <div className="absolute right-2 top-[10px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                                                                <button
+                                                                    className="p-1.5 text-[#e2e5ed]/35 hover:text-[#e2e5ed]/75 rounded-[6px] hover:bg-white/[0.07] transition-all"
+                                                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === m.id ? null : m.id); }}
+                                                                >
+                                                                    <MoreHorizontal size={13} />
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Dropdown menu */}
+                                                            <AnimatePresence>
+                                                                {activeMenuId === m.id && (
+                                                                    <motion.div
+                                                                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                        exit={{ opacity: 0, scale: 0.95, y: -2 }}
+                                                                        transition={{ duration: 0.1 }}
+                                                                        className="absolute right-2 top-8 w-[96px] bg-[#18191f] border border-white/[0.10] rounded-[9px] shadow-2xl z-50 overflow-hidden"
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        onMouseEnter={() => setMenuEntered(true)}
+                                                                        onMouseLeave={() => { if (menuEntered) setActiveMenuId(null); }}
+                                                                    >
+                                                                        <div className="p-1 flex flex-col gap-[2px]">
+                                                                            <button
+                                                                                className="w-full flex items-center gap-2 px-3 py-[7px] text-[12px] text-[#e2e5ed]/65 hover:text-[#e2e5ed] hover:bg-white/[0.06] rounded-[6px] transition-colors text-left"
+                                                                                onClick={async () => {
+                                                                                    setActiveMenuId(null);
+                                                                                    analytics.trackPdfExported();
+                                                                                    if (window.electronAPI?.getMeetingDetails) {
+                                                                                        try {
+                                                                                            const full = await window.electronAPI.getMeetingDetails(m.id);
+                                                                                            generateMeetingPDF(full ?? m);
+                                                                                        } catch { generateMeetingPDF(m); }
+                                                                                    } else { generateMeetingPDF(m); }
+                                                                                }}
+                                                                            >
+                                                                                <Download size={12} />Export
+                                                                            </button>
+                                                                            <button
+                                                                                className="w-full flex items-center gap-2 px-3 py-[7px] text-[12px] text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-[6px] transition-colors text-left"
+                                                                                onClick={async () => {
+                                                                                    if (window.electronAPI?.deleteMeeting) {
+                                                                                        const ok = await window.electronAPI.deleteMeeting(m.id);
+                                                                                        if (ok) setMeetings(prev => prev.filter(x => x.id !== m.id));
+                                                                                    }
+                                                                                    setActiveMenuId(null);
+                                                                                }}
+                                                                            >
+                                                                                <Trash2 size={12} />Delete
+                                                                            </button>
+                                                                        </div>
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                </div>{/* end max-w-[760px] inner */}
                             </main>
                         </motion.div>
                     )}

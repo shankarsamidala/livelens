@@ -198,6 +198,9 @@ export interface ElectronAPI {
   updateMeetingSummary: (id: string, updates: { overview?: string, actionItems?: string[], keyPoints?: string[], actionItemsTitle?: string, keyPointsTitle?: string }) => Promise<boolean>
   deleteMeeting: (id: string) => Promise<boolean>
   setWindowMode: (mode: 'launcher' | 'overlay', inactive?: boolean) => Promise<void>
+  setCompactMode: (compact: boolean) => Promise<{ success: boolean }>
+  setLauncherCompactHeight: (height: number) => Promise<{ success: boolean }>
+  onCompactModeChanged: (callback: (compact: boolean) => void) => () => void
 
   // Intelligence Mode Events
   onIntelligenceAssistUpdate: (callback: (data: { insight: string }) => void) => () => void

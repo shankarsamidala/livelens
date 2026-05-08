@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
-import { ArrowLeft, Search, Mail, Link, ChevronDown, Play, ArrowUp, Copy, Check, MoreHorizontal, Settings, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUp, Copy, Check } from 'lucide-react';
+import { motion } from 'framer-motion';
 import MeetingChatOverlay from './MeetingChatOverlay';
 import EditableTextBlock from './EditableTextBlock';
 import LiveLensLogo from './icon.png';
@@ -13,12 +13,6 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 const formatTime = (ms: number) => {
     const date = new Date(ms);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
-};
-
-const formatDuration = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = ((ms % 60000) / 1000).toFixed(0);
-    return `${minutes}:${Number(seconds) < 10 ? '0' : ''}${seconds}`;
 };
 
 const cleanMarkdown = (content: string) => {
@@ -127,19 +121,6 @@ ${meeting.detailedSummary.keyPoints?.map(item => `- ${item}`).join('\n') || 'Non
         setMeeting(prev => ({ ...prev, title: newTitle }));
         if (window.electronAPI?.updateMeetingTitle) {
             await window.electronAPI.updateMeetingTitle(meeting.id, newTitle);
-        }
-    };
-
-    const handleOverviewSave = async (newOverview: string) => {
-        setMeeting(prev => ({
-            ...prev,
-            detailedSummary: {
-                ...prev.detailedSummary!,
-                overview: newOverview
-            }
-        }));
-        if (window.electronAPI?.updateMeetingSummary) {
-            await window.electronAPI.updateMeetingSummary(meeting.id, { overview: newOverview });
         }
     };
 

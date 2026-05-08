@@ -17,8 +17,8 @@ const STARTUP_DELAY_MS = 1_400;
 // ─── Design tokens ────────────────────────────────────────────
 const T = {
   font:    '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
-  violet:  '#8B5CF6',
-  violetG: 'rgba(139,92,246,0.38)',
+  violet:  '#d97757',
+  violetG: 'rgba(217,119,87,0.38)',
   green:   '#34D399',
   greenG:  'rgba(52,211,153,0.32)',
   amber:   '#FBBF24',
@@ -119,16 +119,16 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
         }
         .perm-border {
           background: linear-gradient(145deg,
-            rgba(139,92,246,0.75),
+            rgba(217,119,87,0.75),
             rgba(59,130,246,0.55),
-            rgba(139,92,246,0.7),
+            rgba(217,119,87,0.7),
             rgba(52,211,153,0.5)
           );
           background-size: 300% 300%;
           animation: perm-border-flow 6s ease infinite;
         }
         .perm-border-reduced {
-          background: linear-gradient(145deg, rgba(139,92,246,0.55), rgba(59,130,246,0.4), rgba(52,211,153,0.38));
+          background: linear-gradient(145deg, rgba(217,119,87,0.55), rgba(59,130,246,0.4), rgba(52,211,153,0.38));
         }
       `}</style>
 
@@ -140,7 +140,7 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
         style={{
           position: 'fixed', inset: 0, zIndex: 9998,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(139,92,246,0.06) 0%, rgba(0,0,0,0.84) 100%)',
+          background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(217,119,87,0.06) 0%, rgba(0,0,0,0.84) 100%)',
           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
         } as React.CSSProperties}
         onClick={e => { if (e.target === e.currentTarget) handleDismiss(); }}
@@ -153,7 +153,7 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
           exit={   reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 14, filter: 'blur(4px)' }}
           transition={{ type: 'spring', stiffness: 290, damping: 25, mass: 0.82 }}
           className={reduced ? 'perm-border-reduced' : 'perm-border'}
-          style={{ padding: '1.5px', borderRadius: '23px', boxShadow: '0 48px 120px -20px rgba(0,0,0,0.95), 0 0 80px rgba(139,92,246,0.06)' }}
+          style={{ padding: '1.5px', borderRadius: '23px', boxShadow: '0 48px 120px -20px rgba(0,0,0,0.95), 0 0 80px rgba(217,119,87,0.06)' }}
         >
           <div style={{
             position: 'relative', width: '430px', borderRadius: '22px', overflow: 'hidden',
@@ -168,7 +168,7 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
               <motion.div aria-hidden
                 animate={{ opacity: [0.07, 0.15, 0.07] }}
                 transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ position: 'absolute', top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '400px', height: '280px', background: 'radial-gradient(ellipse, rgba(139,92,246,0.28) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 1 }}
+                style={{ position: 'absolute', top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '400px', height: '280px', background: 'radial-gradient(ellipse, rgba(217,119,87,0.28) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 1 }}
               />
             )}
 
@@ -239,9 +239,9 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
                       width: '100%', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '0 20px', borderRadius: '13px', border: 'none', cursor: 'pointer',
                       background: allGranted
-                        ? 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 50%, #5B21B6 100%)'
+                        ? 'linear-gradient(135deg, #c4623e 0%, #b05530 50%, #a04928 100%)'
                         : 'rgba(255,255,255,0.07)',
-                      boxShadow: allGranted ? `0 0 0 1px rgba(109,40,217,0.5), 0 8px 28px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.18)` : `0 0 0 1px ${T.rule}`,
+                      boxShadow: allGranted ? `0 0 0 1px rgba(180,85,48,0.5), 0 8px 28px rgba(217,119,87,0.35), inset 0 1px 0 rgba(255,255,255,0.18)` : `0 0 0 1px ${T.rule}`,
                       transition: 'background 0.3s, box-shadow 0.3s',
                       fontFamily: T.font,
                     }}
@@ -303,8 +303,8 @@ function PermRow({
       <div style={{
         width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: isGranted ? 'rgba(52,211,153,0.12)' : isDenied ? 'rgba(248,113,113,0.1)' : 'rgba(139,92,246,0.12)',
-        border: `1px solid ${isGranted ? 'rgba(52,211,153,0.22)' : isDenied ? 'rgba(248,113,113,0.18)' : 'rgba(139,92,246,0.2)'}`,
+        background: isGranted ? 'rgba(52,211,153,0.12)' : isDenied ? 'rgba(248,113,113,0.1)' : 'rgba(217,119,87,0.12)',
+        border: `1px solid ${isGranted ? 'rgba(52,211,153,0.22)' : isDenied ? 'rgba(248,113,113,0.18)' : 'rgba(217,119,87,0.2)'}`,
       }}>
         <Icon size={16} strokeWidth={1.75} color={isGranted ? T.green : isDenied ? T.red : T.violet} />
       </div>
@@ -335,11 +335,11 @@ function PermRow({
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-              background: 'rgba(139,92,246,0.18)', fontSize: '11.5px', fontWeight: 600,
+              background: 'rgba(217,119,87,0.18)', fontSize: '11.5px', fontWeight: 600,
               color: 'rgba(196,181,253,0.9)', fontFamily: T.font, transition: 'background 150ms',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.28)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(139,92,246,0.18)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,119,87,0.28)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(217,119,87,0.18)'}
           >
             {ActionIcon && <ActionIcon size={11} strokeWidth={2} />}
             {actionLabel}
