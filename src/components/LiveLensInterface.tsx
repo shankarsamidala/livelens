@@ -2345,8 +2345,7 @@ Provide only the answer, nothing else.`;
                                     <div className="w-px h-3.5 mx-0.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
                                         onClick={() => {
-                                            window.electronAPI?.setWindowMode?.('launcher');
-                                            window.electronAPI?.openSettingsTab?.('general');
+                                            window.electronAPI?.toggleSettingsWindow?.();
                                         }}
                                         className="w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
                                         style={appearance.iconStyle}
