@@ -16,7 +16,8 @@ import {
     Copy,
     Check,
     PointerOff,
-    EyeOff
+    EyeOff,
+    ChevronsDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -2086,31 +2087,29 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                         <SlidersHorizontal className="w-3.5 h-3.5" />
                                     </button>
                                     <button
-                                        onClick={() => { const s = !isMousePassthrough; setIsMousePassthrough(s); window.electronAPI?.setOverlayMousePassthrough?.(s); }}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isMousePassthrough ? 'overlay-icon-surface overlay-icon-surface-hover text-sky-400' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
-                                        style={appearance.iconStyle}
-                                        title="Mouse passthrough"
-                                    >
-                                        <PointerOff className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
                                         onClick={() => setIsInterviewerCapturing(v => !v)}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover ${isInterviewerCapturing ? 'text-green-400' : 'overlay-text-muted'}`}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isInterviewerCapturing ? 'bg-[#d97757] text-white' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-muted'}`}
                                         style={isInterviewerCapturing ? undefined : appearance.iconStyle}
                                         title={isInterviewerCapturing ? 'Interviewer capture ON — click to pause' : 'Interviewer capture OFF — click to resume'}
                                     >
                                         <Mic className="w-3.5 h-3.5" />
                                     </button>
-                                    <div className="w-px h-3.5 mx-1.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
                                         onClick={() => setAutoScroll(v => !v)}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover ${autoScroll ? 'text-[#d97757]' : 'overlay-text-interactive'}`}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${autoScroll ? 'bg-[#d97757] text-white' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
                                         style={autoScroll ? undefined : appearance.iconStyle}
                                         title="Toggle auto-scroll"
                                     >
-                                        <svg width="14" height="14" viewBox="0 0 10 10" fill="none">
-                                            <path d="M5 1v8M2 6l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                                        </svg>
+                                        <ChevronsDown className="w-3.5 h-3.5" />
+                                    </button>
+                                    <div className="w-px h-3.5 mx-1.5 shrink-0" style={appearance.dividerStyle} />
+                                    <button
+                                        onClick={() => { const s = !isMousePassthrough; setIsMousePassthrough(s); window.electronAPI?.setOverlayMousePassthrough?.(s); }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isMousePassthrough ? 'bg-[#d97757] text-white' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
+                                        style={isMousePassthrough ? undefined : appearance.iconStyle}
+                                        title="Mouse passthrough"
+                                    >
+                                        <PointerOff className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                         onClick={() => setIsExpanded(false)}
@@ -2399,7 +2398,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                         <button
                                             onClick={handleManualSubmit}
                                             disabled={!inputValue.trim()}
-                                            className={`w-6 h-6 rounded-full flex items-center justify-center interaction-base interaction-press ${inputValue.trim() ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]' : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'}`}
+                                            className={`w-6 h-6 rounded-md flex items-center justify-center interaction-base interaction-press ${inputValue.trim() ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]' : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'}`}
                                             style={inputValue.trim() ? undefined : appearance.iconStyle}
                                         >
                                             <ArrowRight className="w-3 h-3" />

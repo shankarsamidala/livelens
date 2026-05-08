@@ -94,7 +94,8 @@ const RollingTranscript: React.FC<RollingTranscriptProps> = ({
                         className="overflow-hidden whitespace-nowrap scroll-smooth overlay-transcript-surface transition-all duration-500 text-right"
                         style={{
                             ...surfaceStyle,
-                            maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+                            maskImage: 'linear-gradient(to right, transparent, black 15%)',
+                        WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%)',
                         }}
                     >
                         {isNormal && (
