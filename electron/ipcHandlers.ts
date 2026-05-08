@@ -635,7 +635,27 @@ export function initializeIpcHandlers(appState: AppState): void {
     return appState.getWindowHelper().isMainWindowMaximized();
   });
 
-  // Open the launcher's SettingsOverlay on a specific tab (callable from any window)
+  // Settings Popup Window (overlay gear button)
+  safeHandle("toggle-settings-window", (event, coords: { offsetX?: number; offsetY?: number } = {}) => {
+    if (coords.offsetX !== undefined && coords.offsetY !== undefined) {
+      const overlayWin = appState.getWindowHelper().getOverlayWindow();
+      if (overlayWin && !overlayWin.isDestroyed()) {
+        const bounds = overlayWin.getBounds();
+        appState.settingsWindowHelper.toggleWindow(
+          bounds.x + coords.offsetX,
+          bounds.y + coords.offsetY,
+        );
+        return;
+      }
+    }
+    appState.settingsWindowHelper.toggleWindow(undefined, undefined);
+  })
+
+  safeHandle("close-settings-window", () => {
+    appState.settingsWindowHelper.closeWindow()
+  })
+
+  // Open the launcher's settings view on a specific tab (callable from any window)
   safeHandle("settings:open-tab", (_, tab: string) => {
     const launcherWin = appState.getWindowHelper().getLauncherWindow();
     if (launcherWin && !launcherWin.isDestroyed()) {

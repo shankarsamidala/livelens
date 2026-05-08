@@ -61,6 +61,9 @@ export interface ElectronAPI {
   setDisguise: (mode: 'terminal' | 'settings' | 'activity' | 'none') => Promise<{ success: boolean; error?: string }>
   getDisguise: () => Promise<'none' | 'terminal' | 'settings' | 'activity'>
   onDisguiseChanged: (callback: (mode: 'terminal' | 'settings' | 'activity' | 'none') => void) => () => void
+  onSettingsVisibilityChange: (callback: (isVisible: boolean) => void) => () => void
+  toggleSettingsWindow: (coords?: { offsetX: number; offsetY: number }) => Promise<void>
+  closeSettingsWindow: () => Promise<void>
   setOpenAtLogin: (open: boolean) => Promise<{ success: boolean; error?: string }>
   getOpenAtLogin: () => Promise<boolean>
   toggleAdvancedSettings: () => Promise<void>
@@ -234,6 +237,7 @@ export interface ElectronAPI {
   setDefaultModel: (modelId: string) => Promise<{ success: boolean; error?: string }>;
   toggleModelSelector: (coords: { offsetX: number; offsetY: number }) => Promise<void>;
   forceRestartOllama: () => Promise<void>;
+  toggleSettingsWindow: (coords?: { offsetX: number; offsetY: number }) => Promise<void>;
 
   // Groq Fast Text Mode
   getGroqFastTextMode: () => Promise<{ enabled: boolean }>;

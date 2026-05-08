@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react"
 import { QueryClient, QueryClientProvider } from "react-query"
 import { ToastProvider, ToastViewport } from "./components/ui/toast"
 import LiveLensInterface from "./components/LiveLensInterface"
+import SettingsPopup from "./components/SettingsPopup"
 import Launcher from "./components/Launcher"
 import ModelSelectorWindow from "./components/ModelSelectorWindow"
 import StartupSequence from "./components/StartupSequence"
@@ -18,13 +19,14 @@ import { ErrorBoundary } from "./components/ErrorBoundary"
 const queryClient = new QueryClient()
 
 const App: React.FC = () => {
+  const isSettingsWindow = new URLSearchParams(window.location.search).get('window') === 'settings';
   const isLauncherWindow = new URLSearchParams(window.location.search).get('window') === 'launcher';
   const isOverlayWindow = new URLSearchParams(window.location.search).get('window') === 'overlay';
   const isModelSelectorWindow = new URLSearchParams(window.location.search).get('window') === 'model-selector';
   const isCropperWindow = new URLSearchParams(window.location.search).get('window') === 'cropper';
   const isCompactWindow = new URLSearchParams(window.location.search).get('window') === 'compact';
 
-  const isDefault = !isOverlayWindow && !isModelSelectorWindow && !isCropperWindow && !isCompactWindow;
+  const isDefault = !isSettingsWindow && !isOverlayWindow && !isModelSelectorWindow && !isCropperWindow && !isCompactWindow;
 
   if (isCropperWindow) {
     const Cropper = React.lazy(() => import('./components/Cropper'));
@@ -182,6 +184,22 @@ const App: React.FC = () => {
     }
   };
 
+  // ── Settings popup window ──
+  if (isSettingsWindow) {
+    return (
+      <ErrorBoundary context="SettingsPopup">
+        <div style={{ background: 'transparent' }} className="h-full min-h-0 w-full">
+          <QueryClientProvider client={queryClient}>
+            <ToastProvider>
+              <SettingsPopup />
+              <ToastViewport />
+            </ToastProvider>
+          </QueryClientProvider>
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
   // ── Model selector window ──
   if (isModelSelectorWindow) {
     return (
@@ -317,8 +335,7 @@ const App: React.FC = () => {
         onDismiss={() => setShowOllamaSetup(false)}
         onUseProviders={() => {
           setShowOllamaSetup(false);
-          setSettingsInitialTab('ai-providers');
-          setIsSettingsOpen(true);
+          window.electronAPI?.openSettingsTab?.('ai-providers');
         }}
       />
     </div>

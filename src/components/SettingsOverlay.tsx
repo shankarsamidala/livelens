@@ -3404,7 +3404,6 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ onClose, initialTab =
                         </div>
                     </div>
                     </div>
-                </div>
             <PremiumUpgradeModal
                 isOpen={isPremiumModalOpen}
                 onClose={() => setIsPremiumModalOpen(false)}

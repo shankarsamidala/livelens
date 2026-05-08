@@ -98,6 +98,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const [sttInterviewerError, setSttInterviewerError] = useState<string>('');
     const [sttInterviewerProvider, setSttInterviewerProvider] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [conversationContext, setConversationContext] = useState<string>('');
     const [isManualRecording, setIsManualRecording] = useState(false);
     const isRecordingRef = useRef(false);  // Ref to track recording state (avoids stale closure)
@@ -398,6 +399,15 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
             .join('\n');
         setConversationContext(context);
     }, [messages]);
+
+    // Listen for settings window visibility changes
+    useEffect(() => {
+        if (!window.electronAPI?.onSettingsVisibilityChange) return;
+        const unsubscribe = window.electronAPI.onSettingsVisibilityChange((isVisible) => {
+            setIsSettingsOpen(isVisible);
+        });
+        return () => unsubscribe();
+    }, []);
 
     // Sync Window Visibility with Expanded State
     useEffect(() => {
@@ -2228,9 +2238,15 @@ Provide only the answer, nothing else.`;
                                     <div className="w-px h-3.5 mx-0.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
                                         onClick={() => {
-                                            window.electronAPI?.openSettingsTab?.('general');
+                                            if (isSettingsOpen) { window.electronAPI?.toggleSettingsWindow?.(); return; }
+                                            if (!contentRef.current) return;
+                                            const contentRect = contentRef.current.getBoundingClientRect();
+                                            window.electronAPI?.toggleSettingsWindow?.({
+                                                offsetX: contentRect.right - 220,
+                                                offsetY: contentRect.bottom + 8,
+                                            });
                                         }}
-                                        className="w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover ${isSettingsOpen ? 'overlay-text-primary' : 'overlay-text-interactive'}`}
                                         style={appearance.iconStyle}
                                         title="Settings"
                                     >
