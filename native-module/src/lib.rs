@@ -193,9 +193,17 @@ impl SystemAudioCapture {
                 attempt = 0;
 
                 // --- DSP state (recreated fresh on each restart) ---
+                // Windows: enable VAD (Aggressive) to filter WASAPI loopback bleed —
+                // notification sounds, Copilot, and other apps that pollute system audio.
+                // macOS: VAD disabled — CoreAudio tap is device-scoped, no bleed (#127).
+                #[cfg(target_os = "windows")]
+                let sys_audio_base = SilenceSuppressionConfig::for_system_audio_windows();
+                #[cfg(not(target_os = "windows"))]
+                let sys_audio_base = SilenceSuppressionConfig::for_system_audio();
+
                 let mut suppressor = SilenceSuppressor::new(SilenceSuppressionConfig {
                     native_sample_rate: native_rate,
-                    ..SilenceSuppressionConfig::for_system_audio()
+                    ..sys_audio_base
                 });
 
                 let chunk_size = (native_rate as usize / 1000) * 20;

@@ -86,6 +86,18 @@ impl SilenceSuppressionConfig {
         }
     }
 
+    /// System audio config for Windows — enables VAD to filter WASAPI loopback bleed.
+    /// WASAPI loopback captures ALL render device audio (notifications, Copilot, other apps).
+    /// Aggressive mode passes VoIP/Teams speech (already noise-cancelled) while blocking
+    /// chimes, UI sounds, and synthetic voices that would otherwise garble STT output.
+    pub fn for_system_audio_windows() -> Self {
+        Self {
+            use_vad: true,
+            vad_mode: VadMode::Aggressive,
+            ..Self::for_system_audio()
+        }
+    }
+
     /// Create config for microphone (standard).
     /// Uses Normal VAD mode instead of Aggressive because built-in microphones with heavy
     /// hardware DSP (like macOS Apple Silicon) sound "unnatural" to strict models (#128).
