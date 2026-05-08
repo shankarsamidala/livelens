@@ -54,6 +54,11 @@ export interface IntelligenceModeEvents {
     'manual_answer_result': (answer: string, question: string) => void;
     'mode_changed': (mode: IntelligenceMode) => void;
     'error': (error: Error, mode: IntelligenceMode) => void;
+    // Dedicated channel for live negotiation coaching payloads.
+    // Previously multiplexed into suggested_answer_token as a sentinel string,
+    // forcing the renderer to JSON.parse every token. This dedicated event
+    // removes that overhead and gives coaching its own typed payload.
+    'negotiation_coaching': (payload: unknown) => void;
 }
 
 export class IntelligenceEngine extends EventEmitter {
@@ -246,6 +251,23 @@ export class IntelligenceEngine extends EventEmitter {
                 const context = this.session.getFormattedContext(180);
                 const answer = await this.answerLLM.generate(question || '', context);
                 if (answer) {
+                    // Catch coaching sentinel on the non-streaming fallback path.
+                    if (
+                        answer.length > 24 &&
+                        answer.charCodeAt(0) === 123 /* { */ &&
+                        answer.includes('__negotiationCoaching')
+                    ) {
+                        try {
+                            const parsed = JSON.parse(answer);
+                            if (parsed && typeof parsed === 'object' && parsed.__negotiationCoaching) {
+                                this.emit('negotiation_coaching', parsed.__negotiationCoaching);
+                                this.setMode('idle');
+                                return null;
+                            }
+                        } catch {
+                            // Fall through to normal answer.
+                        }
+                    }
                     this.session.addAssistantMessage(answer);
                     this.emit('suggested_answer', answer, question || 'inferred', confidence);
                 }
@@ -312,6 +334,25 @@ export class IntelligenceEngine extends EventEmitter {
                     streamAborted = true;
                     break;
                 }
+                // Detect negotiation coaching sentinel — cheap prefix gate keeps hot path fast.
+                // Sentinel arrives as one complete token (LLMHelper yields a single JSON.stringify).
+                if (
+                    token.length > 24 &&
+                    token.charCodeAt(0) === 123 /* { */ &&
+                    token.includes('__negotiationCoaching')
+                ) {
+                    try {
+                        const parsed = JSON.parse(token);
+                        if (parsed && typeof parsed === 'object' && parsed.__negotiationCoaching) {
+                            this.emit('negotiation_coaching', parsed.__negotiationCoaching);
+                            await stream.return(undefined);
+                            this.setMode('idle');
+                            return null;
+                        }
+                    } catch {
+                        // Prefix matched but JSON failed — treat as a normal token below.
+                    }
+                }
                 this.emit('suggested_answer_token', token, question || 'inferred', confidence);
                 fullAnswer += token;
             }
@@ -320,6 +361,25 @@ export class IntelligenceEngine extends EventEmitter {
                 // Aborted mid-stream — don't update session or emit final event
                 this.setMode('idle');
                 return null;
+            }
+
+            // Defensive sentinel check on assembled answer (covers tokens split across
+            // multiple chunks or arriving via the non-streaming fallback path).
+            if (
+                fullAnswer.length > 24 &&
+                fullAnswer.charCodeAt(0) === 123 /* { */ &&
+                fullAnswer.includes('__negotiationCoaching')
+            ) {
+                try {
+                    const parsed = JSON.parse(fullAnswer);
+                    if (parsed && typeof parsed === 'object' && parsed.__negotiationCoaching) {
+                        this.emit('negotiation_coaching', parsed.__negotiationCoaching);
+                        this.setMode('idle');
+                        return null;
+                    }
+                } catch {
+                    // Not actually JSON — fall through to the normal answer path.
+                }
             }
 
             if (!fullAnswer || fullAnswer.trim().length < 5) {

@@ -53,7 +53,8 @@ export class IntelligenceManager extends EventEmitter {
             'recap', 'recap_token', 'clarify', 'clarify_token',
             'follow_up_questions_update', 'follow_up_questions_token',
             'manual_answer_started', 'manual_answer_result',
-            'mode_changed', 'error'
+            'mode_changed', 'error',
+            'negotiation_coaching',
         ];
 
         for (const event of events) {
