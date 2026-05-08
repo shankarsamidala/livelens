@@ -151,6 +151,10 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const storedHideChatHidesWidget = localStorage.getItem('natively_hideChatHidesWidget');
     const hideChatHidesWidget = storedHideChatHidesWidget ? storedHideChatHidesWidget === 'true' : true;
 
+    const [autoScroll, setAutoScroll] = useState(() =>
+        localStorage.getItem('liveLens_auto_scroll') !== 'false'
+    );
+
 
     // Analysis mode + opacity slider
     const [analysisMode, setAnalysisModeState] = useState('general');
@@ -1808,6 +1812,16 @@ Provide only the answer, nothing else.`;
     };
 
 
+    // Persist auto-scroll preference and scroll to bottom on new messages when enabled
+    useEffect(() => {
+        localStorage.setItem('liveLens_auto_scroll', String(autoScroll));
+    }, [autoScroll]);
+
+    useEffect(() => {
+        if (!autoScroll) return;
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    }, [messages, autoScroll]);
+
     // We use a ref to hold the latest handlers to avoid re-binding the event listener on every render
     const handlersRef = useRef({
         handleWhatToSay,
@@ -1833,52 +1847,116 @@ Provide only the answer, nothing else.`;
     };
 
     useEffect(() => {
+        // Frame-rate-independent momentum scroll.
+        // Velocity ramps to TERMINAL while key is held, decays exponentially on release.
+        // Sub-pixel motion preserved via fractional accumulator; scrollTop written directly
+        // to bypass any browser scroll-behavior smoothing that would fight the loop.
+        const TERMINAL_VELOCITY = 1400;  // px/s at full hold
+        const ACCEL_SECONDS     = 0.18;  // time to reach terminal from rest
+        const DECAY_HALF_LIFE   = 0.09;  // seconds for velocity to halve after release
+        const DECAY_K           = Math.LN2 / DECAY_HALF_LIFE;
+        const MIN_VELOCITY      = 6;     // px/s — snap to 0 below this
+        const MAX_FRAME_DT      = 0.05;  // clamp to absorb tab-throttle hiccups
+
+        let direction: -1 | 0 | 1 = 0;
+        let upHeld    = false;
+        let downHeld  = false;
+        let velocity  = 0;
+        let fraction  = 0;
+        let lastTs    = 0;
+        let rafId: number | null = null;
+
+        const recomputeDirection = () => {
+            direction = upHeld === downHeld ? 0 : upHeld ? -1 : 1;
+        };
+
+        const tick = (ts: number) => {
+            const container = scrollContainerRef.current;
+            if (!container) { rafId = null; lastTs = 0; return; }
+            if (lastTs === 0) lastTs = ts;
+            const dt = Math.min((ts - lastTs) / 1000, MAX_FRAME_DT);
+            lastTs = ts;
+
+            if (direction !== 0) {
+                const target = direction * TERMINAL_VELOCITY;
+                const step   = (TERMINAL_VELOCITY / ACCEL_SECONDS) * dt;
+                velocity = Math.abs(target - velocity) <= step
+                    ? target
+                    : velocity + Math.sign(target - velocity) * step;
+            } else {
+                velocity *= Math.exp(-DECAY_K * dt);
+                if (Math.abs(velocity) < MIN_VELOCITY) velocity = 0;
+            }
+
+            const maxScroll = container.scrollHeight - container.clientHeight;
+            const move    = velocity * dt + fraction;
+            const intMove = Math.trunc(move);
+            fraction = move - intMove;
+
+            if (intMove !== 0) {
+                let next = container.scrollTop + intMove;
+                if (next <= 0)          { next = 0;         if (velocity < 0) { velocity = 0; fraction = 0; } }
+                else if (next >= maxScroll) { next = maxScroll; if (velocity > 0) { velocity = 0; fraction = 0; } }
+                if (next !== container.scrollTop) container.scrollTop = next;
+            }
+
+            if (direction !== 0 || velocity !== 0) {
+                rafId = requestAnimationFrame(tick);
+            } else {
+                rafId = null; lastTs = 0; fraction = 0;
+            }
+        };
+
+        const startLoop  = () => { if (rafId === null) rafId = requestAnimationFrame(tick); };
+        const releaseAll = () => { upHeld = false; downHeld = false; recomputeDirection(); };
+
         const handleKeyDown = (e: KeyboardEvent) => {
             const { handleWhatToSay, handleFollowUpQuestions, handleRecap, handleAnswerNow, handleClarify, handleCodeHint, handleBrainstorm } = handlersRef.current;
 
-            // Chat Shortcuts (Scope: Local to Chat/Overlay usually, but we allow them here if focused)
             if (isShortcutPressed(e, 'whatToAnswer')) {
-                e.preventDefault();
-                handleWhatToSay();
+                e.preventDefault(); handleWhatToSay();
             } else if (isShortcutPressed(e, 'clarify')) {
-                e.preventDefault();
-                handleClarify();
+                e.preventDefault(); handleClarify();
             } else if (isShortcutPressed(e, 'followUp')) {
-                e.preventDefault();
-                handleFollowUpQuestions();
+                e.preventDefault(); handleFollowUpQuestions();
             } else if (isShortcutPressed(e, 'dynamicAction4')) {
                 e.preventDefault();
-                if (actionButtonMode === 'brainstorm') {
-                    handleBrainstorm();
-                } else {
-                    handleRecap();
-                }
+                if (actionButtonMode === 'brainstorm') handleBrainstorm(); else handleRecap();
             } else if (isShortcutPressed(e, 'answer')) {
-                e.preventDefault();
-                handleAnswerNow();
-            } else if (isShortcutPressed(e, 'clarify')) {
-                e.preventDefault();
-                handleClarify();
+                e.preventDefault(); handleAnswerNow();
             } else if (isShortcutPressed(e, 'codeHint')) {
-                e.preventDefault();
-                handleCodeHint();
+                e.preventDefault(); handleCodeHint();
             } else if (isShortcutPressed(e, 'brainstorm')) {
-                e.preventDefault();
-                handleBrainstorm();
+                e.preventDefault(); handleBrainstorm();
             } else if (isShortcutPressed(e, 'scrollUp')) {
                 e.preventDefault();
-                scrollContainerRef.current?.scrollBy({ top: -100, behavior: 'smooth' });
+                upHeld = true; recomputeDirection(); startLoop();
             } else if (isShortcutPressed(e, 'scrollDown')) {
                 e.preventDefault();
-                scrollContainerRef.current?.scrollBy({ top: 100, behavior: 'smooth' });
+                downHeld = true; recomputeDirection(); startLoop();
             } else if (isShortcutPressed(e, 'moveWindowUp') || isShortcutPressed(e, 'moveWindowDown')) {
-                // Prevent default scrolling when moving window
                 e.preventDefault();
             }
         };
 
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowUp')                          { upHeld   = false; recomputeDirection(); }
+            else if (e.key === 'ArrowDown')                   { downHeld = false; recomputeDirection(); }
+            else if (e.key === 'Meta' || e.key === 'Control') { releaseAll(); }
+        };
+
+        // Window blur swallows keyup — reset to avoid stuck scrolling
+        const handleBlur = () => releaseAll();
+
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
+            if (rafId !== null) cancelAnimationFrame(rafId);
+        };
     }, [isShortcutPressed]);
 
     // General Global Shortcuts (Rebindable)
@@ -2410,6 +2488,40 @@ Provide only the answer, nothing else.`;
 
                             {/* Chat History - Only show if there are messages OR active states */}
                             {(messages.length > 0 || isManualRecording || isProcessing) && (
+                                <>
+                                {/* Auto-scroll toggle — shown only when there are messages */}
+                                {messages.length > 0 && (
+                                    <div className="flex justify-end px-4 pt-1 pb-0">
+                                        <button
+                                            onClick={() => setAutoScroll(v => !v)}
+                                            className="flex items-center gap-1 no-drag"
+                                            style={{
+                                                fontSize: 10,
+                                                fontWeight: 600,
+                                                letterSpacing: '0.05em',
+                                                padding: '2px 8px',
+                                                borderRadius: 999,
+                                                border: autoScroll
+                                                    ? '1px solid rgba(217,119,87,0.35)'
+                                                    : '1px solid rgba(255,255,255,0.08)',
+                                                background: autoScroll
+                                                    ? 'rgba(217,119,87,0.12)'
+                                                    : 'rgba(255,255,255,0.04)',
+                                                color: autoScroll
+                                                    ? '#d97757'
+                                                    : 'rgba(226,229,237,0.3)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s',
+                                            }}
+                                            title="Toggle auto-scroll to latest message"
+                                        >
+                                            <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                                                <path d="M5 1v8M2 6l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                            AUTO-SCROLL
+                                        </button>
+                                    </div>
+                                )}
                                 <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[clamp(300px,35vh,450px)] no-drag" style={{ scrollbarWidth: 'none' }}>
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
@@ -2487,6 +2599,7 @@ Provide only the answer, nothing else.`;
                                     )}
                                     <div ref={messagesEndRef} />
                                 </div>
+                                </>
                             )}
 
 
