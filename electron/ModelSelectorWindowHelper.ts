@@ -43,7 +43,6 @@ export class ModelSelectorWindowHelper {
             this.window.setFocusable(!this.shouldAvoidActivation());
         }
     }
-    }
 
     public getWindow(): BrowserWindow | null {
         return this.window

@@ -92,125 +92,208 @@ impl SystemAudioCapture {
 
         // ALL init + DSP runs in background thread — start() returns INSTANTLY
         self.capture_thread = Some(thread::spawn(move || {
-            // 1. SpeakerInput Init (takes 5-7 seconds — runs OFF main thread)
-            println!("[SystemAudioCapture] Background init starting...");
-            let input = match speaker::SpeakerInput::new(device_id.clone()) {
-                Ok(i) => i,
-                Err(e) => {
-                    println!("[SystemAudioCapture] Init failed: {}. Trying default...", e);
+            // Outer restart loop — re-enters on device hot-plug or tap-silence fault.
+            // attempt=0 is the initial start; attempt>0 are auto-recovery restarts.
+            const MAX_RESTART_ATTEMPTS: u32 = 5;
+            let mut attempt: u32 = 0;
+
+            'restart: loop {
+                println!(
+                    "[SystemAudioCapture] Init (attempt {})...",
+                    attempt + 1
+                );
+
+                // --- Initialise SpeakerInput ---
+                // Try the requested device first, then fall back to the system default.
+                // On the very first attempt a fatal error is surfaced to JS; on restarts
+                // we retry silently up to MAX_RESTART_ATTEMPTS times.
+                let init_result: Option<speaker::SpeakerInput> = 'init: {
+                    match speaker::SpeakerInput::new(device_id.clone()) {
+                        Ok(i) => break 'init Some(i),
+                        Err(e) => {
+                            println!(
+                                "[SystemAudioCapture] Init with {:?} failed: {}. Trying default...",
+                                device_id, e
+                            );
+                        }
+                    }
                     match speaker::SpeakerInput::new(None) {
-                        Ok(i) => i,
+                        Ok(i) => break 'init Some(i),
                         Err(e2) => {
-                            let msg = format!(
-                                "[SystemAudioCapture] FATAL: All init attempts failed: {}",
-                                e2
+                            if attempt == 0 {
+                                let msg = format!(
+                                    "[SystemAudioCapture] FATAL: All init attempts failed: {}",
+                                    e2
+                                );
+                                eprintln!("{}", msg);
+                                tsfn.call(
+                                    Err(napi::Error::from_reason(msg)),
+                                    ThreadsafeFunctionCallMode::NonBlocking,
+                                );
+                                return;
+                            }
+                            eprintln!(
+                                "[SystemAudioCapture] Restart attempt {} init failed: {}",
+                                attempt, e2
                             );
-                            eprintln!("{}", msg);
-                            // Notify JS so it can emit 'error' and reset isRecording
-                            tsfn.call(
-                                Err(napi::Error::from_reason(msg)),
-                                ThreadsafeFunctionCallMode::NonBlocking,
-                            );
-                            return;
+                            None
                         }
                     }
-                }
-            };
+                };
 
-            let mut stream = match input.stream() {
-                Ok(s) => s,
-                Err(e) => {
-                    eprintln!("[SystemAudioCapture] FATAL: Failed to start stream: {:?}", e);
-                    return;
-                }
-            };
-            let mut consumer = match stream.take_consumer() {
-                Some(c) => c,
-                None => {
-                    eprintln!("[SystemAudioCapture] FATAL: Failed to get consumer");
-                    return;
-                }
-            };
-
-            let native_rate = stream.sample_rate();
-            // Publish the real native rate so JS can read it via get_sample_rate()
-            sample_rate_shared.store(native_rate, Ordering::Release);
-            println!(
-                "[SystemAudioCapture] Background init complete. Initial Rate: {}Hz. DSP starting.",
-                native_rate
-            );
-
-            // 2. DSP loop with silence suppression + WebRTC VAD
-            let mut suppressor = SilenceSuppressor::new(SilenceSuppressionConfig {
-                native_sample_rate: native_rate,
-                ..SilenceSuppressionConfig::for_system_audio()
-            });
-
-            // 20ms chunks at native rate (e.g. 960 samples at 48kHz)
-            let chunk_size = (native_rate as usize / 1000) * 20;
-            let mut frame_buffer: Vec<i16> = Vec::with_capacity(chunk_size * 4);
-            let mut raw_batch: Vec<f32> = Vec::with_capacity(4096);
-
-            loop {
-                if stop_signal.load(Ordering::Relaxed) {
-                    break;
-                }
-
-                // Drain ALL available samples from ring buffer (lock-free)
-                while let Some(sample) = consumer.try_pop() {
-                    raw_batch.push(sample);
-                }
-
-                // Convert f32 -> i16 at native sample rate
-                if !raw_batch.is_empty() {
-                    for &f in &raw_batch {
-                        let scaled = (f * 32767.0).clamp(-32768.0, 32767.0);
-                        frame_buffer.push(scaled as i16);
-                    }
-                    raw_batch.clear();
-                }
-
-                // Process in 20ms chunks through the two-stage gate
-                while frame_buffer.len() >= chunk_size {
-                    let frame: Vec<i16> = frame_buffer.drain(0..chunk_size).collect();
-
-                    let (action, speech_ended) = suppressor.process(&frame);
-
-                    match action {
-                        FrameAction::Send(data) => {
-                            let bytes = i16_slice_to_le_bytes(&data);
-                            tsfn.call(
-                                Ok(Buffer::from(bytes)),
-                                ThreadsafeFunctionCallMode::NonBlocking,
+                let input = match init_result {
+                    Some(i) => i,
+                    None => {
+                        attempt += 1;
+                        if attempt >= MAX_RESTART_ATTEMPTS {
+                            eprintln!(
+                                "[SystemAudioCapture] FATAL: Max restart attempts ({}) reached",
+                                MAX_RESTART_ATTEMPTS
                             );
+                            break 'restart;
                         }
-                        FrameAction::SendSilence => {
-                            // Send zero-filled buffer to keep streaming APIs alive
-                            let silence = vec![0u8; chunk_size * 2];
-                            tsfn.call(
-                                Ok(Buffer::from(silence)),
-                                ThreadsafeFunctionCallMode::NonBlocking,
-                            );
+                        thread::sleep(Duration::from_millis(1000));
+                        continue 'restart;
+                    }
+                };
+
+                let mut stream = match input.stream() {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!(
+                            "[SystemAudioCapture] Failed to start stream: {:?}",
+                            e
+                        );
+                        attempt += 1;
+                        if attempt >= MAX_RESTART_ATTEMPTS {
+                            break 'restart;
                         }
-                        FrameAction::Suppress => {
-                            // Do nothing — bandwidth saving
+                        thread::sleep(Duration::from_millis(1000));
+                        continue 'restart;
+                    }
+                };
+
+                let mut consumer = match stream.take_consumer() {
+                    Some(c) => c,
+                    None => {
+                        eprintln!("[SystemAudioCapture] FATAL: Failed to get consumer");
+                        break 'restart;
+                    }
+                };
+
+                let native_rate = stream.sample_rate();
+                sample_rate_shared.store(native_rate, Ordering::Release);
+                println!(
+                    "[SystemAudioCapture] Init complete (attempt {}). Rate: {}Hz. DSP starting.",
+                    attempt + 1,
+                    native_rate
+                );
+
+                // Reset attempt counter — successful init resets the budget.
+                attempt = 0;
+
+                // --- DSP state (recreated fresh on each restart) ---
+                let mut suppressor = SilenceSuppressor::new(SilenceSuppressionConfig {
+                    native_sample_rate: native_rate,
+                    ..SilenceSuppressionConfig::for_system_audio()
+                });
+
+                let chunk_size = (native_rate as usize / 1000) * 20;
+                let mut frame_buffer: Vec<i16> = Vec::with_capacity(chunk_size * 4);
+                let mut raw_batch: Vec<f32> = Vec::with_capacity(4096);
+                let mut iteration: u32 = 0;
+
+                // Inner DSP loop — returns true to request a tap restart, false to stop.
+                let restart_needed = 'dsp: loop {
+                    if stop_signal.load(Ordering::Relaxed) {
+                        break 'dsp false;
+                    }
+
+                    // Drain ALL available samples from ring buffer (lock-free)
+                    while let Some(sample) = consumer.try_pop() {
+                        raw_batch.push(sample);
+                    }
+
+                    // Convert f32 -> i16 at native sample rate
+                    if !raw_batch.is_empty() {
+                        for &f in &raw_batch {
+                            let scaled = (f * 32767.0).clamp(-32768.0, 32767.0);
+                            frame_buffer.push(scaled as i16);
+                        }
+                        raw_batch.clear();
+                    }
+
+                    // Process in 20ms chunks through the two-stage gate
+                    while frame_buffer.len() >= chunk_size {
+                        let frame: Vec<i16> = frame_buffer.drain(0..chunk_size).collect();
+
+                        let (action, speech_ended) = suppressor.process(&frame);
+
+                        match action {
+                            FrameAction::Send(data) => {
+                                let bytes = i16_slice_to_le_bytes(&data);
+                                tsfn.call(
+                                    Ok(Buffer::from(bytes)),
+                                    ThreadsafeFunctionCallMode::NonBlocking,
+                                );
+                            }
+                            FrameAction::SendSilence => {
+                                // Send zero-filled buffer to keep streaming APIs alive
+                                let silence = vec![0u8; chunk_size * 2];
+                                tsfn.call(
+                                    Ok(Buffer::from(silence)),
+                                    ThreadsafeFunctionCallMode::NonBlocking,
+                                );
+                            }
+                            FrameAction::Suppress => {
+                                // Do nothing — bandwidth saving
+                            }
+                        }
+
+                        if speech_ended {
+                            if let Some(ref se_tsfn) = speech_ended_tsfn {
+                                se_tsfn.call(Ok(true), ThreadsafeFunctionCallMode::NonBlocking);
+                            }
                         }
                     }
 
-                    // Fire speech_ended callback on the exact transition frame
-                    if speech_ended {
-                        if let Some(ref se_tsfn) = speech_ended_tsfn {
-                            se_tsfn.call(Ok(true), ThreadsafeFunctionCallMode::NonBlocking);
-                        }
+                    // Watchdog check every ~50 iterations (~1s at DSP_POLL_MS=20ms).
+                    // 12s silence threshold: long enough to skip natural quiet gaps,
+                    // short enough to recover before the user notices the tap is dead.
+                    iteration += 1;
+                    if iteration % 50 == 0 && stream.needs_restart(12) {
+                        println!("[SystemAudioCapture] Watchdog triggered — restarting tap...");
+                        break 'dsp true;
                     }
+
+                    thread::sleep(Duration::from_millis(DSP_POLL_MS));
+                };
+
+                // Drop consumer + stream before restarting to release CoreAudio resources.
+                drop(consumer);
+                drop(stream);
+
+                if !restart_needed {
+                    break 'restart;
                 }
 
-                // Keep the sleep small so we quickly read the ring buffer
-                thread::sleep(Duration::from_millis(DSP_POLL_MS));
+                attempt += 1;
+                if attempt >= MAX_RESTART_ATTEMPTS {
+                    eprintln!(
+                        "[SystemAudioCapture] FATAL: Max restart attempts ({}) reached after watchdog",
+                        MAX_RESTART_ATTEMPTS
+                    );
+                    break 'restart;
+                }
+
+                println!(
+                    "[SystemAudioCapture] Restarting tap in 500ms (attempt {}/{})...",
+                    attempt, MAX_RESTART_ATTEMPTS
+                );
+                thread::sleep(Duration::from_millis(500));
             }
 
             println!("[SystemAudioCapture] DSP thread stopped.");
-            // stream is dropped here → SpeakerStream::Drop calls stop_with_ch
         }));
 
         Ok(())

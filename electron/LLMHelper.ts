@@ -33,7 +33,6 @@ const GROQ_MODEL = "llama-3.3-70b-versatile"
 const OPENAI_MODEL = "gpt-5.4"
 const CLAUDE_MODEL = "claude-sonnet-4-6"
 const MAX_OUTPUT_TOKENS = 65536
-const this.getClaudeMaxOutput(model) = 64000
 
 // Simple prompt for image analysis (not interview copilot - kept separate)
 const IMAGE_ANALYSIS_PROMPT = `Analyze concisely. Be direct. No markdown formatting. Return plain text only.`

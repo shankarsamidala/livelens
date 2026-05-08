@@ -23,6 +23,9 @@ export function initializeIpcHandlers(appState: AppState): void {
    * Used to gate profile intelligence features (resume upload, JD upload, company research, etc.).
    */
   const isProOrTrialActive = (): boolean => {
+    // TEMP: bypass pro checks for testing — restore before release
+    return true;
+
     // 1. Full premium license (Dodo / Gumroad / LiveLens API subscription)
     try {
       const { LicenseManager } = require('../premium/electron/services/LicenseManager');

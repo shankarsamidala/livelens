@@ -5,14 +5,25 @@ use ringbuf::{
     traits::{Producer, Split},
     HeapCons, HeapProd, HeapRb,
 };
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
+
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+}
 
 struct Ctx {
     format: arc::R<av::AudioFormat>,
     producer: HeapProd<f32>,
     channels: u32,
     current_sample_rate: Arc<AtomicU32>,
+    /// Updated every proc callback — used to detect device death (Feature 1).
+    last_proc_tick: Arc<AtomicU64>,
+    /// Updated only when non-zero samples arrive — used to detect tap silence bug (Feature 2).
+    last_nonzero_tick: Arc<AtomicU64>,
 }
 
 pub struct SpeakerInput {
@@ -21,6 +32,8 @@ pub struct SpeakerInput {
     _ctx: Box<Ctx>,
     consumer: Option<HeapCons<f32>>,
     current_sample_rate: Arc<AtomicU32>,
+    last_proc_tick: Arc<AtomicU64>,
+    last_nonzero_tick: Arc<AtomicU64>,
 }
 
 impl SpeakerInput {
@@ -115,11 +128,18 @@ impl SpeakerInput {
 
         let current_sample_rate = Arc::new(AtomicU32::new(asbd.sample_rate as u32));
 
+        // Initialize watchdog timestamps to now so the first ~3s don't false-trigger.
+        let now = now_secs();
+        let last_proc_tick = Arc::new(AtomicU64::new(now));
+        let last_nonzero_tick = Arc::new(AtomicU64::new(now));
+
         let mut ctx = Box::new(Ctx {
             format,
             producer,
             channels,
             current_sample_rate: current_sample_rate.clone(),
+            last_proc_tick: last_proc_tick.clone(),
+            last_nonzero_tick: last_nonzero_tick.clone(),
         });
 
         let agg_device = ca::AggregateDevice::with_desc(&agg_desc)?;
@@ -136,6 +156,8 @@ impl SpeakerInput {
             _ctx: ctx,
             consumer: Some(consumer),
             current_sample_rate,
+            last_proc_tick,
+            last_nonzero_tick,
         })
     }
 
@@ -146,6 +168,8 @@ impl SpeakerInput {
             _ctx: self._ctx,
             _tap: self.tap,
             current_sample_rate: self.current_sample_rate,
+            last_proc_tick: self.last_proc_tick,
+            last_nonzero_tick: self.last_nonzero_tick,
         })
     }
 }
@@ -168,6 +192,9 @@ extern "C" fn proc(
     // The ASBD format is the ONLY source of truth for the buffer layout!
     ctx.current_sample_rate
         .store(ctx.format.absd().sample_rate as u32, Ordering::Release);
+
+    // Feature 1 watchdog: stamp every callback so DSP thread can detect device death.
+    ctx.last_proc_tick.store(now_secs(), Ordering::Release);
 
     let _channels = ctx.channels;
 
@@ -198,6 +225,13 @@ extern "C" fn proc(
 
 #[inline(always)]
 fn push_audio(ctx: &mut Ctx, data: &[f32], channels: u32) {
+    // Feature 2 watchdog: check first 64 samples for any non-zero energy.
+    // Avoids iterating the full buffer on every callback while still catching
+    // the tap-stuck-silent bug reliably (real audio is never 100% zero).
+    if data.iter().take(64).any(|&s| s.abs() > 1e-7) {
+        ctx.last_nonzero_tick.store(now_secs(), Ordering::Release);
+    }
+
     if channels <= 1 {
         let _pushed = ctx.producer.push_slice(data);
     } else {
@@ -221,6 +255,8 @@ pub struct SpeakerStream {
     _ctx: Box<Ctx>,
     _tap: ca::TapGuard,
     current_sample_rate: Arc<AtomicU32>,
+    last_proc_tick: Arc<AtomicU64>,
+    last_nonzero_tick: Arc<AtomicU64>,
 }
 
 impl SpeakerStream {
@@ -230,6 +266,32 @@ impl SpeakerStream {
 
     pub fn take_consumer(&mut self) -> Option<HeapCons<f32>> {
         self.consumer.take()
+    }
+
+    /// Returns true when the hardware tap appears dead or stuck-silent and should be restarted.
+    ///
+    /// - `silence_secs`: consecutive all-zero seconds before declaring a tap-silence fault.
+    ///
+    /// Two conditions trigger a restart:
+    /// 1. No proc callbacks for >3 seconds → device unplugged or HAL died (Feature 1).
+    /// 2. Proc is running but every sample is zero for >silence_secs → tap bug (Feature 2).
+    pub fn needs_restart(&self, silence_secs: u64) -> bool {
+        let now = now_secs();
+        let last_proc = self.last_proc_tick.load(Ordering::Acquire);
+        let last_nz = self.last_nonzero_tick.load(Ordering::Acquire);
+
+        if now.saturating_sub(last_proc) > 3 {
+            println!("[CoreAudioTap] Watchdog: no proc callbacks for >3s — device likely dead");
+            return true;
+        }
+        if now.saturating_sub(last_nz) > silence_secs {
+            println!(
+                "[CoreAudioTap] Watchdog: tap silent for >{}s while proc active — restarting",
+                silence_secs
+            );
+            return true;
+        }
+        false
     }
 
     /// Pause the aggregate device without destroying it.

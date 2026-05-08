@@ -106,4 +106,13 @@ impl SpeakerStream {
             }
         }
     }
+
+    /// Returns true if the tap should be restarted (device dead or stuck-silent).
+    /// SCK manages its own lifecycle — always returns false for that backend.
+    pub fn needs_restart(&self, silence_secs: u64) -> bool {
+        match &self.backend {
+            BackendStream::CoreAudio(s) => s.needs_restart(silence_secs),
+            BackendStream::Sck(_) => false,
+        }
+    }
 }
