@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
-import { ArrowUp, Copy, Check } from 'lucide-react';
+import { ArrowUp, Copy, Check, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MeetingChatOverlay from './MeetingChatOverlay';
 import EditableTextBlock from './EditableTextBlock';
@@ -55,7 +55,7 @@ interface MeetingDetailsProps {
     onOpenSettings: () => void;
 }
 
-const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting: initialMeeting }) => {
+const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting: initialMeeting, onBack }) => {
     const isLight = useResolvedTheme() === 'light';
     // We need local state for the meeting object to reflect optimistic updates
     const [meeting, setMeeting] = useState<Meeting>(initialMeeting);
@@ -163,7 +163,7 @@ ${meeting.detailedSummary.keyPoints?.map(item => `- ${item}`).join('\n') || 'Non
 
 
     return (
-        <div className="h-full w-full flex flex-col bg-bg-secondary text-text-secondary font-sans overflow-hidden">
+        <div className="h-full w-full flex flex-col font-sans overflow-hidden" style={{ background: '#080a0e', color: 'rgba(226,229,237,0.88)' }}>
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto custom-scrollbar">
                 <motion.div
@@ -172,6 +172,17 @@ ${meeting.detailedSummary.keyPoints?.map(item => `- ${item}`).join('\n') || 'Non
                     transition={{ delay: 0.1, duration: 0.3 }}
                     className="max-w-4xl mx-auto px-8 py-8 pb-32" // Added pb-32 for floating footer clearance
                 >
+                    {/* Back button */}
+                    <button
+                        onClick={onBack}
+                        className="flex items-center gap-1.5 mb-5 text-[12px] font-medium text-text-tertiary hover:text-text-primary transition-colors"
+                        style={{ color: 'rgba(226,229,237,0.45)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'rgba(226,229,237,0.85)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(226,229,237,0.45)')}
+                    >
+                        <ArrowLeft size={13} /> Back
+                    </button>
+
                     {/* Meta Info & Actions Row */}
                     <div className="flex items-start justify-between mb-6">
                         <div className="w-full pr-4">

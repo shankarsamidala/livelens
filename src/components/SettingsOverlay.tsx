@@ -1315,7 +1315,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                             style={{ visibility: isPreviewingOpacity ? 'hidden' : 'visible' }}
                         >
                         {/* Sidebar */}
-                        <div className="w-[200px] bg-transparent flex flex-col border-r border-white/[0.07] shrink-0">
+                        <div className="w-[200px] flex flex-col border-r border-white/[0.07] shrink-0" style={{ background: '#0d0f14' }}>
                             <div className="px-[10px] py-5 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
                                 <nav className="flex flex-col gap-[2px]">
                                     {/* ── App ── */}
