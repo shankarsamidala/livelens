@@ -60,6 +60,16 @@ export class SettingsWindowHelper {
         this.windowHelper = wh;
     }
 
+    private shouldAvoidActivation(): boolean {
+        return this.windowHelper?.isWindowsUndetectable() ?? false;
+    }
+
+    public syncActivationPolicy(): void {
+        if (this.settingsWindow && !this.settingsWindow.isDestroyed()) {
+            this.settingsWindow.setFocusable(!this.shouldAvoidActivation());
+        }
+    }
+
     public toggleWindow(x?: number, y?: number): void {
         const mainWindow = BrowserWindow.getAllWindows().find(w => !w.isDestroyed() && w !== this.settingsWindow);
         if (mainWindow && x !== undefined && y !== undefined) {
@@ -99,22 +109,28 @@ export class SettingsWindowHelper {
         // Ensure fully visible on screen
         this.ensureVisibleOnScreen();
 
+        const shouldActivate = activate && !this.shouldAvoidActivation();
         if (process.platform === 'win32' && this.contentProtection) {
+            const shouldFocus = shouldActivate; // snapshot before timeout
             this.settingsWindow.setOpacity(0);
-            if (activate) this.settingsWindow.show(); else this.settingsWindow.showInactive();
+            this.settingsWindow.showInactive();
             this.settingsWindow.setContentProtection(true);
 
             if (this.opacityTimeout) clearTimeout(this.opacityTimeout);
             this.opacityTimeout = setTimeout(() => {
                 if (this.settingsWindow && !this.settingsWindow.isDestroyed()) {
                     this.settingsWindow.setOpacity(1);
-                    if (activate) this.settingsWindow.focus();
+                    if (shouldFocus) this.settingsWindow.focus();
                 }
             }, 60);
         } else {
             this.settingsWindow.setContentProtection(this.contentProtection);
-            if (activate) this.settingsWindow.show(); else this.settingsWindow.showInactive();
-            if (activate) this.settingsWindow.focus();
+            if (shouldActivate) {
+                this.settingsWindow.show();
+                this.settingsWindow.focus();
+            } else {
+                this.settingsWindow.showInactive();
+            }
         }
 
         this.emitVisibilityChange(true);
@@ -238,6 +254,7 @@ export class SettingsWindowHelper {
 
         if (this.settingsWindow && !this.settingsWindow.isDestroyed()) {
             this.settingsWindow.setContentProtection(enable);
+            this.syncActivationPolicy();
         }
     }
 }

@@ -446,6 +446,34 @@ export class WindowHelper {
     this.isWindowVisible = false
   }
 
+  // ── Windows undetectable activation guards ──────────────────────────────
+  // On Windows every show()/focus() activates the window (steals OS focus).
+  // When undetectable mode is on the overlay must never activate — use
+  // showInactive() and skip focus() so the meeting app stays in front.
+
+  public isWindowsUndetectable(): boolean {
+    return process.platform === 'win32' && this.appState.getUndetectable();
+  }
+
+  private shouldOverlayBeFocusable(): boolean {
+    return !this.isWindowsUndetectable();
+  }
+
+  private shouldFocusOverlay(inactive?: boolean): boolean {
+    return !inactive && this.shouldOverlayBeFocusable();
+  }
+
+  public syncOverlayActivationPolicy(): void {
+    const focusable = this.shouldOverlayBeFocusable();
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      this.overlayWindow.setFocusable(focusable);
+    }
+    if (this.launcherWindow && !this.launcherWindow.isDestroyed()) {
+      this.launcherWindow.setFocusable(focusable);
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   // Apply or remove click-through (mouse passthrough) on the overlay window.
   // Called whenever the passthrough state changes in AppState.
   public syncOverlayInteractionPolicy(): void {
@@ -488,15 +516,12 @@ export class WindowHelper {
       this.overlayWindow.setAlwaysOnTop(true, 'screen-saver');
     }
 
-    if (this.appState.getOverlayMousePassthrough()) {
-      // In passthrough/stealth mode: appear on screen without stealing OS focus.
-      // The underlying app (Zoom, browser, etc.) must keep focus.
+    if (this.appState.getOverlayMousePassthrough() || this.isWindowsUndetectable()) {
+      // In passthrough/stealth mode or Windows undetectable: appear without stealing focus.
       this.overlayWindow.showInactive();
     } else {
       // Normal interactive mode: show and focus so the user can click/type.
       this.overlayWindow.showInactive();
-      // Bring to front without a full app-activate (avoids dock bounce on macOS).
-      // setAlwaysOnTop is already set at creation; a focus() call alone is safe.
       this.overlayWindow.focus();
     }
   }
@@ -586,11 +611,14 @@ export class WindowHelper {
 
       // Restore opacity before showing (it may have been zeroed by hideMainWindow).
       if (process.platform === 'win32' && this.contentProtection) {
-        // Opacity Shield: Show at 0 opacity first to prevent frame leak
+        // Opacity Shield: Show at 0 opacity first to prevent frame leak.
+        // Snapshot shouldFocus before the timeout to avoid a race where
+        // undetectable mode is toggled mid-flight and the closure re-evaluates
+        // to the wrong value 60 ms later (Greptile P2 fix).
+        const shouldFocus = this.shouldFocusOverlay(inactive);
         this.overlayWindow.setOpacity(0);
-        if (inactive) this.overlayWindow.showInactive(); else this.overlayWindow.show();
+        this.overlayWindow.showInactive();
         this.overlayWindow.setContentProtection(true);
-        // Small delay to ensure Windows DWM processes the flag before making it opaque
 
         if (this.opacityTimeout) clearTimeout(this.opacityTimeout);
         this.opacityTimeout = setTimeout(() => {
@@ -598,7 +626,7 @@ export class WindowHelper {
             this.overlayWindow.setOpacity(1);
             // Re-assert z-order on Windows — DWM can silently demote the HWND after hide/show
             this.overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-            if (!inactive) this.overlayWindow.focus();
+            if (shouldFocus) this.overlayWindow.focus();
           }
         }, 60);
       } else {
@@ -614,9 +642,12 @@ export class WindowHelper {
         if (process.platform === 'win32') {
           this.overlayWindow.setAlwaysOnTop(true, 'screen-saver');
         }
-        if (inactive) this.overlayWindow.showInactive(); else this.overlayWindow.show();
-        // Only grab focus for explicit user-initiated shows (not shortcut/ghost shows)
-        if (!inactive) this.overlayWindow.focus();
+        if (this.shouldFocusOverlay(inactive)) {
+          this.overlayWindow.show();
+          this.overlayWindow.focus();
+        } else {
+          this.overlayWindow.showInactive();
+        }
       }
       this.isWindowVisible = true;
     }
@@ -635,24 +666,29 @@ export class WindowHelper {
     // Show Launcher FIRST
     if (this.launcherWindow && !this.launcherWindow.isDestroyed()) {
       if (process.platform === 'win32' && this.contentProtection) {
-        // Opacity Shield: Show at 0 opacity first
+        // Opacity Shield: Show at 0 opacity first. Snapshot before timeout (race fix).
+        const shouldFocus = this.shouldFocusOverlay(inactive);
         this.launcherWindow.setOpacity(0);
-        if (inactive) this.launcherWindow.showInactive(); else this.launcherWindow.show();
+        this.launcherWindow.showInactive();
         this.launcherWindow.setContentProtection(true);
 
         if (this.opacityTimeout) clearTimeout(this.opacityTimeout);
         this.opacityTimeout = setTimeout(() => {
           if (this.launcherWindow && !this.launcherWindow.isDestroyed()) {
             this.launcherWindow.setOpacity(1);
-            if (!inactive) this.launcherWindow.focus();
+            if (shouldFocus) this.launcherWindow.focus();
           }
         }, 60);
       } else {
         // Restore opacity (may have been zeroed pre-screenshot by hideMainWindow)
         this.launcherWindow.setOpacity(1);
         this.launcherWindow.setContentProtection(this.contentProtection);
-        if (inactive) this.launcherWindow.showInactive(); else this.launcherWindow.show();
-        if (!inactive) this.launcherWindow.focus();
+        if (this.shouldFocusOverlay(inactive)) {
+          this.launcherWindow.show();
+          this.launcherWindow.focus();
+        } else {
+          this.launcherWindow.showInactive();
+        }
       }
       this.isWindowVisible = true;
     }

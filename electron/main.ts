@@ -2309,9 +2309,13 @@ export class AppState {
 
     this.isUndetectable = state
     this.windowHelper.setContentProtection(state)
-    this.settingsWindowHelper.setContentProtection(state)
-    this.modelSelectorWindowHelper.setContentProtection(state)
+    this.settingsWindowHelper.setContentProtection(state)   // also calls syncActivationPolicy internally
+    this.modelSelectorWindowHelper.setContentProtection(state) // also calls syncActivationPolicy internally
     this.cropperWindowHelper.setContentProtection(state)
+    // Sync overlay/launcher focusable flag on Windows (child helpers handle themselves above)
+    if (process.platform === 'win32') {
+      this.windowHelper.syncOverlayActivationPolicy();
+    }
 
     // Persist state via SettingsManager
     SettingsManager.getInstance().set('isUndetectable', state);

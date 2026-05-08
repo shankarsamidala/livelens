@@ -34,6 +34,17 @@ export class ModelSelectorWindowHelper {
         this.windowHelper = wh;
     }
 
+    private shouldAvoidActivation(): boolean {
+        return this.windowHelper?.isWindowsUndetectable() ?? false;
+    }
+
+    public syncActivationPolicy(): void {
+        if (this.window && !this.window.isDestroyed()) {
+            this.window.setFocusable(!this.shouldAvoidActivation());
+        }
+    }
+    }
+
     public getWindow(): BrowserWindow | null {
         return this.window
     }
@@ -62,22 +73,28 @@ export class ModelSelectorWindowHelper {
         this.window.setPosition(Math.round(x), Math.round(y))
         this.ensureVisibleOnScreen();
 
+        const shouldActivate = activate && !this.shouldAvoidActivation();
         if (process.platform === 'win32' && this.contentProtection) {
+            const shouldFocus = shouldActivate; // snapshot before timeout
             this.window.setOpacity(0);
-            if (activate) this.window.show(); else this.window.showInactive();
+            this.window.showInactive();
             this.window.setContentProtection(true);
 
             if (this.opacityTimeout) clearTimeout(this.opacityTimeout);
             this.opacityTimeout = setTimeout(() => {
                 if (this.window && !this.window.isDestroyed()) {
                     this.window.setOpacity(1);
-                    if (activate) this.window.focus();
+                    if (shouldFocus) this.window.focus();
                 }
             }, 60);
         } else {
             this.window.setContentProtection(this.contentProtection);
-            if (activate) this.window.show(); else this.window.showInactive();
-            if (activate) this.window.focus();
+            if (shouldActivate) {
+                this.window.show();
+                this.window.focus();
+            } else {
+                this.window.showInactive();
+            }
         }
     }
 
@@ -212,6 +229,7 @@ export class ModelSelectorWindowHelper {
         this.contentProtection = enable;
         if (this.window && !this.window.isDestroyed()) {
             this.window.setContentProtection(enable);
+            this.syncActivationPolicy();
         }
     }
 }
