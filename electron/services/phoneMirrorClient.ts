@@ -26,7 +26,7 @@ export const PHONE_MIRROR_HTML = `<!doctype html>
         --bar-h: 84px;
       }
       * { box-sizing: border-box; }
-      html, body { min-height: 100%; }
+      html, body { height: 100%; overflow: hidden; }
       body {
         margin: 0;
         background:
@@ -41,8 +41,10 @@ export const PHONE_MIRROR_HTML = `<!doctype html>
       .app {
         display: grid;
         grid-template-rows: auto 1fr auto;
-        min-height: 100dvh;
+        height: 100dvh;
+        max-height: -webkit-fill-available;
         padding: env(safe-area-inset-top) 14px env(safe-area-inset-bottom);
+        overflow: hidden;
       }
       .topbar {
         position: sticky; top: 0; z-index: 5;
@@ -64,7 +66,8 @@ export const PHONE_MIRROR_HTML = `<!doctype html>
       .status.connected .dot { background: var(--accent); animation: pulse 1.8s ease-in-out infinite; }
       .feed {
         display: flex; flex-direction: column; gap: 12px; min-height: 0;
-        overflow-y: auto; padding: 12px 0 calc(var(--bar-h) + 20px);
+        overflow-y: scroll; -webkit-overflow-scrolling: touch;
+        padding: 12px 0 calc(var(--bar-h) + 20px);
         scroll-behavior: smooth; overscroll-behavior: contain;
       }
       .empty {
