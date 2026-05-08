@@ -2820,6 +2820,17 @@ async function initializeApp() {
     console.error('[Main] Failed to recover unprocessed meetings:', err);
   });
 
+  // Auto-start Phone Mirror if it was enabled in a previous session.
+  {
+    const { PhoneMirrorService } = require('./services/PhoneMirrorService');
+    const { SettingsManager } = require('./services/SettingsManager');
+    if (SettingsManager.getInstance().get('phoneMirrorEnabled')) {
+      PhoneMirrorService.getInstance()
+        .start({ exposeOnLan: !!SettingsManager.getInstance().get('phoneMirrorExposeOnLan'), persist: false })
+        .catch((err: any) => console.error('[Init] PhoneMirror auto-start failed:', err));
+    }
+  }
+
   // Note: We do NOT force dock show here anymore, respecting stealth mode.
 
   app.on("activate", () => {
@@ -2872,6 +2883,14 @@ async function initializeApp() {
     } catch (e) {
       console.error('[Main] Failed to scrub credentials on quit:', e);
     }
+
+    // Gracefully shut down Phone Mirror HTTP/WS server.
+    try {
+      const { PhoneMirrorService } = require('./services/PhoneMirrorService');
+      PhoneMirrorService.getInstance().dispose().catch((err: any) =>
+        console.error('[Main] PhoneMirror dispose failed:', err)
+      );
+    } catch (_) { /* noop */ }
   })
 
 

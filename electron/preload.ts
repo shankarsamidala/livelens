@@ -1234,6 +1234,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
   modesUpdateNoteSection: (id: string, updates: { title?: string; description?: string }) => ipcRenderer.invoke('modes:update-note-section', id, updates),
   modesDeleteNoteSection: (id: string) => ipcRenderer.invoke('modes:delete-note-section', id),
   modesRemoveAllNoteSections: (modeId: string) => ipcRenderer.invoke('modes:remove-all-note-sections', modeId),
+
+  // Phone Mirror API
+  phoneMirrorGetInfo: () => ipcRenderer.invoke("phone-mirror:get-info"),
+  phoneMirrorEnable: (exposeOnLan: boolean) => ipcRenderer.invoke("phone-mirror:enable", exposeOnLan),
+  phoneMirrorDisable: () => ipcRenderer.invoke("phone-mirror:disable"),
+  phoneMirrorSetLan: (exposeOnLan: boolean) => ipcRenderer.invoke("phone-mirror:set-lan", exposeOnLan),
+  phoneMirrorRotateToken: () => ipcRenderer.invoke("phone-mirror:rotate-token"),
+  onPhoneMirrorStatus: (callback: (info: any) => void) => {
+    const subscription = (_: any, info: any) => callback(info)
+    ipcRenderer.on('phone-mirror:status', subscription)
+    return () => { ipcRenderer.removeListener('phone-mirror:status', subscription) }
+  },
 } as ElectronAPI)
 
 // Renderer-side console forwarding to main-process log file.

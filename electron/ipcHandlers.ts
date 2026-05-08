@@ -8,7 +8,7 @@ import * as os from "os";
 import * as path from "path";
 import * as fs from "fs";
 import { AudioDevices } from "./audio/AudioDevices";
-
+import { PhoneMirrorService } from "./services/PhoneMirrorService";
 
 import { RECOGNITION_LANGUAGES, AI_RESPONSE_LANGUAGES } from "./config/languages"
 
@@ -479,6 +479,9 @@ export function initializeIpcHandlers(appState: AppState): void {
         final: true
       }, true);
 
+      // Mirror to phone (no-op if PhoneMirrorService isn't running).
+      try { PhoneMirrorService.getInstance().publishUserMessage(String(myStreamId), message); } catch (_) { /* noop */ }
+
       let fullResponse = "";
 
       // Context Injection for "Answer" button (100s rolling window)
@@ -518,12 +521,14 @@ export function initializeIpcHandlers(appState: AppState): void {
             return null;
           }
           event.sender.send("gemini-stream-token", token);
+          try { PhoneMirrorService.getInstance().publishToken(String(myStreamId), token); } catch (_) { /* noop */ }
           fullResponse += token;
         }
 
         // Final check: only send done if we are still the active stream
         if (_chatStreamId === myStreamId) {
           event.sender.send("gemini-stream-done");
+          try { PhoneMirrorService.getInstance().publishDone(String(myStreamId), fullResponse); } catch (_) { /* noop */ }
 
           // Update IntelligenceManager with ASSISTANT message after completion
           if (fullResponse.trim().length > 0) {
@@ -537,6 +542,7 @@ export function initializeIpcHandlers(appState: AppState): void {
         console.error("[IPC] Streaming error:", streamError);
         if (_chatStreamId === myStreamId) {
           event.sender.send("gemini-stream-error", streamError.message || "Unknown streaming error");
+          try { PhoneMirrorService.getInstance().publishError(String(myStreamId), streamError?.message || "Unknown streaming error"); } catch (_) { /* noop */ }
         }
       }
 
@@ -3416,6 +3422,57 @@ export function initializeIpcHandlers(appState: AppState): void {
     } catch (e: any) {
       console.error('[IPC] modes:remove-all-note-sections error:', e);
       return { success: false, error: e.message };
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // Phone Mirror — stream live AI responses to a paired phone over WS.
+  // -----------------------------------------------------------------------
+
+  // Push status updates to the renderer whenever the service starts/stops
+  // or a phone connects/disconnects.
+  PhoneMirrorService.getInstance().onStatusChange((info) => {
+    const win = appState.getMainWindow();
+    win?.webContents.send('phone-mirror:status', info);
+    try {
+      const settingsWin = appState.settingsWindowHelper.getSettingsWindow();
+      settingsWin?.webContents?.send('phone-mirror:status', info);
+    } catch (_) { /* settings window may not exist yet */ }
+  });
+
+  safeHandle("phone-mirror:get-info", async () => {
+    return PhoneMirrorService.getInstance().snapshot();
+  });
+
+  safeHandle("phone-mirror:enable", async (_, exposeOnLan?: boolean) => {
+    try {
+      return await PhoneMirrorService.getInstance().start({ exposeOnLan: !!exposeOnLan, persist: true });
+    } catch (e: any) {
+      console.error('[IPC] phone-mirror:enable error:', e);
+      return { error: e?.message || 'failed to start phone mirror' };
+    }
+  });
+
+  safeHandle("phone-mirror:disable", async () => {
+    await PhoneMirrorService.getInstance().stop({ persist: true });
+    return { success: true };
+  });
+
+  safeHandle("phone-mirror:set-lan", async (_, exposeOnLan: boolean) => {
+    try {
+      return await PhoneMirrorService.getInstance().setExposeOnLan(!!exposeOnLan);
+    } catch (e: any) {
+      console.error('[IPC] phone-mirror:set-lan error:', e);
+      return { error: e?.message || 'failed to update lan setting' };
+    }
+  });
+
+  safeHandle("phone-mirror:rotate-token", async () => {
+    try {
+      return await PhoneMirrorService.getInstance().rotateToken();
+    } catch (e: any) {
+      console.error('[IPC] phone-mirror:rotate-token error:', e);
+      return { error: e?.message || 'failed to rotate token' };
     }
   });
 }
