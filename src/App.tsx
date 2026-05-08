@@ -4,7 +4,6 @@ import { ToastProvider, ToastViewport } from "./components/ui/toast"
 import LiveLensInterface from "./components/LiveLensInterface"
 import Launcher from "./components/Launcher"
 import ModelSelectorWindow from "./components/ModelSelectorWindow"
-import SettingsOverlay from "./components/SettingsOverlay"
 import StartupSequence from "./components/StartupSequence"
 import { AnimatePresence, motion } from "framer-motion"
 import UpdateBanner from "./components/UpdateBanner"
@@ -60,8 +59,6 @@ const App: React.FC = () => {
 
   // State
   const [showStartup, setShowStartup] = useState(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = useState('general');
 
   const [overlayOpacity, setOverlayOpacity] = useState<number>(() => {
     const stored = localStorage.getItem('natively_overlay_opacity');
@@ -93,12 +90,6 @@ const App: React.FC = () => {
       }
     }
 
-    // Settings tab routing from overlay
-    const removeOpenSettingsTab = window.electronAPI?.onOpenSettingsTab?.((tab: string) => {
-      setSettingsInitialTab(tab);
-      setIsSettingsOpen(true);
-    });
-
     // Ollama auto-pull progress
     let removeProgress: (() => void) | undefined;
     let removeComplete: (() => void) | undefined;
@@ -127,7 +118,6 @@ const App: React.FC = () => {
       if (removeProgress) removeProgress();
       if (removeComplete) removeComplete();
       if (removeWarning) removeWarning();
-      if (removeOpenSettingsTab) removeOpenSettingsTab();
     };
   }, []);
 
@@ -260,20 +250,11 @@ const App: React.FC = () => {
                 <div id="launcher-container" className="h-full w-full relative">
                   <Launcher
                     onStartMeeting={handleStartMeeting}
-                    onOpenSettings={(tab = 'general') => {
-                      setSettingsInitialTab(tab);
-                      setIsSettingsOpen(true);
-                    }}
                     ollamaPullStatus={ollamaPullStatus}
                     ollamaPullPercent={ollamaPullPercent}
                     ollamaPullMessage={ollamaPullMessage}
                   />
                 </div>
-                <SettingsOverlay
-                  isOpen={isSettingsOpen}
-                  onClose={() => setIsSettingsOpen(false)}
-                  initialTab={settingsInitialTab}
-                />
                 <ToastViewport />
               </ToastProvider>
             </QueryClientProvider>

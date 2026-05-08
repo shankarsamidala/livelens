@@ -62,7 +62,6 @@ interface Meeting {
 interface MeetingDetailsProps {
     meeting: Meeting;
     onBack: () => void;
-    onOpenSettings: () => void;
 }
 
 const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting: initialMeeting, onBack }) => {

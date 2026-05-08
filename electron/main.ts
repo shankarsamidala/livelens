@@ -147,7 +147,6 @@ console.error = (...args: any[]) => {
 
 import { initializeIpcHandlers } from "./ipcHandlers"
 import { WindowHelper } from "./WindowHelper"
-import { SettingsWindowHelper } from "./SettingsWindowHelper"
 import { ModelSelectorWindowHelper } from "./ModelSelectorWindowHelper"
 import { CropperWindowHelper } from "./CropperWindowHelper"
 import { ScreenshotHelper } from "./ScreenshotHelper"
@@ -193,7 +192,6 @@ interface ScreenshotCaptureSession {
   captureKind: ScreenshotCaptureKind;
   wasMainWindowVisible: boolean;
   windowMode: ScreenshotWindowMode;
-  wasSettingsVisible: boolean;
   wasModelSelectorVisible: boolean;
   overlayBounds: Electron.Rectangle | null;
   overlayDisplayId: number | null;
@@ -220,7 +218,6 @@ export class AppState {
   private static instance: AppState | null = null
 
   private windowHelper: WindowHelper
-  public settingsWindowHelper: SettingsWindowHelper
   public modelSelectorWindowHelper: ModelSelectorWindowHelper
   public cropperWindowHelper: CropperWindowHelper
   private screenshotHelper: ScreenshotHelper
@@ -286,7 +283,6 @@ export class AppState {
 
     // 2. Initialize Helpers with loaded state
     this.windowHelper = new WindowHelper(this)
-    this.settingsWindowHelper = new SettingsWindowHelper()
     this.modelSelectorWindowHelper = new ModelSelectorWindowHelper()
     this.cropperWindowHelper = new CropperWindowHelper()
 
@@ -295,7 +291,6 @@ export class AppState {
     this.processingHelper = new ProcessingHelper(this)
 
     this.windowHelper.setContentProtection(this.isUndetectable);
-    this.settingsWindowHelper.setContentProtection(this.isUndetectable);
     this.modelSelectorWindowHelper.setContentProtection(this.isUndetectable);
     this.cropperWindowHelper.setContentProtection(this.isUndetectable);
 
@@ -423,7 +418,6 @@ export class AppState {
     });
 
     // Inject WindowHelper into other helpers
-    this.settingsWindowHelper.setWindowHelper(this.windowHelper);
     this.modelSelectorWindowHelper.setWindowHelper(this.windowHelper);
 
 
@@ -1416,7 +1410,6 @@ export class AppState {
     const attachAudioTestListeners = (capture: MicrophoneCapture) => {
       capture.on('data', (chunk: Buffer) => {
         const targets = [
-          this.settingsWindowHelper.getSettingsWindow(),
           this.getWindowHelper().getLauncherWindow(),
           this.getWindowHelper().getOverlayWindow(),
         ].filter((win): win is BrowserWindow => !!win && !win.isDestroyed());
@@ -1993,14 +1986,12 @@ export class AppState {
     captureKind: ScreenshotCaptureKind,
     restoreFocus: boolean
   ): ScreenshotCaptureSession {
-    const settingsWindow = this.settingsWindowHelper.getSettingsWindow();
     const modelSelectorWindow = this.modelSelectorWindowHelper.getWindow();
 
     return {
       captureKind,
       wasMainWindowVisible: this.windowHelper.isVisible(),
       windowMode: this.windowHelper.getCurrentWindowMode(),
-      wasSettingsVisible: !!settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isVisible(),
       wasModelSelectorVisible: !!modelSelectorWindow && !modelSelectorWindow.isDestroyed() && modelSelectorWindow.isVisible(),
       overlayBounds: this.windowHelper.getLastOverlayBounds(),
       overlayDisplayId: this.windowHelper.getLastOverlayDisplayId(),
@@ -2031,10 +2022,6 @@ export class AppState {
       this.modelSelectorWindowHelper.hideWindow();
     }
 
-    if (session.wasSettingsVisible) {
-      this.settingsWindowHelper.closeWindow();
-    }
-
     if (session.wasMainWindowVisible) {
       this.hideMainWindow();
     }
@@ -2049,14 +2036,6 @@ export class AppState {
         this.windowHelper.switchToOverlay(!activate);
       } else {
         this.windowHelper.switchToLauncher(!activate);
-      }
-    }
-
-    if (session.wasSettingsVisible) {
-      const settingsWindow = this.settingsWindowHelper.getSettingsWindow();
-      if (settingsWindow && !settingsWindow.isDestroyed()) {
-        const { x, y } = settingsWindow.getBounds();
-        this.settingsWindowHelper.showWindow(x, y, { activate });
       }
     }
 
@@ -2309,7 +2288,6 @@ export class AppState {
 
     this.isUndetectable = state
     this.windowHelper.setContentProtection(state)
-    this.settingsWindowHelper.setContentProtection(state)   // also calls syncActivationPolicy internally
     this.modelSelectorWindowHelper.setContentProtection(state) // also calls syncActivationPolicy internally
     this.cropperWindowHelper.setContentProtection(state)
     // Sync overlay/launcher focusable flag on Windows (child helpers handle themselves above)
@@ -2351,19 +2329,11 @@ export class AppState {
         // if the user toggled again before the timer fired.
         const settled = this.isUndetectable;
 
-        const activeWindow = this.windowHelper.getMainWindow();
-        const settingsWindow = this.settingsWindowHelper.getSettingsWindow();
-        let targetFocusWindow = activeWindow;
-        if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isVisible()) {
-          targetFocusWindow = settingsWindow;
-        }
+        const targetFocusWindow = this.windowHelper.getMainWindow();
 
         const modelSelectorWindow = this.modelSelectorWindowHelper.getWindow();
         const isModelSelectorVisible = modelSelectorWindow && !modelSelectorWindow.isDestroyed() && modelSelectorWindow.isVisible();
 
-        if (targetFocusWindow && targetFocusWindow === settingsWindow) {
-          this.settingsWindowHelper.setIgnoreBlur(true);
-        }
         if (isModelSelectorVisible) {
           this.modelSelectorWindowHelper.setIgnoreBlur(true);
         }
@@ -2396,9 +2366,6 @@ export class AppState {
           // Do NOT call focus() — let the user's current app retain focus
         }
 
-        if (targetFocusWindow && targetFocusWindow === settingsWindow) {
-          setTimeout(() => { this.settingsWindowHelper.setIgnoreBlur(false); }, 500);
-        }
         if (isModelSelectorVisible) {
           setTimeout(() => { this.modelSelectorWindowHelper.setIgnoreBlur(false); }, 500);
         }
@@ -2564,7 +2531,6 @@ export class AppState {
         // Windows/Linux: Update all window icons
         this.windowHelper.getLauncherWindow()?.setIcon(image);
         this.windowHelper.getOverlayWindow()?.setIcon(image);
-        this.settingsWindowHelper.getSettingsWindow()?.setIcon(image);
       }
     } else {
       console.warn(`[AppState] Disguise icon not found: ${iconPath}`);
@@ -2581,12 +2547,6 @@ export class AppState {
     if (overlay && !overlay.isDestroyed()) {
       overlay.setTitle(appName.trim());
       overlay.webContents.send('disguise-changed', mode);
-    }
-
-    const settingsWin = this.settingsWindowHelper.getSettingsWindow();
-    if (settingsWin && !settingsWin.isDestroyed()) {
-      settingsWin.setTitle(appName.trim());
-      settingsWin.webContents.send('disguise-changed', mode);
     }
 
     // Cancel any stale forceUpdate timeouts from previous disguise changes
@@ -2618,7 +2578,6 @@ export class AppState {
       this.windowHelper.getMainWindow(),
       this.windowHelper.getLauncherWindow(),
       this.windowHelper.getOverlayWindow(),
-      this.settingsWindowHelper.getSettingsWindow(),
       this.modelSelectorWindowHelper.getWindow(),
     ];
     const sent = new Set<number>();
@@ -2723,8 +2682,7 @@ async function initializeApp() {
   // Register global shortcuts using KeybindManager
   KeybindManager.getInstance().registerGlobalShortcuts()
 
-  // Pre-create settings and model selector windows in background for faster first open
-  appState.settingsWindowHelper.preloadWindow()
+  // Pre-create model selector window in background for faster first open
   appState.modelSelectorWindowHelper.preloadWindow()
 
   // One-time macOS screen recording permission prompt.

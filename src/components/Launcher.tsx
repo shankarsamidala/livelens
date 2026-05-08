@@ -51,7 +51,6 @@ interface Meeting {
 
 interface LauncherProps {
     onStartMeeting: () => void;
-    onOpenSettings: (tab?: string) => void;
     ollamaPullStatus?: 'idle' | 'downloading' | 'complete' | 'failed';
     ollamaPullPercent?: number;
     ollamaPullMessage?: string;
@@ -103,9 +102,9 @@ const NavBtn: React.FC<{ label: string; active: boolean; onClick: () => void; ch
     </div>
 );
 
-const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, ollamaPullStatus = 'idle', ollamaPullPercent = 0, ollamaPullMessage = '' }) => {
+const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, ollamaPullStatus = 'idle', ollamaPullPercent = 0, ollamaPullMessage = '' }) => {
     const [activeView, setActiveView] = useState<'home' | 'modes' | 'settings'>('home');
-    const settingsTab = 'general';
+    const [settingsTab, setSettingsTab] = useState('general');
     const [currentMode, setCurrentMode] = useState<string>('general');
     const [meetings, setMeetings] = useState<Meeting[]>([]);
     const [isMeetingActive, setIsMeetingActive] = useState(false);
@@ -126,6 +125,14 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, oll
 
     // Keybinds
     const { isShortcutPressed } = useShortcuts();
+    useEffect(() => {
+        const removeOpenSettingsTab = window.electronAPI?.onOpenSettingsTab?.((tab: string) => {
+            setSettingsTab(tab || 'general');
+            setActiveView('settings');
+        });
+        return () => { removeOpenSettingsTab?.(); };
+    }, []);
+
     useEffect(() => {
         let mounted = true;
         console.log("Launcher mounted");
@@ -380,8 +387,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, oll
                 {/* Inline Settings View */}
                 {activeView === 'settings' && (
                     <SettingsOverlay
-                        inline
-                        isOpen
                         onClose={() => setActiveView('home')}
                         initialTab={settingsTab}
                     />
@@ -522,7 +527,6 @@ const Launcher: React.FC<LauncherProps> = ({ onStartMeeting, onOpenSettings, oll
                             <MeetingDetails
                                 meeting={selectedMeeting}
                                 onBack={handleBack}
-                                onOpenSettings={onOpenSettings}
                             />
                         </motion.div>
                     ) : (

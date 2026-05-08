@@ -209,14 +209,11 @@ export function initializeIpcHandlers(appState: AppState): void {
       if (!width || !height) return
 
       const senderWebContents = event.sender
-      const settingsWin = appState.settingsWindowHelper.getSettingsWindow()
       const overlayWin = appState.getWindowHelper().getOverlayWindow()
       const launcherWin = appState.getWindowHelper().getLauncherWindow()
       const modelSelectorWin = appState.modelSelectorWindowHelper.getWindow()
 
-      if (settingsWin && !settingsWin.isDestroyed() && settingsWin.webContents.id === senderWebContents.id) {
-        appState.settingsWindowHelper.setWindowDimensions(settingsWin, width, height)
-      } else if (modelSelectorWin && !modelSelectorWin.isDestroyed() && modelSelectorWin.webContents.id === senderWebContents.id) {
+      if (modelSelectorWin && !modelSelectorWin.isDestroyed() && modelSelectorWin.webContents.id === senderWebContents.id) {
         appState.modelSelectorWindowHelper.setWindowDimensions(width, height)
       } else if (
         overlayWin && !overlayWin.isDestroyed() && overlayWin.webContents.id === senderWebContents.id
@@ -638,22 +635,6 @@ export function initializeIpcHandlers(appState: AppState): void {
     return appState.getWindowHelper().isMainWindowMaximized();
   });
 
-  // Settings Window
-  safeHandle("toggle-settings-window", (event, coords: { offsetX?: number; offsetY?: number } = {}) => {
-    if (coords.offsetX !== undefined && coords.offsetY !== undefined) {
-      const overlayWin = appState.getWindowHelper().getOverlayWindow();
-      if (overlayWin && !overlayWin.isDestroyed()) {
-        const bounds = overlayWin.getBounds();
-        appState.settingsWindowHelper.toggleWindow(
-          bounds.x + coords.offsetX,
-          bounds.y + coords.offsetY,
-        );
-        return;
-      }
-    }
-    appState.settingsWindowHelper.toggleWindow(undefined, undefined);
-  })
-
   // Open the launcher's SettingsOverlay on a specific tab (callable from any window)
   safeHandle("settings:open-tab", (_, tab: string) => {
     const launcherWin = appState.getWindowHelper().getLauncherWindow();
@@ -663,12 +644,6 @@ export function initializeIpcHandlers(appState: AppState): void {
       launcherWin.focus();
     }
   })
-
-  safeHandle("close-settings-window", () => {
-    appState.settingsWindowHelper.closeWindow()
-  })
-
-
 
   safeHandle("set-undetectable", async (_, state: boolean) => {
     appState.setUndetectable(state)
@@ -3437,10 +3412,6 @@ export function initializeIpcHandlers(appState: AppState): void {
   PhoneMirrorService.getInstance().onStatusChange((info) => {
     const win = appState.getMainWindow();
     win?.webContents.send('phone-mirror:status', info);
-    try {
-      const settingsWin = appState.settingsWindowHelper.getSettingsWindow();
-      settingsWin?.webContents?.send('phone-mirror:status', info);
-    } catch (_) { /* settings window may not exist yet */ }
   });
 
   safeHandle("phone-mirror:get-info", async () => {

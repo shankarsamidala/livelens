@@ -155,9 +155,6 @@ interface ElectronAPI {
   toggleModelSelector: (coords: { offsetX: number; offsetY: number }) => Promise<void>
   forceRestartOllama: () => Promise<void>
 
-  // Settings Window
-  toggleSettingsWindow: (coords?: { offsetX: number; offsetY: number }) => Promise<void>
-
   // Groq Fast Text Mode
   getGroqFastTextMode: () => Promise<{ enabled: boolean }>
   setGroqFastTextMode: (enabled: boolean) => Promise<{ success: boolean; error?: string }>
@@ -534,14 +531,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     }
   },
 
-  onSettingsVisibilityChange: (callback: (isVisible: boolean) => void) => {
-    const subscription = (_: any, isVisible: boolean) => callback(isVisible)
-    ipcRenderer.on("settings-visibility-changed", subscription)
-    return () => {
-      ipcRenderer.removeListener("settings-visibility-changed", subscription)
-    }
-  },
-
   onToggleExpand: (callback: () => void) => {
     const subscription = () => callback()
     ipcRenderer.on("toggle-expand", subscription)
@@ -908,9 +897,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setDefaultModel: (modelId: string) => ipcRenderer.invoke('set-default-model', modelId),
   toggleModelSelector: (coords: { offsetX: number; offsetY: number }) => ipcRenderer.invoke('toggle-model-selector', coords),
   forceRestartOllama: () => ipcRenderer.invoke('force-restart-ollama'),
-
-  // Settings Window
-  toggleSettingsWindow: (coords?: { offsetX: number; offsetY: number }) => ipcRenderer.invoke('toggle-settings-window', coords),
 
   // Groq Fast Text Mode
   getGroqFastTextMode: () => ipcRenderer.invoke('get-groq-fast-text-mode'),
