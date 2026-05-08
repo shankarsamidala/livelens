@@ -40,6 +40,11 @@ impl SpeakerStream {
     pub fn data_ready_signal(&self) -> Arc<(Mutex<bool>, Condvar)> {
         self.data_ready.clone()
     }
+
+    /// WASAPI manages its own lifecycle — watchdog-based restart is not needed on Windows.
+    pub fn needs_restart(&self, _silence_secs: u64) -> bool {
+        false
+    }
 }
 
 // Helper to find device by ID
@@ -85,7 +90,7 @@ impl SpeakerInput {
         Ok(Self { device_id })
     }
 
-    pub fn stream(self) -> SpeakerStream {
+    pub fn stream(self) -> Result<SpeakerStream> {
         let rb = HeapRb::<f32>::new(RING_BUFFER_SAMPLES);
         let (producer, consumer) = rb.split();
 
@@ -121,13 +126,13 @@ impl SpeakerInput {
             }
         };
 
-        SpeakerStream {
+        Ok(SpeakerStream {
             consumer: Some(consumer),
             waker_state,
             capture_thread: Some(capture_thread),
             actual_sample_rate,
             data_ready,
-        }
+        })
     }
 
     fn capture_audio_loop(
