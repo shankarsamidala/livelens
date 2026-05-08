@@ -29,6 +29,8 @@ const EMPTY_INFO: PhoneMirrorInfo = {
     clients: 0,
 };
 
+const isWindows = navigator.userAgent.includes('Windows');
+
 export const LiveLensPhoneMirrorSettings: React.FC = () => {
     const [info, setInfo] = useState<PhoneMirrorInfo>(EMPTY_INFO);
     const [busy, setBusy] = useState<null | 'enable' | 'disable' | 'lan' | 'rotate'>(null);
@@ -285,9 +287,14 @@ export const LiveLensPhoneMirrorSettings: React.FC = () => {
                 }}>
                     <ShieldAlert size={14} style={{ marginTop: 1, flexShrink: 0 }} />
                     <span>
-                        LAN access is on, but no Wi-Fi or Ethernet IP was detected. Connect this Mac to the same Wi-Fi
-                        as your phone (VPN tunnels and virtual interfaces don't count). If you've connected, confirm{' '}
-                        <strong>System Settings → Network → Firewall</strong> is allowing incoming connections for this app.
+                        LAN access is on, but no Wi-Fi or Ethernet IP was detected.{' '}
+                        {isWindows ? (
+                            <>Connect to the same Wi-Fi as your phone. If you've connected, check that Windows Firewall allowed LiveLens — a hidden{' '}
+                            <strong>Windows Security Alert</strong> dialog may have appeared behind this window when you first enabled LAN access.</>
+                        ) : (
+                            <>Connect this Mac to the same Wi-Fi as your phone (VPN tunnels and virtual interfaces don't count). If you've connected, confirm{' '}
+                            <strong>System Settings → Network → Firewall</strong> is allowing incoming connections for this app.</>
+                        )}
                     </span>
                 </div>
             )}

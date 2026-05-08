@@ -15,6 +15,25 @@ export const WHISPER_MODEL_SIZES: { id: WhisperModelSize; label: string; sizeMB:
 // Shared pipeline cache — one loaded model persists for the app lifetime
 const pipelineCache = new Map<string, any>();
 
+// Known Whisper hallucination strings produced on silence/noise — filter these out.
+const HALLUCINATION_PATTERNS = [
+    /잠깐만/,           // Korean "just a moment"
+    /감사합니다/,       // Korean "thank you"
+    /cảm\s*ơn/i,       // Vietnamese "thank you"
+    /ご視聴ありがとう/,  // Japanese "thanks for watching"
+    /字幕/,             // Chinese "subtitles"
+    /翻訳/,             // Japanese "translation"
+    /MBC/,
+    /KBS/,
+    /подпис/i,          // Russian/Slavic subtitle hallucination
+    /Untertitel/i,      // German subtitle hallucination
+];
+
+function isWhisperHallucination(text: string): boolean {
+    if (!text || text.length < 2) return true;
+    return HALLUCINATION_PATTERNS.some(p => p.test(text));
+}
+
 export class WhisperLocalSTT extends EventEmitter {
     private pipeline: any = null;
     private modelSize: WhisperModelSize;
@@ -120,10 +139,13 @@ export class WhisperLocalSTT extends EventEmitter {
                 task: 'transcribe',
                 chunk_length_s: 30,
                 stride_length_s: 5,
+                no_speech_threshold: 0.6,
+                logprob_threshold: -1.0,
+                compression_ratio_threshold: 2.4,
             });
 
             const text = (result?.text ?? '').trim();
-            if (text) {
+            if (text && !isWhisperHallucination(text)) {
                 this.emit('transcript', { text, isFinal: true, confidence: 1.0 });
             }
         } catch (err) {

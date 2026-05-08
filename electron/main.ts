@@ -102,6 +102,25 @@ async function ensureMacMicrophoneAccess(context: string): Promise<boolean> {
  *   - 'not-determined':  macOS will show the dialog when SCK/CoreAudio tap runs.
  *   - 'restricted':      managed device policy — nothing we can do programmatically.
  */
+// Whisper hallucination strings produced on silence/noise — especially common on
+// Windows system audio (WASAPI loopback). Filter these before they reach the UI.
+const WHISPER_HALLUCINATION_PATTERNS = [
+  /잠깐만/,           // Korean "just a moment"
+  /감사합니다/,       // Korean "thank you"
+  /cảm\s*ơn/i,       // Vietnamese "thank you"
+  /ご視聴ありがとう/,  // Japanese "thanks for watching"
+  /字幕/,             // Chinese "subtitles"
+  /翻訳/,             // Japanese "translation"
+  /MBC/,
+  /KBS/,
+  /подпис/i,          // Russian/Slavic subtitle hallucination
+  /Untertitel/i,      // German subtitle hallucination
+];
+function isWhisperHallucination(text: string): boolean {
+  if (!text || text.trim().length < 2) return true;
+  return WHISPER_HALLUCINATION_PATTERNS.some(p => p.test(text));
+}
+
 function getMacScreenCaptureStatus(): 'granted' | 'denied' | 'not-determined' | 'restricted' {
   if (process.platform !== 'darwin') return 'granted';
   
@@ -821,11 +840,9 @@ export class AppState {
 
   // New Property for System Audio & Microphone
   private systemAudioCapture: SystemAudioCapture | null = null;
-  private microphoneCapture: MicrophoneCapture | null = null;
   private audioTestCapture: MicrophoneCapture | null = null; // For audio settings test
   private _audioTestStarting = false;               // P2-12: in-flight guard against concurrent calls
   private googleSTT: STTProvider | null = null; // Interviewer
-  private googleSTT_User: STTProvider | null = null; // User
 
   private createSTTProvider(speaker: 'interviewer' | 'user'): STTProvider | null {
     const { CredentialsManager } = require('./services/CredentialsManager');
@@ -886,7 +903,9 @@ export class AppState {
         || CredentialsManager.getInstance().getOpenaiApiKey();
       if (apiKey) {
         console.log(`[Main] Using OpenAIStreamingSTT (WebSocket+REST fallback) for ${speaker}`);
-        stt = new OpenAIStreamingSTT(apiKey);
+        const openaiStt = new OpenAIStreamingSTT(apiKey);
+        openaiStt.setAudioSource(speaker === 'interviewer' ? 'system' : 'microphone');
+        stt = openaiStt;
       } else {
         console.warn(`[Main] No API key for OpenAI STT, falling back to GoogleSTT`);
         stt = new GoogleSTT(speaker);
@@ -930,6 +949,11 @@ export class AppState {
     // Wire Transcript Events
     stt.on('transcript', (segment: { text: string, isFinal: boolean, confidence: number }) => {
       if (!this.isMeetingActive) {
+        return;
+      }
+
+      // Drop known Whisper hallucination strings (produced on silence/noise, common on Windows system audio)
+      if (isWhisperHallucination(segment.text)) {
         return;
       }
 
@@ -1073,8 +1097,6 @@ export class AppState {
   }
 
   private setupSystemAudioPipeline(): void {
-    // REMOVED EARLY RETURN: if (this.systemAudioCapture && this.microphoneCapture) return; // Already initialized
-
     try {
       // 1. Initialize Captures if missing
       // If they already exist (e.g. from reconfigureAudio), they are already wired to write to this.googleSTT/User
@@ -1103,24 +1125,6 @@ export class AppState {
         this.setupAudioRecoveryHandler();
       }
 
-      if (!this.microphoneCapture) {
-        this.microphoneCapture = new MicrophoneCapture();
-        this.microphoneCapture.on('data', (chunk: Buffer) => {
-          this.googleSTT_User?.write(chunk);
-        });
-        this.microphoneCapture.on('sample_rate_changed', (rate: number) => {
-          console.log(`[Main] MicrophoneCapture rate updated dynamically to ${rate}Hz`);
-          // Forward to ALL active STT providers — STTProvider union includes setSampleRate
-          this.googleSTT_User?.setSampleRate(rate);
-        });
-        this.microphoneCapture.on('speech_ended', () => {
-          this.googleSTT_User?.notifySpeechEnded?.();
-        });
-        this.microphoneCapture.on('error', (err: Error) => {
-          console.error('[Main] MicrophoneCapture Error:', err);
-        });
-      }
-
       // 2. Initialize STT Services if missing
       if (!this.googleSTT) {
         const { CredentialsManager } = require('./services/CredentialsManager');
@@ -1129,29 +1133,13 @@ export class AppState {
         this.googleSTT = this.createSTTProvider('interviewer');
       }
 
-      if (!this.googleSTT_User) {
-        const { CredentialsManager } = require('./services/CredentialsManager');
-        const sttProv = CredentialsManager.getInstance().getSttProvider();
-        console.log(`[Main] Creating user STT provider: ${sttProv}`);
-        this.googleSTT_User = this.createSTTProvider('user');
-      }
-
       // --- CRITICAL FIX: SYNC SAMPLE RATES ---
-      // Always sync rates, even if just initialized, to ensure consistency
-
-      // 1. Sync System Audio Rate
       const sysRate = this.systemAudioCapture?.getSampleRate() || 48000;
       if (this._verboseLogging) console.log(`[Main] Configuring Interviewer STT to ${sysRate}Hz`);
       this.googleSTT?.setSampleRate(sysRate);
       this.googleSTT?.setAudioChannelCount?.(1);
 
-      // 2. Sync Mic Rate
-      const micRate = this.microphoneCapture?.getSampleRate() || 48000;
-      if (this._verboseLogging) console.log(`[Main] Configuring User STT to ${micRate}Hz`);
-      this.googleSTT_User?.setSampleRate(micRate);
-      this.googleSTT_User?.setAudioChannelCount?.(1);
-
-      if (this._verboseLogging) console.log('[Main] Full Audio Pipeline (System + Mic) Initialized (Ready)');
+      if (this._verboseLogging) console.log('[Main] System Audio Pipeline Initialized (Ready)');
 
     } catch (err) {
       console.error('[Main] Failed to setup System Audio Pipeline:', err);
@@ -1226,60 +1214,6 @@ export class AppState {
       }
     }
 
-    // 2. Microphone (Input Capture)
-    if (this.microphoneCapture) {
-      // destroy() calls stop() AND removeAllListeners(), preventing EventEmitter listener leaks.
-      this.microphoneCapture.destroy();
-      this.microphoneCapture = null;
-    }
-
-    try {
-      console.log('[Main] Initializing MicrophoneCapture...');
-      this.microphoneCapture = new MicrophoneCapture(inputDeviceId || undefined);
-      const rate = this.microphoneCapture.getSampleRate();
-      console.log(`[Main] MicrophoneCapture rate: ${rate}Hz`);
-      this.googleSTT_User?.setSampleRate(rate);
-
-      this.microphoneCapture.on('data', (chunk: Buffer) => {
-        // console.log('[Main] Mic chunk', chunk.length);
-        this.googleSTT_User?.write(chunk);
-      });
-      this.microphoneCapture.on('sample_rate_changed', (rate: number) => {
-        console.log(`[Main] (Reconfigured) MicrophoneCapture rate updated dynamically to ${rate}Hz`);
-        this.googleSTT_User?.setSampleRate(rate);
-      });
-      this.microphoneCapture.on('speech_ended', () => {
-        this.googleSTT_User?.notifySpeechEnded?.();
-      });
-      this.microphoneCapture.on('error', (err: Error) => {
-        console.error('[Main] MicrophoneCapture Error:', err);
-      });
-      console.log('[Main] MicrophoneCapture initialized.');
-    } catch (err) {
-      console.warn('[Main] Failed to initialize MicrophoneCapture with preferred ID. Falling back to default.', err);
-      try {
-        this.microphoneCapture = new MicrophoneCapture(); // Default
-        const rate = this.microphoneCapture.getSampleRate();
-        console.log(`[Main] MicrophoneCapture (Default) rate: ${rate}Hz`);
-        this.googleSTT_User?.setSampleRate(rate);
-
-        this.microphoneCapture.on('data', (chunk: Buffer) => {
-          this.googleSTT_User?.write(chunk);
-        });
-        this.microphoneCapture.on('sample_rate_changed', (rate: number) => {
-          console.log(`[Main] (Reconfigured Default) MicrophoneCapture rate updated dynamically to ${rate}Hz`);
-          this.googleSTT_User?.setSampleRate(rate);
-        });
-        this.microphoneCapture.on('speech_ended', () => {
-          this.googleSTT_User?.notifySpeechEnded?.();
-        });
-        this.microphoneCapture.on('error', (err: Error) => {
-          console.error('[Main] MicrophoneCapture (Default) Error:', err);
-        });
-      } catch (err2) {
-        console.error('[Main] Failed to initialize MicrophoneCapture (Default):', err2);
-      }
-    }
   }
 
   /**
@@ -1294,7 +1228,6 @@ export class AppState {
     // still in-flight call this.googleSTT?.write() while googleSTT is already null.
     if (this.isMeetingActive) {
       this.systemAudioCapture?.stop();
-      this.microphoneCapture?.stop();
     }
 
     // Now safe to destroy STT instances — no more audio events incoming
@@ -1303,22 +1236,11 @@ export class AppState {
       this.googleSTT.removeAllListeners();
       this.googleSTT = null;
     }
-    if (this.googleSTT_User) {
-      this.googleSTT_User.stop();
-      this.googleSTT_User.removeAllListeners();
-      this.googleSTT_User = null;
-    }
 
-    // Only reinitialize the pipeline when a meeting is already active.
-    // Outside a meeting, defer pipeline creation to startMeeting() so we never
-    // eagerly construct a MicrophoneCapture (which calls build_input_stream on
-    // macOS and immediately triggers the orange mic indicator even without .play()).
     if (this.isMeetingActive) {
       this.setupSystemAudioPipeline();
       this.systemAudioCapture?.start();
-      this.microphoneCapture?.start();
       this.googleSTT?.start();
-      this.googleSTT_User?.start();
     }
 
     console.log('[Main] STT Provider reconfigured');
@@ -1477,11 +1399,7 @@ export class AppState {
   }
 
   public finalizeMicSTT(): void {
-    // We only want to finalize the user microphone, because the context is Manual Answer
-    if (this.googleSTT_User?.finalize) {
-      console.log('[Main] Finalizing STT');
-      this.googleSTT_User.finalize();
-    }
+    // No-op: user mic input was removed
   }
 
   public async startMeeting(metadata?: any): Promise<void> {
@@ -1566,10 +1484,6 @@ export class AppState {
         this.systemAudioCapture?.start();
         this.googleSTT?.start();
 
-        // Start Microphone
-        this.microphoneCapture?.start();
-        this.googleSTT_User?.start();
-
         // Start JIT RAG live indexing
         if (this.ragManager) {
           this.ragManager.startLiveIndexing('live-meeting-current');
@@ -1580,8 +1494,7 @@ export class AppState {
           const requestedOutput = metadata?.audio?.outputDeviceId || 'default';
           const backend = requestedOutput === 'sck' ? 'sck' : 'coreaudio';
           const sysRate = this.systemAudioCapture?.getSampleRate() || 48000;
-          const micRate = this.microphoneCapture?.getSampleRate() || 48000;
-          console.log(`[Main][debug] Audio pipeline: input=${requestedInput} output=${requestedOutput} backend=${backend} sysRate=${sysRate}Hz micRate=${micRate}Hz`);
+          console.log(`[Main][debug] Audio pipeline: output=${requestedOutput} backend=${backend} sysRate=${sysRate}Hz`);
         }
         console.log('[Main] Audio pipeline started successfully.');
       } catch (err) {
@@ -1605,8 +1518,6 @@ export class AppState {
     // Stop audio captures synchronously — these are fire-and-forget internally
     this.systemAudioCapture?.stop();
     this.googleSTT?.stop();
-    this.microphoneCapture?.stop();
-    this.googleSTT_User?.stop();
 
     // Save session state and reset context — MeetingPersistence.stopMeeting() is
     // already fire-and-forget internally (processAndSaveMeeting runs in background).
@@ -1829,10 +1740,6 @@ export class AppState {
     if (this.googleSTT) {
       this.googleSTT.setCredentials(keyPath);
     }
-
-    if (this.googleSTT_User) {
-      this.googleSTT_User.setCredentials(keyPath);
-    }
   }
 
   public setRecognitionLanguage(key: string): void {
@@ -1845,7 +1752,6 @@ export class AppState {
     const effectiveKey = (key === 'auto' && sttProvider !== 'natively') ? 'english-us' : key;
 
     this.googleSTT?.setRecognitionLanguage(effectiveKey);
-    this.googleSTT_User?.setRecognitionLanguage(effectiveKey);
     this.processingHelper.getLLMHelper().setSttLanguage(effectiveKey);
   }
 

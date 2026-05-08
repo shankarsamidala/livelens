@@ -8,7 +8,6 @@ import {
     ChevronDown,
     Lightbulb,
     Mic,
-    MicOff,
     Image,
     X,
     Zap,
@@ -44,6 +43,7 @@ interface Message {
     screenshotPreview?: string;
     isCode?: boolean;
     intent?: string;
+    questionText?: string;
     isNegotiationCoaching?: boolean;
     negotiationCoachingData?: {
         tacticalNote: string;
@@ -91,19 +91,15 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const [inputValue, setInputValue] = useState('');
     const { shortcuts, isShortcutPressed } = useShortcuts();
     const [messages, setMessages] = useState<Message[]>([]);
-    const [sttUserStatus, setSttUserStatus] = useState<'connected' | 'reconnecting' | 'failed'>('connected');
-    const [sttUserError, setSttUserError] = useState<string>('');
-    const [sttUserProvider, setSttUserProvider] = useState<string>('');
     const [sttInterviewerStatus, setSttInterviewerStatus] = useState<'connected' | 'reconnecting' | 'failed'>('connected');
     const [sttInterviewerError, setSttInterviewerError] = useState<string>('');
     const [sttInterviewerProvider, setSttInterviewerProvider] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isInterviewerCapturing, setIsInterviewerCapturing] = useState(true);
+    const isInterviewerCapturingRef = useRef(true);
+    useEffect(() => { isInterviewerCapturingRef.current = isInterviewerCapturing; }, [isInterviewerCapturing]);
     const [conversationContext, setConversationContext] = useState<string>('');
-    const [isManualRecording, setIsManualRecording] = useState(false);
-    const isRecordingRef = useRef(false);  // Ref to track recording state (avoids stale closure)
-    const [manualTranscript, setManualTranscript] = useState('');
-    const manualTranscriptRef = useRef<string>('');
     const [showTranscript, setShowTranscript] = useState(() => {
         const stored = localStorage.getItem('natively_interviewer_transcript');
         return stored !== 'false';
@@ -124,8 +120,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
 
     const [rollingTranscript, setRollingTranscript] = useState('');  // For interviewer rolling text bar
     const [isInterviewerSpeaking, setIsInterviewerSpeaking] = useState(false);  // Track if actively speaking
-    const [voiceInput, setVoiceInput] = useState('');  // Accumulated user voice input
-    const voiceInputRef = useRef<string>('');  // Ref for capturing in async handlers
     const textInputRef = useRef<HTMLInputElement>(null); // Ref for input focus
     const isStealthRef = useRef<boolean>(false); // Tracks if the next expansion should be stealthy
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -135,6 +129,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     // handleWhatToSay() can access it even in React 18 concurrent mode (where
     // a plain setTimeout(0) may fire before setAttachedContext flushes).
     const pendingCaptureRef = useRef<{ path: string; preview: string } | null>(null);
+    const pendingQuestionRef = useRef<string>('');  // Captures rolling transcript at action button click time
 
     // Latent Context State (Screenshots attached but not sent)
     const [attachedContext, setAttachedContext] = useState<Array<{ path: string, preview: string }>>([]);
@@ -452,8 +447,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
             setMessages([]);
             setInputValue('');
             setAttachedContext([]);
-            setManualTranscript('');
-            setVoiceInput('');
             setIsProcessing(false);
             // Optionally reset connection status if needed, but connection persists
 
@@ -480,12 +473,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     // If registered inside the [isExpanded] effect, events are dropped during cleanup.
     useEffect(() => {
         return window.electronAPI.onSttStatusChanged((data) => {
-            if (data.channel === 'user') {
-                setSttUserStatus(data.state);
-                setSttUserProvider(data.provider);
-                if (data.error) setSttUserError(data.error);
-                if (data.state === 'connected') setSttUserError('');
-            } else if (data.channel === 'interviewer') {
+            if (data.channel === 'interviewer') {
                 setSttInterviewerStatus(data.state);
                 setSttInterviewerProvider(data.provider);
                 if (data.error) setSttInterviewerError(data.error);
@@ -500,31 +488,11 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
 
         // Real-time Transcripts
         cleanups.push(window.electronAPI.onNativeAudioTranscript((transcript) => {
-            // When Answer button is active, capture USER transcripts for voice input
-            // Use ref to avoid stale closure issue
-            if (isRecordingRef.current && transcript.speaker === 'user') {
-                if (transcript.final) {
-                    // Accumulate final transcripts
-                    setVoiceInput(prev => {
-                        const updated = prev + (prev ? ' ' : '') + transcript.text;
-                        voiceInputRef.current = updated;
-                        return updated;
-                    });
-                    setManualTranscript('');  // Clear partial preview
-                    manualTranscriptRef.current = '';
-                } else {
-                    // Show live partial transcript
-                    setManualTranscript(transcript.text);
-                    manualTranscriptRef.current = transcript.text;
-                }
-                return;  // Don't add to messages while recording
-            }
+            // Only interviewer (system audio) transcripts are processed
+            if (transcript.speaker === 'user') return;
 
-            // Ignore user mic transcripts when not recording
-            // Only interviewer (system audio) transcripts should appear in chat
-            if (transcript.speaker === 'user') {
-                return;  // Skip user mic input - only relevant when Answer button is active
-            }
+            // Interviewer capture toggle — drop transcripts when paused
+            if (!isInterviewerCapturingRef.current) return;
 
             // Only show interviewer (system audio) transcripts in rolling bar
             if (transcript.speaker !== 'interviewer') {
@@ -599,12 +567,15 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                 }
 
                 // Otherwise, start a new one (First token)
+                const q = pendingQuestionRef.current;
+                pendingQuestionRef.current = '';
                 return [...prev, {
                     id: Date.now().toString(),
                     role: 'system',
                     text: data.token,
                     intent: 'what_to_answer',
-                    isStreaming: true
+                    isStreaming: true,
+                    questionText: q || undefined
                 }];
             }));
         }));
@@ -748,12 +719,15 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     };
                     return updated;
                 }
+                const q = pendingQuestionRef.current;
+                pendingQuestionRef.current = '';
                 return [...prev, {
                     id: Date.now().toString(),
                     role: 'system',
                     text: data.token,
                     intent: 'follow_up_questions',
-                    isStreaming: true
+                    isStreaming: true,
+                    questionText: q || undefined
                 }];
             }));
         }));
@@ -831,12 +805,15 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     updated[prev.length - 1] = { ...lastMsg, text: lastMsg.text + data.token };
                     return updated;
                 }
+                const q = pendingQuestionRef.current;
+                pendingQuestionRef.current = '';
                 return [...prev, {
                     id: Date.now().toString(),
                     role: 'system' as const,
                     text: data.token,
                     intent: 'clarify',
-                    isStreaming: true
+                    isStreaming: true,
+                    questionText: q || undefined
                 }];
             }));
         });
@@ -878,6 +855,12 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsExpanded(true);
         setIsProcessing(true);
         analytics.trackCommandExecuted('what_to_say');
+
+        // Snapshot the current question and reset transcript for next question
+        setRollingTranscript(current => {
+            pendingQuestionRef.current = current;
+            return '';
+        });
 
         // Capture and clear attached image context.
         // Also merge in any screenshot from the capture-and-process shortcut that
@@ -958,6 +941,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsExpanded(true);
         setIsProcessing(true);
         analytics.trackCommandExecuted('suggest_questions');
+        setRollingTranscript(current => { pendingQuestionRef.current = current; return ''; });
 
         try {
             await window.electronAPI.generateFollowUpQuestions();
@@ -976,6 +960,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsExpanded(true);
         setIsProcessing(true);
         analytics.trackCommandExecuted('clarify');
+        setRollingTranscript(current => { pendingQuestionRef.current = current; return ''; });
 
         try {
             await window.electronAPI.generateClarify();
@@ -1029,6 +1014,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsExpanded(true);
         setIsProcessing(true);
         analytics.trackCommandExecuted('brainstorm');
+        setRollingTranscript(current => { pendingQuestionRef.current = current; return ''; });
 
         const currentAttachments = attachedContext;
         if (currentAttachments.length > 0) {
@@ -1273,148 +1259,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         return () => cleanups.forEach(fn => fn());
     }, [currentModel]); // Ensure tracking captures correct model
 
-
-    const handleAnswerNow = async () => {
-        if (isManualRecording) {
-            // Stop recording - send accumulated voice input to Gemini
-            isRecordingRef.current = false;  // Update ref immediately
-            setIsManualRecording(false);
-            setManualTranscript('');  // Clear live preview
-
-            // Send manual finalization signal to STT Providers
-            window.electronAPI.finalizeMicSTT().catch(err => console.error('[LiveLensInterface] Failed to send finalizeMicSTT:', err));
-
-            const currentAttachments = attachedContext;
-            setAttachedContext([]); // Clear context immediately on send
-
-            const question = (voiceInputRef.current + (manualTranscriptRef.current ? ' ' + manualTranscriptRef.current : '')).trim();
-            setVoiceInput('');
-            voiceInputRef.current = '';
-            setManualTranscript('');
-            manualTranscriptRef.current = '';
-
-            if (!question && currentAttachments.length === 0) {
-                // No voice input and no image — show real STT error if available
-                if (sttUserStatus === 'failed' && sttUserError) {
-                    setMessages(prev => [...prev, {
-                        id: Date.now().toString(),
-                        role: 'system',
-                        text: `❌ STT Error: ${sttUserError}`
-                    }]);
-                } else if (sttUserStatus === 'reconnecting') {
-                    setMessages(prev => [...prev, {
-                        id: Date.now().toString(),
-                        role: 'system',
-                        text: '⏳ STT is reconnecting, try again in a moment.'
-                    }]);
-                } else {
-                    setMessages(prev => [...prev, {
-                        id: Date.now().toString(),
-                        role: 'system',
-                        text: '⚠️ No speech detected. Try speaking closer to your microphone.'
-                    }]);
-                }
-                return;
-            }
-
-            // Show user's spoken question
-            setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                role: 'user',
-                text: question,
-                hasScreenshot: currentAttachments.length > 0,
-                screenshotPreview: currentAttachments[0]?.preview
-            }]);
-            
-            // Scroll to bottom when user sends message
-            setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, 50);
-
-            // Add placeholder for streaming response
-            setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                role: 'system',
-                text: '',
-                isStreaming: true
-            }]);
-
-            setIsProcessing(true);
-
-            try {
-                let prompt = '';
-
-                if (currentAttachments.length > 0) {
-                    // Image + Voice Context
-                    prompt = `You are a helper. The user has provided a screenshot and a spoken question/command.
-User said: "${question}"
-
-Instructions:
-1. Analyze the screenshot in the context of what the user said.
-2. Provide a direct, helpful answer.
-3. Be concise.`;
-                } else {
-                    // JIT RAG pre-flight: try to use indexed meeting context first
-                    const ragResult = await window.electronAPI.ragQueryLive?.(question);
-                    if (ragResult?.success) {
-                        // JIT RAG handled it — response streamed via rag:stream-chunk events
-                        return;
-                    }
-
-                    // Voice Only (Smart Extract) — fallback
-                    prompt = `You are a real-time interview assistant. The user just repeated or paraphrased a question from their interviewer.
-Instructions:
-1. Extract the core question being asked
-2. Provide a clear, concise, and professional answer that the user can say out loud
-3. Keep the answer conversational but informative (2-4 sentences ideal)
-4. Do NOT include phrases like "The question is..." - just give the answer directly
-5. Format for speaking out loud, not for reading
-
-Provide only the answer, nothing else.`;
-                }
-
-                // Call Streaming API: message = question, context = instructions
-                requestStartTimeRef.current = Date.now();
-                await window.electronAPI.streamGeminiChat(question, currentAttachments.length > 0 ? currentAttachments.map(s => s.path) : undefined, prompt, { skipSystemPrompt: true });
-
-            } catch (err) {
-                // Initial invocation failing (e.g. IPC error before stream starts)
-                setIsProcessing(false);
-                setMessages(prev => {
-                    const last = prev[prev.length - 1];
-                    // If we just added the empty streaming placeholder, remove it or fill it with error
-                    if (last && last.isStreaming && last.text === '') {
-                        return prev.slice(0, -1).concat({
-                            id: Date.now().toString(),
-                            role: 'system',
-                            text: `❌ Error starting stream: ${err}`
-                        });
-                    }
-                    return [...prev, {
-                        id: Date.now().toString(),
-                        role: 'system',
-                        text: `❌ Error: ${err}`
-                    }];
-                });
-            }
-        } else {
-            // Start recording - reset voice input state
-            setVoiceInput('');
-            voiceInputRef.current = '';
-            setManualTranscript('');
-            isRecordingRef.current = true;  // Update ref immediately
-            setIsManualRecording(true);
-
-
-            // Ensure native audio is connected
-            try {
-                // Native audio is now managed by main process
-                // await window.electronAPI.invoke('native-audio-connect');
-            } catch (err) {
-                // Already connected, that's fine
-            }
-        }
-    };
 
     const handleManualSubmit = async () => {
         if (!inputValue.trim() && attachedContext.length === 0) return;
@@ -1779,7 +1623,6 @@ Provide only the answer, nothing else.`;
         handleFollowUp,
         handleFollowUpQuestions,
         handleRecap,
-        handleAnswerNow,
         handleClarify,
         handleCodeHint,
         handleBrainstorm
@@ -1791,7 +1634,6 @@ Provide only the answer, nothing else.`;
         handleFollowUp,
         handleFollowUpQuestions,
         handleRecap,
-        handleAnswerNow,
         handleClarify,
         handleCodeHint,
         handleBrainstorm
@@ -1862,7 +1704,7 @@ Provide only the answer, nothing else.`;
         const releaseAll = () => { upHeld = false; downHeld = false; recomputeDirection(); };
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            const { handleWhatToSay, handleFollowUpQuestions, handleRecap, handleAnswerNow, handleClarify, handleCodeHint, handleBrainstorm } = handlersRef.current;
+            const { handleWhatToSay, handleFollowUpQuestions, handleRecap, handleClarify, handleCodeHint, handleBrainstorm } = handlersRef.current;
 
             if (isShortcutPressed(e, 'whatToAnswer')) {
                 e.preventDefault(); handleWhatToSay();
@@ -1873,8 +1715,6 @@ Provide only the answer, nothing else.`;
             } else if (isShortcutPressed(e, 'dynamicAction4')) {
                 e.preventDefault();
                 if (actionButtonMode === 'brainstorm') handleBrainstorm(); else handleRecap();
-            } else if (isShortcutPressed(e, 'answer')) {
-                e.preventDefault(); handleAnswerNow();
             } else if (isShortcutPressed(e, 'codeHint')) {
                 e.preventDefault(); handleCodeHint();
             } else if (isShortcutPressed(e, 'brainstorm')) {
@@ -2089,7 +1929,6 @@ Provide only the answer, nothing else.`;
                 if (actionButtonMode === 'brainstorm') handlers.handleBrainstorm();
                 else handlers.handleRecap();
             }
-            else if (action === 'answer') handlers.handleAnswerNow();
             else if (action === 'clarify') handlers.handleClarify();
             else if (action === 'codeHint') handlers.handleCodeHint();
             else if (action === 'brainstorm') handlers.handleBrainstorm();
@@ -2118,17 +1957,11 @@ Provide only the answer, nothing else.`;
             window.electronAPI?.getOsVersion?.().catch(() => 'unknown'),
         ]);
         const { categorizeSttError } = await import('../lib/sttErrorMapper');
-        const userCat = sttUserError ? categorizeSttError(sttUserError) : null;
         const interviewerCat = sttInterviewerError ? categorizeSttError(sttInterviewerError) : null;
         const report = [
             '## STT Diagnostic Report',
             `App Version: ${version}`,
             `Platform: ${osVersion} (${arch})`,
-            `---`,
-            `Microphone Provider: ${sttUserProvider}`,
-            `Microphone Status: ${sttUserStatus}`,
-            userCat ? `Microphone Category: ${userCat.title} [${userCat.category}]` : '',
-            `Microphone Error: ${sttUserError || 'N/A'}`,
             `---`,
             `System Audio Provider: ${sttInterviewerProvider}`,
             `System Audio Status: ${sttInterviewerStatus}`,
@@ -2260,7 +2093,25 @@ Provide only the answer, nothing else.`;
                                     >
                                         <PointerOff className="w-3.5 h-3.5" />
                                     </button>
+                                    <button
+                                        onClick={() => setIsInterviewerCapturing(v => !v)}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover ${isInterviewerCapturing ? 'text-green-400' : 'overlay-text-muted'}`}
+                                        style={isInterviewerCapturing ? undefined : appearance.iconStyle}
+                                        title={isInterviewerCapturing ? 'Interviewer capture ON — click to pause' : 'Interviewer capture OFF — click to resume'}
+                                    >
+                                        <Mic className="w-3.5 h-3.5" />
+                                    </button>
                                     <div className="w-px h-3.5 mx-1.5 shrink-0" style={appearance.dividerStyle} />
+                                    <button
+                                        onClick={() => setAutoScroll(v => !v)}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover ${autoScroll ? 'text-[#d97757]' : 'overlay-text-interactive'}`}
+                                        style={autoScroll ? undefined : appearance.iconStyle}
+                                        title="Toggle auto-scroll"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 10 10" fill="none">
+                                            <path d="M5 1v8M2 6l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </button>
                                     <button
                                         onClick={() => setIsExpanded(false)}
                                         className="w-7 h-7 flex items-center justify-center rounded-lg overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive interaction-base interaction-press"
@@ -2365,7 +2216,7 @@ Provide only the answer, nothing else.`;
                             )}
 
                             {/* Rolling Transcript Bar — includes STT status indicator inline */}
-                            {(showTranscript && rollingTranscript) || interviewerSttIndicatorStatus !== 'connected' || sttUserStatus !== 'connected' ? (
+                            {(showTranscript && rollingTranscript) || interviewerSttIndicatorStatus !== 'connected' ? (
                                 <RollingTranscript
                                     text={showTranscript ? rollingTranscript : ''}
                                     isActive={isInterviewerSpeaking}
@@ -2375,51 +2226,13 @@ Provide only the answer, nothing else.`;
                                         error: interviewerSttIndicatorError,
                                         provider: sttInterviewerProvider,
                                     }}
-                                    microphoneChannel={{
-                                        status: sttUserStatus,
-                                        error: sttUserError,
-                                        provider: sttUserProvider,
-                                    }}
                                     onCopyDiagnostics={copyDiagnostics}
                                 />
                             ) : null}
 
                             {/* Chat History - Only show if there are messages OR active states */}
-                            {(messages.length > 0 || isManualRecording || isProcessing) && (
+                            {(messages.length > 0 || isProcessing) && (
                                 <>
-                                {/* Auto-scroll toggle — shown only when there are messages */}
-                                {messages.length > 0 && (
-                                    <div className="flex justify-end px-4 pt-1 pb-0">
-                                        <button
-                                            onClick={() => setAutoScroll(v => !v)}
-                                            className="flex items-center gap-1 no-drag"
-                                            style={{
-                                                fontSize: 10,
-                                                fontWeight: 600,
-                                                letterSpacing: '0.05em',
-                                                padding: '2px 8px',
-                                                borderRadius: 999,
-                                                border: autoScroll
-                                                    ? '1px solid rgba(217,119,87,0.35)'
-                                                    : '1px solid rgba(255,255,255,0.08)',
-                                                background: autoScroll
-                                                    ? 'rgba(217,119,87,0.12)'
-                                                    : 'rgba(255,255,255,0.04)',
-                                                color: autoScroll
-                                                    ? '#d97757'
-                                                    : 'rgba(226,229,237,0.3)',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.15s',
-                                            }}
-                                            title="Toggle auto-scroll to latest message"
-                                        >
-                                            <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-                                                <path d="M5 1v8M2 6l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                                            </svg>
-                                            AUTO-SCROLL
-                                        </button>
-                                    </div>
-                                )}
                                 <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[clamp(300px,35vh,450px)] no-drag" style={{ scrollbarWidth: 'none' }}>
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
@@ -2440,6 +2253,12 @@ Provide only the answer, nothing else.`;
                                                     : ''
                                                 }
                     `}>
+                                                {msg.questionText && (
+                                                    <div className="flex items-start gap-1.5 mb-2 pb-2 border-b border-white/[0.07]">
+                                                        <span className="text-[10px] font-semibold uppercase tracking-wider overlay-text-muted shrink-0 mt-0.5">Q</span>
+                                                        <span className="text-[11px] overlay-text-muted italic leading-snug">{msg.questionText}</span>
+                                                    </div>
+                                                )}
                                                 {msg.role === 'interviewer' && (
                                                     <div className="flex items-center gap-1.5 mb-1 text-[10px] font-medium uppercase tracking-wider overlay-text-muted">
                                                         Interviewer
@@ -2467,24 +2286,6 @@ Provide only the answer, nothing else.`;
                                         </div>
                                     ))}
 
-                                    {/* Active Recording State with Live Transcription */}
-                                    {isManualRecording && (
-                                        <div className="flex flex-col items-end gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                            {(manualTranscript || voiceInput) && (
-                                                <div className="max-w-[85%] px-3.5 py-2.5 bg-white/[0.05] border border-white/[0.09] rounded-[14px] rounded-tr-[4px]">
-                                                    <span className="text-[13px] overlay-text-secondary italic">
-                                                        {voiceInput}{voiceInput && manualTranscript ? ' ' : ''}{manualTranscript}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-[3px] px-1 py-1">
-                                                <div className="w-[3px] h-[10px] rounded-full bg-white/40 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }} />
-                                                <div className="w-[3px] h-[10px] rounded-full bg-white/40 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '180ms' }} />
-                                                <div className="w-[3px] h-[10px] rounded-full bg-white/40 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '360ms' }} />
-                                                <span className="text-[10px] text-white/30 ml-1.5 tracking-wide">Listening…</span>
-                                            </div>
-                                        </div>
-                                    )}
 
                                     {isProcessing && (
                                         <div className="flex justify-start">
@@ -2595,14 +2396,6 @@ Provide only the answer, nothing else.`;
                                         </div>
                                     )}
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                        <button
-                                            onClick={handleAnswerNow}
-                                            title={isManualRecording ? 'Stop mic' : 'Enable mic'}
-                                            className={`w-6 h-6 rounded-full flex items-center justify-center interaction-base interaction-press transition-colors duration-200 ${isManualRecording ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' : 'overlay-icon-surface overlay-text-muted hover:overlay-text-interactive'}`}
-                                            style={isManualRecording ? undefined : appearance.iconStyle}
-                                        >
-                                            {isManualRecording ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3 opacity-60" />}
-                                        </button>
                                         <button
                                             onClick={handleManualSubmit}
                                             disabled={!inputValue.trim()}

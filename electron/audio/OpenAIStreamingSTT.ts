@@ -78,6 +78,7 @@ export class OpenAIStreamingSTT extends EventEmitter {
     // Public config
     private apiKey: string;
     private languageKey = 'en';
+    private audioSource: 'microphone' | 'system' = 'microphone';
 
     // Audio config (set from pipeline)
     private inputSampleRate = 16_000;
@@ -165,6 +166,11 @@ export class OpenAIStreamingSTT extends EventEmitter {
             this._closeWs(true);
             this._connectWs();
         }
+    }
+
+    /** 'system' = loopback/interviewer audio, 'microphone' = user mic */
+    public setAudioSource(source: 'microphone' | 'system'): void {
+        this.audioSource = source;
     }
 
     /** No-op — no credential files needed */
@@ -336,7 +342,9 @@ export class OpenAIStreamingSTT extends EventEmitter {
                         silence_duration_ms: 500,
                     },
                     input_audio_noise_reduction: {
-                        type: 'near_field',
+                        // near_field = close mic; far_field = system/loopback audio.
+                        // Applying near_field to system audio destroys the signal.
+                        type: this.audioSource === 'system' ? 'far_field' : 'near_field',
                     },
                 },
             }));

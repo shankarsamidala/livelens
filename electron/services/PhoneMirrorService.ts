@@ -538,12 +538,23 @@ async function listenWithProbe(server: http.Server, host: string, basePort: numb
 
 function tryListen(server: http.Server, host: string, port: number): Promise<boolean> {
   return new Promise((resolve) => {
-    const onError = () => { server.removeListener('listening', onListening); resolve(false); };
-    const onListening = () => { server.removeListener('error', onError); resolve(true); };
+    let settled = false;
+    const settle = (result: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      server.removeListener('listening', onListening);
+      server.removeListener('error', onError);
+      resolve(result);
+    };
+    // 2 s cap per attempt — on Windows, Firewall can hold the bind indefinitely
+    const timer = setTimeout(() => settle(false), 2000);
+    const onError = () => settle(false);
+    const onListening = () => settle(true);
     server.once('error', onError);
     server.once('listening', onListening);
     try { server.listen(port, host); }
-    catch (_) { resolve(false); }
+    catch (_) { settle(false); }
   });
 }
 
