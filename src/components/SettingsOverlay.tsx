@@ -1244,14 +1244,6 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ onClose, initialTab =
                                 </nav>
                             </div>
 
-                            <div className="p-[10px] border-t border-white/[0.07]">
-                                <button
-                                    onClick={() => window.electronAPI.quitApp()}
-                                    className="w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-[9px]"
-                                >
-                                    <LogOut size={14} className="shrink-0" /> Quit LiveLens
-                                </button>
-                            </div>
                         </div>
 
                         {/* Content */}

@@ -44,7 +44,6 @@ interface Message {
     screenshotPreview?: string;
     isCode?: boolean;
     intent?: string;
-    questionText?: string;
     isNegotiationCoaching?: boolean;
     negotiationCoachingData?: {
         tacticalNote: string;
@@ -101,26 +100,14 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const isInterviewerCapturingRef = useRef(true);
     useEffect(() => { isInterviewerCapturingRef.current = isInterviewerCapturing; }, [isInterviewerCapturing]);
     const [conversationContext, setConversationContext] = useState<string>('');
-    const [showTranscript, setShowTranscript] = useState(() => {
-        const stored = localStorage.getItem('natively_interviewer_transcript');
-        return stored !== 'false';
-    });
-
     // Analytics State
     const requestStartTimeRef = useRef<number | null>(null);
 
-    // Sync transcript setting
-    useEffect(() => {
-        const handleStorage = () => {
-            const stored = localStorage.getItem('natively_interviewer_transcript');
-            setShowTranscript(stored !== 'false');
-        };
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, []);
-
-    const [rollingTranscript, setRollingTranscript] = useState('');  // For interviewer rolling text bar
-    const [isInterviewerSpeaking, setIsInterviewerSpeaking] = useState(false);  // Track if actively speaking
+    const [rollingTranscript, setRollingTranscript] = useState('');
+    const rollingTranscriptRef = useRef('');   // mirrors state — avoids stale closure in useEffect
+    const partialAccRef = useRef('');          // accumulates live delta tokens between finals
+    const [isInterviewerSpeaking, setIsInterviewerSpeaking] = useState(false);
+    const userTypedRef = useRef(false); // true when user manually typed — prevents transcript from overwriting
     const textInputRef = useRef<HTMLInputElement>(null); // Ref for input focus
     const isStealthRef = useRef<boolean>(false); // Tracks if the next expansion should be stealthy
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -130,7 +117,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     // handleWhatToSay() can access it even in React 18 concurrent mode (where
     // a plain setTimeout(0) may fire before setAttachedContext flushes).
     const pendingCaptureRef = useRef<{ path: string; preview: string } | null>(null);
-    const pendingQuestionRef = useRef<string>('');  // Captures rolling transcript at action button click time
 
     // Latent Context State (Screenshots attached but not sent)
     const [attachedContext, setAttachedContext] = useState<Array<{ path: string, preview: string }>>([]);
@@ -500,28 +486,22 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                 return;  // Safety check for any other speaker types
             }
 
-            // Route to rolling transcript bar - accumulate text continuously
-            setIsInterviewerSpeaking(!transcript.final);
-
             if (transcript.final) {
-                // Append finalized text to accumulated transcript
-                setRollingTranscript(prev => {
-                    const separator = prev ? '  ·  ' : '';
-                    return prev + separator + transcript.text;
-                });
-
-                // Clear speaking indicator after pause
-                setTimeout(() => {
-                    setIsInterviewerSpeaking(false);
-                }, 3000);
+                // Commit: store only the latest finalized sentence, not the full history
+                partialAccRef.current = '';
+                rollingTranscriptRef.current = transcript.text;
+                setRollingTranscript(transcript.text);
+                if (!userTypedRef.current) {
+                    setInputValue(transcript.text);
+                }
+                setIsInterviewerSpeaking(false);
             } else {
-                // For partial transcripts, show current segment appended to accumulated
-                setRollingTranscript(prev => {
-                    // Find where previous finalized content ends (look for last separator)
-                    const lastSeparator = prev.lastIndexOf('  ·  ');
-                    const accumulated = lastSeparator >= 0 ? prev.substring(0, lastSeparator + 5) : '';
-                    return accumulated + transcript.text;
-                });
+                // Live delta: show only the current partial — no historical accumulation
+                partialAccRef.current += transcript.text;
+                setIsInterviewerSpeaking(true);
+                if (!userTypedRef.current) {
+                    setInputValue(partialAccRef.current);
+                }
             }
         }));
 
@@ -568,15 +548,12 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                 }
 
                 // Otherwise, start a new one (First token)
-                const q = pendingQuestionRef.current;
-                pendingQuestionRef.current = '';
                 return [...prev, {
                     id: Date.now().toString(),
                     role: 'system',
                     text: data.token,
                     intent: 'what_to_answer',
                     isStreaming: true,
-                    questionText: q || undefined
                 }];
             }));
         }));
@@ -720,15 +697,12 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     };
                     return updated;
                 }
-                const q = pendingQuestionRef.current;
-                pendingQuestionRef.current = '';
                 return [...prev, {
                     id: Date.now().toString(),
                     role: 'system',
                     text: data.token,
                     intent: 'follow_up_questions',
                     isStreaming: true,
-                    questionText: q || undefined
                 }];
             }));
         }));
@@ -806,15 +780,12 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     updated[prev.length - 1] = { ...lastMsg, text: lastMsg.text + data.token };
                     return updated;
                 }
-                const q = pendingQuestionRef.current;
-                pendingQuestionRef.current = '';
                 return [...prev, {
                     id: Date.now().toString(),
                     role: 'system' as const,
                     text: data.token,
                     intent: 'clarify',
                     isStreaming: true,
-                    questionText: q || undefined
                 }];
             }));
         });
@@ -849,7 +820,49 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
         analytics.trackCopyAnswer();
-        // Optional: Trigger a small toast or state change for visual feedback
+    };
+
+const handleQuickAction = async (action: 'example' | 'shorter' | 'deeper' | 'star') => {
+        const prompts: Record<typeof action, string> = {
+            example: 'Give me a real-world example of that',
+            shorter: 'Give me a shorter version I can say in 30 seconds',
+            deeper: 'Go deeper on the technical details',
+            star: 'Reformat that as a STAR story (Situation, Task, Action, Result)',
+        };
+        const prompt = prompts[action];
+
+        setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            role: 'user',
+            text: prompt,
+        }]);
+
+        setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            role: 'system',
+            text: '',
+            isStreaming: true,
+        }]);
+
+        setIsExpanded(true);
+        setIsProcessing(true);
+
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 50);
+
+        try {
+            await window.electronAPI.streamGeminiChat(prompt, undefined, conversationContext);
+        } catch (err) {
+            setIsProcessing(false);
+            setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last && last.isStreaming && last.text === '') {
+                    return prev.slice(0, -1).concat({ id: Date.now().toString(), role: 'system', text: `❌ Error: ${err}` });
+                }
+                return [...prev, { id: Date.now().toString(), role: 'system', text: `❌ Error: ${err}` }];
+            });
+        }
     };
 
     const handleWhatToSay = async () => {
@@ -857,11 +870,19 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsProcessing(true);
         analytics.trackCommandExecuted('what_to_say');
 
-        // Snapshot the current question and reset transcript for next question
-        setRollingTranscript(current => {
-            pendingQuestionRef.current = current;
-            return '';
-        });
+        // Snapshot question, clear rolling transcript, partial acc, and input box
+        const q = inputValue.trim() || rollingTranscriptRef.current.trim();
+        rollingTranscriptRef.current = '';
+        partialAccRef.current = '';
+        setRollingTranscript('');
+        setInputValue('');
+        if (q) {
+            setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                role: 'interviewer',
+                text: q,
+            }]);
+        }
 
         // Capture and clear attached image context.
         // Also merge in any screenshot from the capture-and-process shortcut that
@@ -942,7 +963,12 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsExpanded(true);
         setIsProcessing(true);
         analytics.trackCommandExecuted('suggest_questions');
-        setRollingTranscript(current => { pendingQuestionRef.current = current; return ''; });
+        const qFU = inputValue.trim() || rollingTranscriptRef.current.trim();
+        rollingTranscriptRef.current = '';
+        partialAccRef.current = '';
+        setRollingTranscript('');
+        setInputValue('');
+        if (qFU) setMessages(prev => [...prev, { id: Date.now().toString(), role: 'interviewer', text: qFU }]);
 
         try {
             await window.electronAPI.generateFollowUpQuestions();
@@ -961,7 +987,12 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsExpanded(true);
         setIsProcessing(true);
         analytics.trackCommandExecuted('clarify');
-        setRollingTranscript(current => { pendingQuestionRef.current = current; return ''; });
+        const qCl = inputValue.trim() || rollingTranscriptRef.current.trim();
+        rollingTranscriptRef.current = '';
+        partialAccRef.current = '';
+        setRollingTranscript('');
+        setInputValue('');
+        if (qCl) setMessages(prev => [...prev, { id: Date.now().toString(), role: 'interviewer', text: qCl }]);
 
         try {
             await window.electronAPI.generateClarify();
@@ -1015,7 +1046,12 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         setIsExpanded(true);
         setIsProcessing(true);
         analytics.trackCommandExecuted('brainstorm');
-        setRollingTranscript(current => { pendingQuestionRef.current = current; return ''; });
+        const qBr = inputValue.trim() || rollingTranscriptRef.current.trim();
+        rollingTranscriptRef.current = '';
+        partialAccRef.current = '';
+        setRollingTranscript('');
+        setInputValue('');
+        if (qBr) setMessages(prev => [...prev, { id: Date.now().toString(), role: 'interviewer', text: qBr }]);
 
         const currentAttachments = attachedContext;
         if (currentAttachments.length > 0) {
@@ -1268,7 +1304,11 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         const currentAttachments = attachedContext;
 
         // Clear inputs immediately
+        userTypedRef.current = false;
         setInputValue('');
+        setRollingTranscript('');
+        rollingTranscriptRef.current = '';
+        partialAccRef.current = '';
         setAttachedContext([]);
 
         setMessages(prev => [...prev, {
@@ -1995,7 +2035,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                         className="flex flex-col items-center w-full"
                     >
                         <div
-                            className={`relative w-[600px] max-w-full backdrop-blur-2xl border rounded-[20px] overflow-hidden flex flex-col draggable-area overlay-shell-surface ${overlayPanelClass}`}
+                            className={`relative w-[680px] max-w-full backdrop-blur-2xl border rounded-[20px] overflow-hidden flex flex-col draggable-area overlay-shell-surface ${overlayPanelClass}`}
                             style={{ ...appearance.shellStyle, opacity: localOpacity }}
                         >
 
@@ -2071,22 +2111,6 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                     </div>
                                     <div className="w-px h-3.5 mx-0.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
-                                        onClick={() => {
-                                            if (isSettingsOpen) { window.electronAPI?.toggleSettingsWindow?.(); return; }
-                                            if (!contentRef.current) return;
-                                            const contentRect = contentRef.current.getBoundingClientRect();
-                                            window.electronAPI?.toggleSettingsWindow?.({
-                                                offsetX: contentRect.right - 220,
-                                                offsetY: contentRect.bottom + 8,
-                                            });
-                                        }}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover ${isSettingsOpen ? 'overlay-text-primary' : 'overlay-text-interactive'}`}
-                                        style={appearance.iconStyle}
-                                        title="Settings"
-                                    >
-                                        <SlidersHorizontal className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
                                         onClick={() => setIsInterviewerCapturing(v => !v)}
                                         className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isInterviewerCapturing ? 'bg-[#d97757] text-white' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-muted'}`}
                                         style={isInterviewerCapturing ? undefined : appearance.iconStyle}
@@ -2101,6 +2125,22 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                         title="Toggle auto-scroll"
                                     >
                                         <ChevronsDown className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (isSettingsOpen) { window.electronAPI?.toggleSettingsWindow?.(); return; }
+                                            if (!contentRef.current) return;
+                                            const contentRect = contentRef.current.getBoundingClientRect();
+                                            window.electronAPI?.toggleSettingsWindow?.({
+                                                offsetX: contentRect.right - 220,
+                                                offsetY: contentRect.bottom + 8,
+                                            });
+                                        }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press overlay-icon-surface overlay-icon-surface-hover ${isSettingsOpen ? 'overlay-text-primary' : 'overlay-text-interactive'}`}
+                                        style={appearance.iconStyle}
+                                        title="Settings"
+                                    >
+                                        <SlidersHorizontal className="w-3.5 h-3.5" />
                                     </button>
                                     <div className="w-px h-3.5 mx-1.5 shrink-0" style={appearance.dividerStyle} />
                                     <button
@@ -2214,12 +2254,11 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                 </div>
                             )}
 
-                            {/* Rolling Transcript Bar — includes STT status indicator inline */}
-                            {(showTranscript && rollingTranscript) || interviewerSttIndicatorStatus !== 'connected' ? (
+                            {/* STT error indicator only */}
+                            {interviewerSttIndicatorStatus !== 'connected' && (
                                 <RollingTranscript
-                                    text={showTranscript ? rollingTranscript : ''}
-                                    isActive={isInterviewerSpeaking}
-                                    surfaceStyle={showTranscript ? appearance.transcriptStyle : undefined}
+                                    text=""
+                                    isActive={false}
                                     interviewerChannel={{
                                         status: interviewerSttIndicatorStatus,
                                         error: interviewerSttIndicatorError,
@@ -2227,71 +2266,131 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                     }}
                                     onCopyDiagnostics={copyDiagnostics}
                                 />
-                            ) : null}
+                            )}
 
-                            {/* Chat History - Only show if there are messages OR active states */}
+                            {/* Chat History + live transcript */}
                             {(messages.length > 0 || isProcessing) && (
                                 <>
-                                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[clamp(300px,35vh,450px)] no-drag" style={{ scrollbarWidth: 'none' }}>
-                                    {messages.map((msg) => (
-                                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
-                                            <div className={`
-                      ${msg.role === 'user' ? 'max-w-[72.25%] px-[13.6px] py-[10.2px]' : 'max-w-[85%] px-4 py-3'} text-[14px] leading-relaxed relative group whitespace-pre-wrap
-                      ${msg.role === 'user'
-                                                    ? (isLightTheme
-                                                        ? 'bg-black/[0.06] backdrop-blur-md border border-black/[0.09] text-slate-800 rounded-[20px] rounded-tr-[4px] shadow-sm font-medium'
-                                                        : 'bg-white/[0.07] backdrop-blur-md border border-white/[0.10] text-[#e2e5ed] rounded-[20px] rounded-tr-[4px] font-medium')
-                                                    : ''
-                                                }
-                      ${msg.role === 'system'
-                                                    ? 'overlay-text-primary font-normal'
-                                                    : ''
-                                                }
-                      ${msg.role === 'interviewer'
-                                                    ? 'overlay-text-muted italic pl-0 text-[13px]'
-                                                    : ''
-                                                }
-                    `}>
-                                                {msg.questionText && (
-                                                    <div className="flex items-start gap-1.5 mb-2 pb-2 border-b border-white/[0.07]">
-                                                        <span className="text-[10px] font-semibold uppercase tracking-wider overlay-text-muted shrink-0 mt-0.5">Q</span>
-                                                        <span className="text-[11px] overlay-text-muted italic leading-snug">{msg.questionText}</span>
+                                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[clamp(300px,35vh,450px)] no-drag" style={{ scrollbarWidth: 'none' }}>
+                                    {messages.map((msg) => {
+                                        // Negotiation coaching — full-width card, no bubble
+                                        if (msg.isNegotiationCoaching && msg.negotiationCoachingData) {
+                                            return (
+                                                <div key={msg.id} className="animate-fade-in-up">
+                                                    {renderMessageText(msg)}
+                                                </div>
+                                            );
+                                        }
+
+                                        // User message — RIGHT, Q style
+                                        if (msg.role === 'user') {
+                                            return (
+                                                <div key={msg.id} className="flex justify-end animate-fade-in-up">
+                                                    <div className="flex flex-col items-end gap-[5px] max-w-[84%]">
+                                                        <div className="flex items-center gap-[5px] pr-[1px]">
+                                                            <span className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: '#d97757' }}>You</span>
+                                                            <svg className="w-[11px] h-[11px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#d97757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                                <circle cx="12" cy="7" r="4"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div className="px-3 py-2 text-[13px] leading-[1.55]" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '12px 4px 12px 12px', color: 'rgba(226,229,237,0.78)' }}>
+                                                            {msg.hasScreenshot && (
+                                                                <div className="flex items-center gap-1 text-[10px] mb-1.5 pb-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', color: 'rgba(226,229,237,0.40)' }}>
+                                                                    <Image className="w-2.5 h-2.5" />
+                                                                    <span>Screenshot attached</span>
+                                                                </div>
+                                                            )}
+                                                            {renderMessageText(msg)}
+                                                        </div>
                                                     </div>
-                                                )}
-                                                {msg.role === 'interviewer' && (
-                                                    <div className="flex items-center gap-1.5 mb-1 text-[10px] font-medium uppercase tracking-wider overlay-text-muted">
-                                                        Interviewer
-                                                        {msg.isStreaming && <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />}
+                                                </div>
+                                            );
+                                        }
+
+                                        // Interviewer Q — RIGHT, orange brand label
+                                        if (msg.role === 'interviewer') {
+                                            return (
+                                                <div key={msg.id} className="flex justify-end animate-fade-in-up">
+                                                    <div className="flex flex-col items-end gap-[5px] max-w-[84%]">
+                                                        <div className="flex items-center gap-[5px] pr-[1px]">
+                                                            <span className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: '#d97757' }}>Interviewer</span>
+                                                            <svg className="w-[11px] h-[11px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#d97757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                                <circle cx="12" cy="7" r="4"/>
+                                                            </svg>
+                                                            {msg.isStreaming && <span className="w-[5px] h-[5px] rounded-full animate-pulse" style={{ background: '#d97757' }} />}
+                                                        </div>
+                                                        <div className="px-3 py-2 text-[13px] leading-[1.55]" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '12px 4px 12px 12px', color: 'rgba(226,229,237,0.78)' }}>
+                                                            {msg.text}
+                                                        </div>
                                                     </div>
-                                                )}
-                                                {msg.role === 'user' && msg.hasScreenshot && (
-                                                    <div className={`flex items-center gap-1 text-[10px] opacity-70 mb-1 border-b pb-1 ${isLightTheme ? 'border-black/10' : 'border-white/10'}`}>
-                                                        <Image className="w-2.5 h-2.5" />
-                                                        <span>Screenshot attached</span>
+                                                </div>
+                                            );
+                                        }
+
+                                        // System / AI — LEFT, LiveLens label + actions
+                                        const hasOwnCard =
+                                            msg.isCode ||
+                                            (msg.text && msg.text.includes('```')) ||
+                                            msg.intent === 'shorten' ||
+                                            msg.intent === 'recap' ||
+                                            msg.intent === 'follow_up_questions' ||
+                                            msg.intent === 'what_to_answer';
+
+                                        return (
+                                            <div key={msg.id} className="flex justify-start animate-fade-in-up">
+                                                <div className="flex flex-col items-start gap-[5px] max-w-[88%]">
+                                                    <div className="flex items-center gap-[5px] pl-[1px]">
+                                                        <span style={{ color: 'rgba(106,155,204,0.70)', fontSize: '10px', lineHeight: 1 }}>●</span>
+                                                        <span className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: 'rgba(106,155,204,0.70)' }}>LiveLens</span>
+                                                        {msg.isStreaming && <span className="w-[5px] h-[5px] rounded-full animate-pulse" style={{ background: '#6a9bcc' }} />}
                                                     </div>
-                                                )}
-                                                {msg.role === 'system' && !msg.isStreaming && (
-                                                    <button
-                                                        onClick={() => handleCopy(msg.text)}
-                                                        className="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
-                                                        title="Copy to clipboard"
-                                                        style={appearance.iconStyle}
-                                                    >
-                                                        <Copy className="w-3.5 h-3.5" />
-                                                    </button>
-                                                )}
-                                                {renderMessageText(msg)}
+                                                    {hasOwnCard ? (
+                                                        <div className="text-left w-full">
+                                                            {renderMessageText(msg)}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-left text-[13px] leading-relaxed px-[14px] py-[10px] w-full" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '4px 12px 12px 12px' }}>
+                                                            {renderMessageText(msg)}
+                                                        </div>
+                                                    )}
+                                                    {!msg.isStreaming && (
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <button onClick={() => handleQuickAction('example')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                                                <Lightbulb className="w-3 h-3 opacity-70" /> Example
+                                                            </button>
+                                                            <button onClick={() => handleQuickAction('shorter')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                                                <ChevronsDown className="w-3 h-3 opacity-70" /> Shorter
+                                                            </button>
+                                                            <button onClick={() => handleQuickAction('deeper')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                                                <Zap className="w-3 h-3 opacity-70" /> Deeper
+                                                            </button>
+                                                            <button onClick={() => handleQuickAction('star')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                                                <ArrowRight className="w-3 h-3 opacity-70" /> STAR
+                                                            </button>
+                                                            <button onClick={() => handleCopy(msg.text)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
+                                                                <Copy className="w-3 h-3 opacity-70" /> Copy
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
 
-
-                                    {isProcessing && (
+                                    {isProcessing && !messages.some(m => m.isStreaming) && (
                                         <div className="flex justify-start">
-                                            <div className="flex items-center gap-[3px] px-1 py-2">
-                                                <div className="w-[3px] h-[8px] rounded-full bg-white/30 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }} />
-                                                <div className="w-[3px] h-[8px] rounded-full bg-white/30 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '180ms' }} />
-                                                <div className="w-[3px] h-[8px] rounded-full bg-white/30 animate-[listening_1.1s_ease-in-out_infinite]" style={{ animationDelay: '360ms' }} />
+                                            <div className="flex flex-col items-start gap-[5px]">
+                                                <div className="flex items-center gap-[5px] pl-[1px]">
+                                                    <span style={{ color: 'rgba(106,155,204,0.45)', fontSize: '10px', lineHeight: 1 }}>●</span>
+                                                    <span className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: 'rgba(106,155,204,0.45)' }}>LiveLens</span>
+                                                </div>
+                                                <div className="flex items-center gap-[4px] px-[14px] py-[10px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px 12px 12px 12px' }}>
+                                                    <div className="w-[3px] h-[10px] rounded-full animate-[listening_1.1s_ease-in-out_infinite]" style={{ background: 'rgba(106,155,204,0.45)', animationDelay: '0ms' }} />
+                                                    <div className="w-[3px] h-[10px] rounded-full animate-[listening_1.1s_ease-in-out_infinite]" style={{ background: 'rgba(106,155,204,0.45)', animationDelay: '180ms' }} />
+                                                    <div className="w-[3px] h-[10px] rounded-full animate-[listening_1.1s_ease-in-out_infinite]" style={{ background: 'rgba(106,155,204,0.45)', animationDelay: '360ms' }} />
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -2375,9 +2474,9 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                         ref={textInputRef}
                                         type="text"
                                         value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
+                                        onChange={(e) => { userTypedRef.current = true; setInputValue(e.target.value); }}
                                         onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                                        className={`w-full border focus:ring-1 rounded-xl pl-3 pr-[60px] py-2 focus:outline-none transition-all duration-200 ease-sculpted text-[13px] leading-relaxed ${inputClass}`}
+                                        className={`w-full border rounded-xl pl-3 pr-[60px] py-2 focus:outline-none transition-all duration-200 ease-sculpted text-[13px] leading-relaxed ${inputClass} ${isInterviewerSpeaking ? 'ring-1 ring-[#d97757]/60' : 'focus:ring-1'}`}
                                         style={appearance.inputStyle}
                                     />
                                     {!inputValue && (
@@ -2397,14 +2496,20 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                                         <button
                                             onClick={handleManualSubmit}
-                                            disabled={!inputValue.trim()}
-                                            className={`w-6 h-6 rounded-md flex items-center justify-center interaction-base interaction-press ${inputValue.trim() ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]' : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'}`}
-                                            style={inputValue.trim() ? undefined : appearance.iconStyle}
+                                            disabled={!inputValue.trim() && attachedContext.length === 0}
+                                            className={`w-6 h-6 rounded-md flex items-center justify-center interaction-base interaction-press ${inputValue.trim() || attachedContext.length > 0 ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]' : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'}`}
+                                            style={inputValue.trim() || attachedContext.length > 0 ? undefined : appearance.iconStyle}
                                         >
                                             <ArrowRight className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </div>
+                                {isInterviewerSpeaking && (
+                                    <div className="flex items-center gap-[5px] mt-[5px] pl-[2px]">
+                                        <span className="w-[5px] h-[5px] rounded-full animate-pulse shrink-0" style={{ background: '#d97757' }} />
+                                        <span className="text-[10px]" style={{ color: 'rgba(217,119,87,0.65)' }}>Interviewer speaking — edit if needed</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </motion.div>
