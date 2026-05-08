@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback, startTransition as reactStartTransition } from 'react';
 import {
     Pencil,
     MessageSquare,
@@ -628,8 +628,9 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
 
 
         cleanups.push(window.electronAPI.onIntelligenceSuggestedAnswerToken((data) => {
-            // Progressive update for 'what_to_answer' mode
-            setMessages(prev => {
+            // Progressive update for 'what_to_answer' mode — wrapped in startTransition
+            // so streaming token updates are interruptible and don't block user input.
+            reactStartTransition(() => setMessages(prev => {
                 const lastMsg = prev[prev.length - 1];
 
                 // If we already have a streaming message for this intent, append
@@ -650,7 +651,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     intent: 'what_to_answer',
                     isStreaming: true
                 }];
-            });
+            }));
         }));
 
         cleanups.push(window.electronAPI.onIntelligenceSuggestedAnswer((data) => {
@@ -682,7 +683,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
 
         // STREAMING: Refinement
         cleanups.push(window.electronAPI.onIntelligenceRefinedAnswerToken((data) => {
-            setMessages(prev => {
+            reactStartTransition(() => setMessages(prev => {
                 const lastMsg = prev[prev.length - 1];
                 if (lastMsg && lastMsg.isStreaming && lastMsg.intent === data.intent) {
                     const updated = [...prev];
@@ -700,7 +701,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     intent: data.intent,
                     isStreaming: true
                 }];
-            });
+            }));
         }));
 
         cleanups.push(window.electronAPI.onIntelligenceRefinedAnswer((data) => {
@@ -727,7 +728,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
 
         // STREAMING: Recap
         cleanups.push(window.electronAPI.onIntelligenceRecapToken((data) => {
-            setMessages(prev => {
+            reactStartTransition(() => setMessages(prev => {
                 const lastMsg = prev[prev.length - 1];
                 if (lastMsg && lastMsg.isStreaming && lastMsg.intent === 'recap') {
                     const updated = [...prev];
@@ -744,7 +745,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     intent: 'recap',
                     isStreaming: true
                 }];
-            });
+            }));
         }));
 
         cleanups.push(window.electronAPI.onIntelligenceRecap((data) => {
@@ -782,7 +783,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
         // Assuming it's a message for consistency with "Copilot" approach.
 
         cleanups.push(window.electronAPI.onIntelligenceFollowUpQuestionsToken((data) => {
-            setMessages(prev => {
+            reactStartTransition(() => setMessages(prev => {
                 const lastMsg = prev[prev.length - 1];
                 if (lastMsg && lastMsg.isStreaming && lastMsg.intent === 'follow_up_questions') {
                     const updated = [...prev];
@@ -799,7 +800,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     intent: 'follow_up_questions',
                     isStreaming: true
                 }];
-            });
+            }));
         }));
 
         cleanups.push(window.electronAPI.onIntelligenceFollowUpQuestionsUpdate((data) => {
@@ -868,7 +869,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
     // orphaning the final 'clarify' event and leaving isProcessing=true forever.
     useEffect(() => {
         const cleanupToken = window.electronAPI.onIntelligenceClarifyToken((data) => {
-            setMessages(prev => {
+            reactStartTransition(() => setMessages(prev => {
                 const lastMsg = prev[prev.length - 1];
                 if (lastMsg && lastMsg.isStreaming && lastMsg.intent === 'clarify') {
                     const updated = [...prev];
@@ -882,7 +883,7 @@ const LiveLensInterface: React.FC<LiveLensInterfaceProps> = ({ onEndMeeting, ove
                     intent: 'clarify',
                     isStreaming: true
                 }];
-            });
+            }));
         });
 
         const cleanupFinal = window.electronAPI.onIntelligenceClarify((data) => {

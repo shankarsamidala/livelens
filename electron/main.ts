@@ -2639,8 +2639,11 @@ async function initializeApp() {
   // by the build step, not re-launched by concurrently while the old process is alive.
   const gotLock = app.requestSingleInstanceLock();
   if (!gotLock) {
-    console.log('[Main] Another instance is already running. Quitting this instance.');
-    app.quit();
+    console.log('[Main] Another instance is already running. Exiting this instance.');
+    // app.exit(0) terminates immediately — app.quit() can be deferred before
+    // whenReady, leaving the duplicate alive long enough to register a second
+    // tray icon on macOS Spotlight re-launches.
+    app.exit(0);
     return;
   }
 
