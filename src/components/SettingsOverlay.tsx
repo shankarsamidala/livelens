@@ -13,6 +13,7 @@ import { AboutSection } from './AboutSection';
 import { HelpSettings } from './settings/HelpSettings';
 import { AIProvidersSettings } from './settings/AIProvidersSettings';
 import { LiveLensApiSettings } from './settings/LiveLensApiSettings';
+import { LiveLensProSettings } from './settings/LiveLensProSettings';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShortcuts } from '../hooks/useShortcuts';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
@@ -1333,6 +1334,10 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                                     <button onClick={() => setActiveTab('natively-api')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'natively-api' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
                                         <Zap size={14} className="shrink-0" />
                                         LiveLens API
+                                    </button>
+                                    <button onClick={() => setActiveTab('pro')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'pro' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                        <Star size={14} className="shrink-0" />
+                                        LiveLens Pro
                                     </button>
 
                                     {/* ── Input ── */}
@@ -2776,6 +2781,9 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                             )}
                             {activeTab === 'natively-api' && (
                                 <LiveLensApiSettings />
+                            )}
+                            {activeTab === 'pro' && (
+                                <LiveLensProSettings />
                             )}
                             {activeTab === 'keybinds' && (
                                 <div className="space-y-5 animated fadeIn select-text pb-4">
