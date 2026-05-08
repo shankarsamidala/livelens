@@ -117,7 +117,13 @@ impl SystemAudioCapture {
                 }
             };
 
-            let mut stream = input.stream();
+            let mut stream = match input.stream() {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("[SystemAudioCapture] FATAL: Failed to start stream: {:?}", e);
+                    return;
+                }
+            };
             let mut consumer = match stream.take_consumer() {
                 Some(c) => c,
                 None => {
