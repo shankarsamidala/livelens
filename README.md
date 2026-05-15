@@ -1,42 +1,15 @@
 # [Sponsored by Recall AI - API for desktop recording](https://docs.recall.ai/docs/desktop-sdk?utm_source=github&utm_medium=sponsorship&utm_campaign=evinjohnn-natively-ai-assistant)
 
-If you’re looking for a hosted desktop recording API, consider checking out [Recall.ai](https://docs.recall.ai/docs/desktop-sdk?utm_source=github&utm_medium=sponsorship&utm_campaign=evinjohnn-natively-ai-assistant), an API that records Zoom, Google Meet, Microsoft Teams, in-person meetings, and more.
+If you're looking for a hosted desktop recording API, consider checking out [Recall.ai](https://docs.recall.ai/docs/desktop-sdk?utm_source=github&utm_medium=sponsorship&utm_campaign=evinjohnn-natively-ai-assistant), an API that records Zoom, Google Meet, Microsoft Teams, in-person meetings, and more.
 
 <div align="center">
-  <img src="assets/icon.png" width="150" alt="Natively AI Assistant Logo">
+  <img src="assets/icon.png" width="150" alt="REINIT — Career Copilot">
 
-# Natively — Free, Open-Source AI Interview Copilot & Meeting Assistant
+# REINIT — Your Career Copilot
 
-**The best free alternative to Cluely, Final Round AI, LockedIn AI, and Interview Coder.**
+**The AI that lives on your machine and knows your entire professional life.**
 <br/>
-**Same UI as Cluely. More features. $0. Open source. No data breaches.**
-<br/>
-
-<a href="#" style="pointer-events: none; cursor: default; color: inherit; text-decoration: none;" title="#1 Cluely clone · Free Cluely alternative · Open-source interview copilot · Free Interview Coder alternative · AI coding interview assistant · LeetCode AI solver · HackerRank AI cheat · Final Round AI free alternative · LockedIn AI alternative · Parakeet AI open source · Undetectable interview AI · Stealth mode interview copilot.Cluely clone · Cluely alternative · Free Cluely · Cluely free version · open source Cluely ·
-    Final Round AI clone · Final Round AI alternative · Free Final Round AI · Final Round AI free version ·
-    Interview Coder clone · Interview Coder alternative · Free Interview Coder · open source Interview Coder ·
-    Parakeet AI clone · Parakeet AI alternative · Free Parakeet AI ·
-    Wonsulting AI clone · Wonsulting alternative · Free Wonsulting AI ·
-    Metaview clone · Metaview alternative · Free Metaview ·
-    Sensei AI clone · Sensei AI alternative · interview copilot ·
-    Hirevue AI cheat · Hirevue assistant · Hirevue helper ·
-    AI interview assistant · AI interview copilot · AI interview helper · interview cheating tool · interview AI ·
-    live coding assistant · real-time coding help · screen overlay AI · invisible AI assistant ·
-    coding interview cheat sheet · leetcode helper AI · system design AI assistant ·
-    Claude Code alternative · Claude Code clone · free Claude Code ·
-    Gemini 3.5 assistant · Gemini 3.5 Pro coding · Google Gemini interview tool ·
-    Agent Claw alternative · Agent Claw clone · free Agent Claw ·
-    Molt Bot clone · Molt Bot alternative · free Molt Bot ·
-    Antigravity AI clone · Antigravity alternative ·
-    Devin AI alternative · open source Devin · free Devin AI ·
-    Cursor AI alternative · Cursor clone · free Cursor AI ·
-    GitHub Copilot alternative · free GitHub Copilot · open source Copilot ·
-    Tabnine alternative · free Tabnine · Tabnine clone ·
-    Codeium alternative · free Codeium ·
-    agentic coding assistant · AI pair programmer · AI coding copilot ·
-    real-time interview AI · live interview assistant · hidden interview tool ·
-    open source interview copilot · free interview AI tool · best interview AI 2026"></a>
-
+**Local. Private. Always on. Built from a real career restart story.**
 <br/>
 
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square)](LICENSE)
@@ -47,7 +20,7 @@ If you’re looking for a hosted desktop recording API, consider checking out [R
 ![Status](https://img.shields.io/badge/Status-active-success?style=flat-square)
 [![X Community](https://img.shields.io/badge/Community-black?style=flat-square&logo=x&logoColor=white)](https://x.com/i/communities/2031398735515693507)
 
-> **Competitors charge $20–$149/month, store your data on their servers, and one already breached 83,000 users.** Natively costs $0, runs locally, and has never had a data breach. Your keys, your models, your machine.
+> **Every professional spends 30–50% of their work life in high-stakes conversations — interviews, sales calls, client meetings, negotiations. Almost none of that intelligence is captured, searchable, or usable afterward. REINIT changes that.**
 
 <p align="center">
   <a href="https://natively.software">
@@ -74,11 +47,17 @@ If you’re looking for a hosted desktop recording API, consider checking out [R
 
 ---
 
-## The Free, Open-Source Cluely Clone
+## Why REINIT Exists
 
-Natively started as a pixel-perfect recreation of Cluely's interface — then kept going. If you've used Cluely, you already know how to use Natively. Same overlay, same workflow, same shortcuts. Except it's free, open-source, runs locally, supports any LLM, and has never breached a single user's data.
+REINIT was built from a personal story — a career that needed restarting.
 
-> Looking for a **free Cluely alternative**? A **Cluely open-source clone**? You found it.
+Real-time, high-stakes professional conversations are where careers are won or lost: the interview where nerves kill your best answer, the sales call where a question catches you off guard, the negotiation where you don't know your number. These moments happen fast, and then they're gone.
+
+REINIT sits invisibly on your machine and gives you the intelligence layer you need in those moments — not by replacing you, but by making you the best version of yourself. It listens, understands context, surfaces what you know, and suggests what to say — all locally, privately, with no data leaving your machine.
+
+The name is intentional. **REINIT = reinitialize.** A fresh start. A second shot. Whether you're breaking into a new field, recovering from a career setback, or preparing for the biggest interview of your life — REINIT is the tool that helps you walk in ready.
+
+> **Competitors charge $20–$149/month, store your data on their servers, and one already breached 83,000 users.** REINIT costs $0, runs locally, and has never had a data breach. Your keys, your models, your machine.
 
 ---
 
@@ -87,37 +66,37 @@ Natively started as a pixel-perfect recreation of Cluely's interface — then ke
 > "This is a fantastic piece of software and you should definitely keep up the great work! This is exactly what I was looking for. I started out trying the open-source version, and because it worked so well, I decided to go ahead and buy the full premium license."  
 > — **Oskar Krzak** (⭐⭐⭐⭐⭐ via Gumroad)
 
-> "Natively is significantly faster than Cluely when it comes to response time and screen analysis. The latency is practically non-existent."  
+> "REINIT is significantly faster than Cluely when it comes to response time and screen analysis. The latency is practically non-existent."  
 > — **Premium User**
 
-> "Just wanted to say thanks! Natively helped me completely crack the first two rounds of my Software Engineering interviews. The responses were incredibly fast and accurate."  
+> "Just wanted to say thanks! REINIT helped me completely crack the first two rounds of my Software Engineering interviews. The responses were incredibly fast and accurate."  
 > — **Private Email Feedback**
 
-> "Used the free version of Natively for my interviews and just landed a massive summer internship. It took all the stress out of the live coding and behavioral rounds!"  
+> "Used REINIT for my interviews and just landed a massive summer internship. It took all the stress out of the live coding and behavioral rounds!"  
 > — **Private Email Feedback**
 
 ---
 
-## Why Natively?
+## Why REINIT?
 
-While other tools act as simple API wrappers, Natively is a complete, native intelligence system designed specifically for high-stakes meetings and interviews.
+While other tools act as simple API wrappers, REINIT is a complete, native intelligence system designed for high-stakes professional conversations.
 
 - **Native Audio Capture (<500ms):** Built with Rust and Zero-Copy ABI transfers, bypassing generic web-audio limitations for ultra-low latency.
 - **Dual-Channel Intelligence:** Distinct pipelines for system audio (what they say) and your microphone (what you dictate) ensuring perfect transcription without room noise.
-- **Battle-Tested Stealth Mode:** Completely undetectable. Hides from the dock, disables popups, and disguises the process during screen sharing.
-- **Rolling Context:** We don't just transcribe; we maintain a "memory window" of the conversation for smarter answers.
+- **Battle-Tested Stealth Mode:** Completely invisible. Hides from the dock, disables popups, and disguises the process during screen sharing.
+- **Rolling Context:** We don't just transcribe — we maintain a memory window of the conversation for smarter, context-aware answers.
 - **Local RAG Memory:** We embed your meetings locally using SQLite vector search so you can ask, "What did John say about the API last week?"
 - **Custom Personas & Reference Docs:** Switch between tailored AI roles (Tech, Sales, HR) and inject specific PDFs to give the AI your exact context.
-- **Rich Dashboard:** A full UI to manage, search, and export your history—not just a floating window.
-- **Fully Offline Capable:** Don't trust the cloud? Run Natively 100% offline using local Ollama models with limited anonymous telemetry.
+- **Rich Dashboard:** A full UI to manage, search, and export your history — not just a floating window.
+- **Fully Offline Capable:** Run REINIT 100% offline using local Ollama models. No cloud required.
 
 ---
 
-## 3 things you should know before choosing an interview AI
+## 3 things you should know before choosing an AI career copilot
 
-1. **Cluely** had a data breach in mid-2025 that exposed 83,000 users' personal info, transcripts, and screenshots — Natively stores everything locally by default with limited anonymous telemetry and has never had a breach.
-2. **Final Round AI** costs $149/month and its taskbar icon is visible to proctoring software — Natively is free, open-source, and has a battle-tested undetectable stealth mode.
-3. **LockedIn AI** charges $55–70/month and locks you into their cloud LLM with no local option — Natively lets you use any model (GPT, Claude, Gemini, Llama) or go fully offline with Ollama.
+1. **Cluely** had a data breach in mid-2025 that exposed 83,000 users' personal info, transcripts, and screenshots — REINIT stores everything locally by default and has never had a breach.
+2. **Final Round AI** costs $149/month and its taskbar icon is visible to proctoring software — REINIT is free, open-source, and has a battle-tested undetectable stealth mode.
+3. **LockedIn AI** charges $55–70/month and locks you into their cloud LLM with no local option — REINIT lets you use any model (GPT, Claude, Gemini, Llama) or go fully offline with Ollama.
 
 ---
 
@@ -125,9 +104,9 @@ While other tools act as simple API wrappers, Natively is a complete, native int
 
 ### ⭐ Star this repo — it matters
 
-Every star pushes Natively higher in GitHub search, helping developers and job seekers find a free, private alternative instead of paying $149/month for tools that store their data on someone else's server.
+Every star pushes REINIT higher in GitHub search, helping developers and job seekers find a free, private alternative instead of paying $149/month for tools that store their data on someone else's server.
 
-[![Star Natively](https://img.shields.io/github/stars/evinjohnn/natively-cluely-ai-assistant?style=for-the-badge&color=gold&label=Star%20on%20GitHub)](https://github.com/Natively-AI-assistant/natively-cluely-ai-assistant)
+[![Star REINIT](https://img.shields.io/github/stars/evinjohnn/natively-cluely-ai-assistant?style=for-the-badge&color=gold&label=Star%20on%20GitHub)](https://github.com/Natively-AI-assistant/natively-cluely-ai-assistant)
 
 </div>
 
@@ -135,7 +114,7 @@ Every star pushes Natively higher in GitHub search, helping developers and job s
 
 ## Demo
 
-![Natively AI Assistant Demo - Real-time Interview Helper and Transcription](assets/natively-ai-meeting-assistant-demo.gif)
+![REINIT Career Copilot Demo - Real-time Meeting Assistant](assets/natively-ai-meeting-assistant-demo.gif)
 
 This demo shows **a complete live meeting scenario**:
 
@@ -148,9 +127,9 @@ This demo shows **a complete live meeting scenario**:
 
 ---
 
-## Full Comparison: Natively vs Cluely vs Final Round AI vs LockedIn AI vs Interview Coder
+## Full Comparison: REINIT vs Cluely vs Final Round AI vs LockedIn AI vs Interview Coder
 
-| Feature                   | Natively                   | Cluely               | Pluely     | LockedIn AI      | Final Round AI         |
+| Feature                   | REINIT                     | Cluely               | Pluely     | LockedIn AI      | Final Round AI         |
 | :------------------------ | :------------------------- | :------------------- | :--------- | :--------------- | :--------------------- |
 | **Price**                 | ✅ Free (BYOK)             | ⚠️ $20/mo            | ✅ Free    | ❌ $55–70/mo     | ❌ $149/mo             |
 | **Open source**           | ✅ AGPL-3.0                | ❌                   | ✅         | ❌               | ❌                     |
@@ -178,41 +157,35 @@ This demo shows **a complete live meeting scenario**:
 
 ---
 
-## Why Natively wins
+## Why REINIT wins
 
 ### vs Cluely — breached 83,000 users
 
-The UI is intentionally familiar — if you've used Cluely, there's zero learning curve.
-
 Cluely's mid-2025 data breach exposed personal information, full interview transcripts, and screenshots of 83,000 users. Every word spoken during an interview was stored on their servers — and then leaked. They charge $20/month for this privilege.
 
-By default, Natively stores everything on your local machine, with only limited anonymous telemetry (basic GA4 install tracking, zero personal data). Your transcripts, API keys, and screenshots never leave your machine when using your own keys. The entire codebase is open-source (AGPL-3.0) and auditable. Zero breaches — that is the only acceptable standard for a tool that listens to your interviews.
-
-Unlike Cluely's rigid interface, Natively also gives you complete control over the AI: **Custom Persona Modes** (Tech, Sales, Recruiting) to strictly format behavior, and **Reference Files** capabilities to upload PDFs so the AI knows exactly the context of the job or meeting before it starts.
+By default, REINIT stores everything on your local machine, with only limited anonymous telemetry (basic GA4 install tracking, zero personal data). Your transcripts, API keys, and screenshots never leave your machine when using your own keys. The entire codebase is open-source (AGPL-3.0) and auditable. Zero breaches — that is the only acceptable standard for a tool that listens to your most important conversations.
 
 ### vs LockedIn AI — $70/month for cloud lock-in
 
 LockedIn AI is the most expensive tool in the category at $55–70/month. It locks you into a single cloud LLM with no option for local inference. Every transcript and response passes through their servers.
 
-Natively supports every major model (Gemini, GPT, Claude, Groq) via bring-your-own-key, and offers 100% offline mode through Ollama. You pay only for the API tokens you actually use — or pay nothing at all by running Llama 3 locally. No subscription, no vendor lock-in.
+REINIT supports every major model (Gemini, GPT, Claude, Groq) via bring-your-own-key, and offers 100% offline mode through Ollama. You pay only for the API tokens you actually use — or pay nothing at all by running Llama 3 locally.
 
 ### vs Final Round AI — $149/month and visible to proctors
 
-Final Round AI is the most expensive option at $149/month, optimized for pre-interview prep and mock interviews but with the slowest live latency in the category. Critically, its taskbar icon is visible to proctoring software, making it detectable during monitored interviews.
+Final Round AI is the most expensive option at $149/month, with the slowest live latency in the category. Critically, its taskbar icon is visible to proctoring software, making it detectable during monitored sessions.
 
-Natively delivers <500ms end-to-end latency using Rust-based native audio capture with Zero-Copy ABI Transfers. Its undetectable stealth mode hides from the dock, disguises process names, and syncs state across all windows — battle-tested and hardened across five major releases.
+REINIT delivers <500ms end-to-end latency using Rust-based native audio capture with Zero-Copy ABI Transfers. Its undetectable stealth mode hides from the dock, disguises process names, and syncs state across all windows.
 
 ### vs Pluely — lightweight but limited
 
-Pluely is a solid lightweight alternative (~10MB, Tauri-based) and it has Linux support, which Natively does not yet offer. Credit where it is due.
+Pluely is a solid lightweight alternative (~10MB, Tauri-based) and has Linux support, which REINIT does not yet offer. Credit where it is due.
 
-But Pluely is a basic overlay. It has no local RAG, no meeting history, no dual audio channels, and no dashboard. Natively is a complete intelligence system: it remembers your past meetings via local vector search, separates system audio from your microphone, and gives you a full management dashboard with export to Markdown, JSON, and Text.
+But Pluely is a basic overlay. It has no local RAG, no meeting history, no dual audio channels, and no dashboard. REINIT is a complete intelligence system: it remembers your past meetings via local vector search, separates system audio from your microphone, and gives you a full management dashboard with export to Markdown, JSON, and Text.
 
 ### vs Interview Coder — More Powerful, Completely Free
 
-Interview Coder is a paid tool focused specifically on coding interview assistance. Natively does everything Interview Coder does — and more — for free:
-
-|                                    |    Natively    | Interview Coder |
+|                                    |    REINIT      | Interview Coder |
 | :--------------------------------- | :------------: | :-------------: |
 | **Price**                          | ✅ Free (BYOK) |     ❌ Paid     |
 | **Open source**                    |       ✅       |       ❌        |
@@ -226,43 +199,40 @@ Interview Coder is a paid tool focused specifically on coding interview assistan
 | **Any LLM (BYOK)**                 |       ✅       |    ❌ Locked    |
 | **Data stored locally**            |       ✅       |    ❌ Cloud     |
 
-Natively covers the full interview loop — not just the coding round.
-
 ### vs Parakeet AI — Memory and History vs Stateless Overlay
 
-Parakeet AI offers basic live meeting assistance but has no persistent memory, no meeting history, and no local vector search. Natively remembers your past meetings via local RAG, lets you ask questions across all your history, and gives you a full dashboard to manage, export, and search everything. Furthermore, Natively includes **Custom Persona Modes** allowing the AI to structure notes and behave optimally for specific flavors of conversations, instead of relying on Parakeet's one-size-fits-all model.
+Parakeet AI offers basic live meeting assistance but has no persistent memory, no meeting history, and no local vector search. REINIT remembers your past meetings via local RAG, lets you ask questions across all your history, and gives you a full dashboard to manage, export, and search everything.
 
 ---
 
 ### Where we're not there yet
 
-- **No Linux support** — we are actively looking for maintainers to help bring Natively to Linux
+- **No Linux support** — actively looking for maintainers
 - **API key setup overhead** — you need to bring your own API keys (or install Ollama), which adds initial setup friction compared to all-in-one cloud tools
-- **No built-in mock interview mode** — Final Round AI has dedicated mock interview practice; Natively focuses on live, real-time assistance
+- **No built-in mock interview mode** — REINIT focuses on live, real-time assistance
 
 ---
 
-## Free AI Coding Interview Assistant — Undetectable on LeetCode, HackerRank & CoderPad
+## Real-Time AI Assistant for Professional Conversations
 
-Natively works as a **free, undetectable AI coding interview assistant** for standard online assessments. It captures your screen, analyzes the problem, and gives you real-time hints, solutions, and explanations — all through an invisible overlay that doesn't interfere with your coding environment.
+REINIT works across any high-stakes professional scenario. It captures your screen, analyzes the context, and gives you real-time guidance — all through an invisible overlay that doesn't interfere with your workflow.
 
-**Works undetected on:**
+**Works across:**
 
-- LeetCode (including LeetCode contests)
-- HackerRank
-- CoderPad
-- Codility
-- HackerEarth
-- Karat
-- Any browser-based coding environment
+- Job interviews (technical, behavioral, system design)
+- Sales and client calls
+- Performance reviews
+- Coding assessments (LeetCode, HackerRank, CoderPad, Codility, HackerEarth, Karat)
+- Any browser-based or desktop application
 
 **How it works:**
 
-1. Screenshot the problem with a single shortcut
-2. Natively OCRs the question and sends it to your chosen AI (GPT, Claude, Gemini, or local Ollama)
-3. Response appears in the invisible overlay — never on screen share
+1. REINIT listens to the conversation in real-time through your system audio
+2. In Manual mode: transcript flows into your input box — review, edit, send when ready
+3. In Auto mode: AI fires a suggested response automatically as questions are asked
+4. Screenshot a problem, slide, or screen with a single shortcut for instant analysis
 
-> ⚠️ **Important:** Natively is not designed to bypass dedicated proctoring software like **Pearson VUE**, **ProctorU**, or **Respondus Lockdown Browser** — these run at the OS level and are a different category entirely. For standard online coding assessments without dedicated proctoring software, Natively's stealth mode is not detectable.
+> ⚠️ **Note:** REINIT is not designed to bypass dedicated proctoring software like **Pearson VUE**, **ProctorU**, or **Respondus Lockdown Browser** — these run at the OS level and are a different category entirely.
 
 ---
 
@@ -271,20 +241,20 @@ Natively works as a **free, undetectable AI coding interview assistant** for sta
 [![Portfolio](https://img.shields.io/badge/Portfolio-evinjohn.vercel.app-blueviolet?style=flat-square&logo=vercel&logoColor=white)](https://evinjohn.vercel.app/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/evinjohn/)
 [![X](https://img.shields.io/badge/X-@evinjohnn-black?style=flat-square&logo=x&logoColor=white)](https://x.com/evinjohnn)
-[![Hire Me](https://img.shields.io/badge/Hire_Me-Contact-success?style=flat-square&logo=gmail&logoColor=white)](mailto:evinjohnn@gmail.com?subject=Natively%20-%20Hiring%20Inquiry)
+[![Hire Me](https://img.shields.io/badge/Hire_Me-Contact-success?style=flat-square&logo=gmail&logoColor=white)](mailto:evinjohnn@gmail.com?subject=REINIT%20-%20Hiring%20Inquiry)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/evinjohn)
 
 </div>
 
 ---
 
-## Natively API (Hosted Tier)
+## REINIT API (Hosted Tier)
 
 **Stop managing four separate services. One key. Zero configuration.**
 
-Are you managing separate accounts for your AI reasoning, live transcription, fast inference, and web search? Juggling multiple API keys, rate limits, and invoices across completely different categories of tools is unnecessary overhead. Natively API replaces all of those categories with **one flat subscription**.
+Are you managing separate accounts for your AI reasoning, live transcription, fast inference, and web search? Juggling multiple API keys, rate limits, and invoices across completely different categories of tools is unnecessary overhead. REINIT API replaces all of those categories with **one flat subscription**.
 
-Under the hood, Natively API connects you to the absolute best models for the optimal user experience:
+Under the hood, REINIT API connects you to the best models for the optimal experience:
 
 - **Backend AI Models**: Claude, OpenAI, Gemini, and Groq.
 - **Premium STT Models**: Google Chirp 2/3, ElevenLabs Scribe v2, and Deepgram Nova-3.
@@ -298,7 +268,7 @@ Under the hood, Natively API connects you to the absolute best models for the op
 - **Real-Time Transcription (Deepgram/Google STT):** separate key + quota
 - **Web Search & Research (Tavily/Perplexity):** yet another subscription
 
-**Replaced by Natively API:**
+**Replaced by REINIT API:**
 
 - **AI chat, transcription & web search** — all included
 - **One flat subscription.** Zero surprise bills. Starts at $8/mo.
@@ -310,11 +280,9 @@ Under the hood, Natively API connects you to the absolute best models for the op
 | :------------------------------------ | :--------------- | :----------- | :----------- | :------------- |
 | **All-in-One Cloud AI Access**        | ✅ Yes           | ✅ Yes       | ✅ Yes       | ✅ Yes         |
 | **Real-Time Transcription**           | ✅ Yes           | ✅ Yes       | ✅ Yes       | ✅ Yes         |
-| **Included Natively Pro Desktop App** | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
+| **Included REINIT Pro Desktop App**   | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
 | **Premium Support**                   | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
 | **Higher Monthly Quotas**             | ❌ No            | ✅ Yes       | ✅ Yes       | ✅ Yes         |
-
-**Don't start the long way.** Skip the 20-minute manual setup. One Natively subscription skips all of it — AI, transcription, and web search are ready immediately.
 
 <p align="center">
   <a href="https://checkout.dodopayments.com/buy/pdt_0NbFixGmD8CSeawb5qvVl">
@@ -333,19 +301,19 @@ Under the hood, Natively API connects you to the absolute best models for the op
 
 ---
 
-## Natively Pro
+## REINIT Pro
 
-While Natively is **free and open-source forever**, we also offer a **Pro Edition** (available as **Lifetime or Yearly** subscriptions) designed specifically for power users and job seekers. Purchasing a Pro license gives you an edge in the job market, all while directly supporting the continued development of the open-source Natively core!
+While REINIT is **free and open-source forever**, we also offer a **Pro Edition** (available as **Lifetime or Yearly** subscriptions) designed specifically for power users and professionals. Purchasing a Pro license gives you an edge in the most important moments of your career, all while directly supporting the continued development of the open-source core.
 
-### 🪙 Unlock Natively Pro with $NAT Token
+### 🪙 Unlock REINIT Pro with $NAT Token
 
-We've launched the official **$NAT token** on Printr! Holders who maintain a specific balance of `$NAT` tokens in their connected wallet automatically unlock access to all **Natively Pro** features.
+We've launched the official **$NAT token** on Printr! Holders who maintain a specific balance of `$NAT` tokens in their connected wallet automatically unlock access to all **REINIT Pro** features.
 
 👉 **[Trade $NAT on Printr](https://app.printr.money/trade/0xba1e50273ec14ca52b3fa64a5054c39470c2835392c6ecd06876f5bccd597d7b)**
 
 ### Free vs Pro Feature Comparison
 
-| Feature                                             | Natively Free | Natively Pro |
+| Feature                                             | REINIT Free   | REINIT Pro   |
 | :-------------------------------------------------- | :-----------: | :----------: |
 | **Bring Your Own Key (BYOK) Models**                |      ✅       |      ✅      |
 | **Local AI Support (Ollama)**                       |      ✅       |      ✅      |
@@ -377,47 +345,41 @@ We've launched the official **$NAT token** on Printr! Holders who maintain a spe
 
 ### What's New in v2.6.0
 
-Version 2.6.0 brings massive workflow and integration capabilities to make your AI assistant even more powerful:
+Version 2.6.0 brings massive workflow and integration capabilities:
 
-- **Phone Link Integration**: Connect your iOS or Android device to seamlessly use it as a wireless remote microphone or companion screen for your meeting notes.
+- **Phone Link Integration**: Connect your iOS or Android device as a wireless remote microphone or companion screen.
 - **TinyPrompts™ Engine**: Highly optimized system prompts for local SLMs (Ollama, Qwen 2.5:4B, Llama 3.2), enabling premium intelligence on consumer-grade hardware.
-- **Codex CLI Integration**: Native support for the Codex automation system, allowing sandboxed code execution and local terminal tasks via `gpt-5.3-codex`.
-- **Auto-Calendar Sync**: Natively now securely connects to Google Calendar and Outlook to automatically pull context and prepare for your upcoming meetings.
-- **Smart Task Sync**: Action items are now auto-extracted with extreme precision and can be instantly exported to Jira, Linear, or Asana boards.
-- **Speaker Identification**: Advanced real-time speaker diarization automatically tags individual speakers by name throughout the meeting transcript.
-- **Expanded Offline Mode**: 100% offline transcription and intelligent note generation using specialized, lightning-fast on-device SLMs.
-- **Advanced Stealth Features**: Hardened undetectable stealth mode with Activity Monitor evasion, process name disguising, and strict timeout management to prevent accidental discovery during OS-level events.
-- **Scroll & Layout Enhancements**: Added scroll keybinds for seamless mouse-free navigation and optimized the horizontal layout for more stable code line rendering.
+- **Codex CLI Integration**: Native support for sandboxed code execution and local terminal tasks via `gpt-5.3-codex`.
+- **Auto-Calendar Sync**: Securely connects to Google Calendar and Outlook to automatically prepare for upcoming meetings.
+- **Smart Task Sync**: Action items auto-extracted and exported to Jira, Linear, or Asana.
+- **Speaker Identification**: Advanced real-time speaker diarization automatically tags individual speakers by name.
+- **Expanded Offline Mode**: 100% offline transcription and intelligent note generation using on-device SLMs.
+- **Advanced Stealth Features**: Hardened stealth mode with Activity Monitor evasion, process name disguising, and strict timeout management.
+- **Scroll & Layout Enhancements**: Scroll keybinds for seamless mouse-free navigation.
 
 ---
 
 ### What's New in v2.5.0
 
-Version 2.5.0 introduces major feature upgrades, architectural overhauls, and robust stability fixes:
-
-- **Custom Persona Modes**: Completed Cluely-style Custom Modes (Technical Interview, Sales, Recruiting, Team Meet, Lecture, etc.) allowing tailored AI personas and behaviors.
-- **Dynamic Note Templates**: AI now dynamically generates highly structured meeting notes based on the active persona mode (e.g., Problem Statement, Follow-ups, Space & Time Complexity for tech interviews).
-- **Reference Files & Custom Context**: Deeply integrate PDFs, DOCX files, and custom text instructions into the AI's real-time prompt logic.
-- **10-Minute Free Trial**: A new free trial system lets you experience Natively API with built-in HWID+IP anti-abuse protections and seamless upgrade paths.
-- **Reliable Screenshot Capture**: Hardened and completely stable multi-screenshot capture with single-trigger `Cmd+Shift+Enter` analysis.
-- **Custom Provider Enhancements**: Custom cURL endpoints now completely support automatic meeting summaries and custom AI behaviors without breaking the prompt injection strategy.
-- **STT Connection Pools & Resilience**: Added round-robin connection pools for Deepgram and ElevenLabs with exponential backoff and shadow-probe failover, absolutely eliminating 1006 reconnect storms.
-- **Redesigned Premium UI**: Apple-tier designs applied across the Modes Pro Gate, Permissions Toaster, Free Trial Modals, and settings overlays using hardware-accelerated animations.
-- **Robust Webhook Billing**: Hardened API subscriptions webhook verifications and payment processing to properly coordinate Standard, Pro, Max, and Ultra API plans.
+- **Custom Persona Modes**: Technical Interview, Sales, Recruiting, Team Meet, Lecture, and more.
+- **Dynamic Note Templates**: AI generates structured meeting notes based on the active persona mode.
+- **Reference Files & Custom Context**: Upload PDFs, DOCX files, or custom instructions into the real-time prompt.
+- **10-Minute Free Trial**: Try the hosted API with built-in anti-abuse protections.
+- **Reliable Screenshot Capture**: Hardened multi-screenshot capture with single-trigger `Cmd+Shift+Enter` analysis.
+- **STT Connection Pools & Resilience**: Round-robin connection pools for Deepgram and ElevenLabs with exponential backoff.
 
 ---
 
 ## Table of Contents
 
-- [The free Cluely clone](#the-free-open-source-cluely-clone)
+- [Why REINIT Exists](#why-reinit-exists)
 - [What Users Are Saying](#what-users-are-saying)
-- [Why Natively?](#why-natively)
-- [3 things to know](#3-things-you-should-know-before-choosing-an-interview-ai)
+- [Why REINIT?](#why-reinit)
+- [3 things to know](#3-things-you-should-know-before-choosing-an-ai-career-copilot)
 - [Demo](#demo)
-- [Full comparison](#full-comparison-natively-vs-cluely-vs-final-round-ai-vs-lockedin-ai-vs-interview-coder)
-- [Why Natively wins](#why-natively-wins)
-- [AI Coding Assistant](#free-ai-coding-interview-assistant-undetectable-on-leetcode-hackerrank--coderpad)
-- [Natively Pro](#natively-pro)
+- [Full comparison](#full-comparison-reinit-vs-cluely-vs-final-round-ai-vs-lockedin-ai-vs-interview-coder)
+- [Why REINIT wins](#why-reinit-wins)
+- [REINIT Pro](#reinit-pro)
 - [What's New in v2.6.0](#whats-new-in-v260)
 - [Privacy & Security](#privacy--security-core-design-principle)
 - [Installation](#installation-developers--contributors)
@@ -432,28 +394,27 @@ Version 2.5.0 introduces major feature upgrades, architectural overhauls, and ro
 - [Contributing](#contributing)
 - [License](#license)
 - [FAQ](#faq)
-- [Alternatives Natively replaces](#alternatives-natively-replaces)
-- [Star History](#star-history)
 
 ---
 
-## What Is Natively?
+## What Is REINIT?
 
-**Natively** is a **desktop AI assistant for live situations**:
+**REINIT** is a **desktop AI copilot for your professional life**:
 
-- Meetings
-- Interviews
-- Presentations
-- Classes
-- Professional conversations
+- Job interviews
+- Sales and client calls
+- Meetings and presentations
+- Negotiations
+- Technical assessments
+- Any high-stakes professional conversation
 
 It provides:
 
-- Live answers
+- Live answers and suggestions
 - Rolling conversational context
 - Screenshot and document understanding
 - Real-time speech-to-text
-- Instant suggestions for what to say next
+- Long-term memory of your past meetings via local RAG
 
 All while remaining **invisible, fast, and privacy-first**.
 
@@ -507,10 +468,10 @@ You explicitly control:
 
 ### AI Credentials & Speech Providers
 
-**Natively is 100% free to use with your own keys.**  
+**REINIT is 100% free to use with your own keys.**  
 Connect **any** speech provider and **any** LLM. No subscriptions, no markups, no hidden fees. All keys are stored locally.
 
-### Unlimited Free Transcription (Whisper, Google, Deepgram)
+### Speech Providers
 
 - **Soniox** (API Key) - _Ultra-fast, highly accurate streaming STT_
 - **Google Cloud Speech-to-Text** (Service Account)
@@ -523,8 +484,6 @@ Connect **any** speech provider and **any** LLM. No subscriptions, no markups, n
 
 ### AI Engine Support (Bring Your Own Key)
 
-Connect Natively to **any** leading model or local inference engine.
-
 | Provider                     | Best For                                                    |
 | :--------------------------- | :---------------------------------------------------------- |
 | **Gemini 3.1 Series**        | Recommended: Massive context window (2M tokens) & low cost. |
@@ -534,7 +493,7 @@ Connect Natively to **any** leading model or local inference engine.
 | **Ollama / LocalAI**         | 100% Offline & Private (No API keys needed).                |
 | **OpenAI-Compatible**        | Connect to _any_ custom endpoint (vLLM, LM Studio, etc.)    |
 
-> **Note:** You only need ONE speech provider to get started. We recommend **Google STT** ,**Groq** or **Deepgram** for the fastest real-time performance.
+> **Note:** You only need ONE speech provider to get started. We recommend **Google STT**, **Groq**, or **Deepgram** for the fastest real-time performance.
 
 ---
 
@@ -560,7 +519,7 @@ Setup Summary:
 3. Create a Service Account
 4. Assign role: `roles/speech.client`
 5. Generate and download a JSON key
-6. Point Natively to the JSON file in settings
+6. Point REINIT to the JSON file in settings
 
 ---
 
@@ -650,38 +609,36 @@ This runs: Vite build → TypeScript compile → native module build → electro
 - Instantly hide/show with shortcuts
 - Works across all applications
 
-### Real-time Interview Copilot & Coding Help
+### Real-time Career Copilot
 
 - Real-time speech-to-text (**<500ms latency**)
 - **Fast Response Mode**: Ultra-fast text responses using Groq Llama 3.3.
-- **Multilingual Support**: Choose from various response languages, and set speech recognition matching specific accents and dialects.
-- **Anti-Chatbot / Human Persona System**: Refined system prompts and negative constraints ensure responses are concise, conversational, and indistinguishable from a real candidate (no robotic preambles or lectures).
-- Context-aware Memory (RAG) for Past Meetings
+- **Multilingual Support**: Choose from various response languages and speech recognition accents.
+- **Human Persona System**: Refined system prompts ensure responses are concise, conversational, and natural — no robotic preambles.
+- Context-aware Memory (RAG) for past meetings
 - Instant answers as questions are asked
-- **Interim/Final Bridging**: Manual transcript finalization and interim bridging during recordings for higher accuracy.
 - **Smart Recap & Summaries**: Instant meeting minutes and executive summaries.
-- **TinyPrompts™ Engine**: Specialized prompt architecture for local SLMs (4B-8B params), ensuring instruction following and reasoning parity with cloud models on local hardware.
-- **Dynamic Note Templates**: AI automatically generates structured meeting notes based on your active persona mode (e.g., Tech Interview follow-ups vs Sales action items).
+- **TinyPrompts™ Engine**: Specialized prompt architecture for local SLMs (4B-8B params).
+- **Dynamic Note Templates**: AI generates structured notes based on your active persona mode.
 
-### Instant Screen & Slide Analysis (OCR) — AI Coding Interview Assistant
+### Screen & Slide Analysis (OCR)
 
-- Works on **LeetCode, HackerRank, CoderPad, Codility, HackerEarth** and any browser-based coding environment
-- Capture a coding problem with one shortcut — get a full solution, explanation, and complexity analysis instantly
-- Invisible overlay never appears on screen share or recordings
+- Works on LeetCode, HackerRank, CoderPad, Codility, HackerEarth, and any browser-based environment
+- Capture with one shortcut — get a full analysis instantly
+- Invisible overlay never appears on screen share
 - Multiple screenshot support for multi-part problems
-- Smart fallback to Groq Llama 4 Scout if primary vision model fails
 
 ### Premium Profile Intelligence
 
-- **Custom Persona Modes**: Seamlessly switch between built-in personas (Technical Interview, Sales, Recruiting) or create your own custom modes tailored to any conversation.
-- **Reference Files & Custom Context**: Upload PDFs, DOCX files, or type custom instructions to give the AI real-time context on your specific situation.
-- **Job Description & Resume Context**: Natively understands your background and the role you're applying for to provide highly tailored, context-aware answers.
-- **Company Research**: Get instant intelligence and dossiers on the company you are interviewing with.
-- **Negotiation Assistance**: Real-time guidance and strategy during offer and salary negotiations.
+- **Custom Persona Modes**: Switch between Technical Interview, Sales, Recruiting, or create your own.
+- **Reference Files & Custom Context**: Upload PDFs, DOCX files, or custom instructions.
+- **Job Description & Resume Context**: Tailored, context-aware answers based on your background and the role.
+- **Company Research**: Instant intelligence on the company you're meeting with.
+- **Negotiation Assistance**: Real-time guidance during offer and salary negotiations.
 
 ### Contextual Actions
 
-- What should I answer?
+- What should I say next?
 - Shorten response
 - Recap conversation
 - Suggest follow-up questions
@@ -692,56 +649,45 @@ This runs: Vite build → TypeScript compile → native module build → electro
 - **Phone Link:** Use your iOS/Android device as a wireless remote microphone or companion screen.
 - **Calendar Prep:** Auto-syncs with Google Calendar and Outlook to prepare context before meetings.
 - **Smart Task Export:** Send extracted action items directly to Jira, Linear, or Asana.
-- **Speaker Diarization:** Real-time speaker identification tags individual speakers by name automatically.
-- **Codex CLI:** Execute terminal tasks, manage workspace files, and run sandboxed code via native Codex integration.
+- **Speaker Diarization:** Real-time speaker identification tags individual speakers by name.
+- **Codex CLI:** Execute terminal tasks, manage workspace files, and run sandboxed code.
 
 ### Dual-Channel Audio Intelligence
 
-Natively understands that _listening_ to a meeting and _talking_ to an AI are different tasks. We treat them separately:
-
-- **System Audio (The Meeting):** Captures high-fidelity audio directly from your OS (fully supported on both macOS and Windows). It "hears" what your colleagues are saying without interference from your room noise.
-- **Sample Rate Auto-Detection**: Dynamically detects and syncs true hardware sample rates (e.g., automatically handling 48kHz audio interfaces or external microphones without distortion or downsampling artifacts).
-- **Two-Stage Silence Processing**: Combines adaptive RMS thresholds with **WebRTC Machine Learning VAD** to reject typing and fan noise.
-- **Microphone Input (Your Voice):** A dedicated channel for your voice commands and dictation. Toggle it instantly to ask Natively a private question without muting your meeting software.
-
-### Spotlight Search & Customization
-
-- Global activation shortcut (`Cmd+K` / `Ctrl+K`)
-- **Custom Key Bindings**: Customize global shortcuts for easier control.
-- Instant answer overlay
-- Upcoming meeting readiness
+- **System Audio (The Meeting):** Captures high-fidelity audio directly from your OS. Hears what others are saying without room noise interference.
+- **Sample Rate Auto-Detection**: Dynamically detects and syncs true hardware sample rates.
+- **Two-Stage Silence Processing**: Combines adaptive RMS thresholds with WebRTC Machine Learning VAD.
+- **Microphone Input (Your Voice):** Dedicated channel for voice commands and dictation.
 
 ### Local RAG & Long-Term Memory
 
 - **Full Offline RAG:** All vector embeddings and retrieval happen locally (SQLite + `sqlite-vec`).
-- **Semantic Search:** innovative "Smart Scope" detects if you are asking about the current meeting or a past one.
+- **Semantic Search:** Smart Scope detects if you're asking about the current meeting or a past one.
 - **Sliding-Window RAG**: 50-token semantic overlap to prevent context loss across chunk boundaries.
-- **Epoch Summarization**: Smarter transcript memory management instead of hard truncation — no more losing early meeting context.
-- **Global Knowledge:** Ask questions across _all_ your past meetings ("What did we decide about the API last month?").
+- **Global Knowledge:** Ask questions across _all_ your past meetings.
 - **Automatic Indexing:** Meetings are automatically chunked, embedded, and indexed in the background.
 
 ### Advanced Privacy & Stealth
 
-- **Undetectable Mode:** Instantly hide from dock/taskbar with visually locked selector to prevent state mismatches.
-- **Cross-Window State Sync**: Real-time state synchronization across Settings, Launcher, and Overlay windows.
-- **Process Disguise (Masquerading):** Instantly change the app to look like Terminal, System Settings, Activity Monitor, or other harmless utilities to completely evade detection during screen sharing.
-- **Security Hardening**: API keys are scrubbed from memory on app quit and credentials manager overwrites key data before disposal.
-- **API Rate Limiting**: Token-bucket algorithm (burst/refill) to prevent 429 errors on free-tier providers.
+- **Undetectable Mode:** Instantly hide from dock/taskbar.
+- **Process Disguise:** Change the app to look like Terminal, System Settings, Activity Monitor, or other system utilities.
+- **Security Hardening**: API keys are scrubbed from memory on app quit.
+- **API Rate Limiting**: Token-bucket algorithm to prevent 429 errors on free-tier providers.
 - **Local-Only Processing:** All data stays on your machine.
 
 ---
 
 ## Meeting Intelligence Dashboard
 
-Natively includes a powerful, local-first meeting management system to review, search, and manage your entire conversation history.
+REINIT includes a powerful, local-first meeting management system to review, search, and manage your entire conversation history.
 
 ![Dashboard Preview](assets/dashboard-preview.png)
 
 - **Meeting Archives:** Access full transcripts of every past meeting, searchable by keywords or dates.
-- **Smart Export:** One-click export of transcripts and AI summaries to **Markdown, JSON, or Text**—perfect for pasting into Notion, Obsidian, or Slack.
-- **Usage Statistics:** Track your token usage and API costs in real-time. Know exactly how much you are spending on Gemini, OpenAI, or Claude.
-- **Audio Separation:** Distinct controls for **System Audio** (what they say) vs. **Microphone** (what you dictate).
-- **Session Management:** Rename, organize, or delete past sessions to keep your workspace clean.
+- **Smart Export:** One-click export to **Markdown, JSON, or Text**.
+- **Usage Statistics:** Track your token usage and API costs in real-time.
+- **Audio Separation:** Distinct controls for System Audio vs. Microphone.
+- **Session Management:** Rename, organize, or delete past sessions.
 
 ---
 
@@ -749,7 +695,7 @@ Natively includes a powerful, local-first meeting management system to review, s
 
 ```mermaid
 timeline
-    title Natively Product Roadmap
+    title REINIT Product Roadmap
     section Recently Completed
         Personas : ✅ Custom Modes & Templates
         Trial : ✅ 10-Minute Free Trial
@@ -775,17 +721,17 @@ timeline
 
 ## Use Cases
 
-### Academic & Learning
+### Career & Interviews
 
-- **Live Assistance:** Get explanations for complex lecture topics in real-time.
-- **Translation:** Instant language translation during international classes.
-- **Problem Solving:** Immediate help with coding or mathematical problems.
+- **Interview Support:** Context-aware prompts to help you navigate technical and behavioral questions.
+- **Salary Negotiation:** Real-time strategy and talking points during offer discussions.
+- **Career Transitions:** Research, preparation, and real-time support for moving into a new field.
 
 ### Professional Meetings
 
-- **Interview Support:** Context-aware prompts to help you navigate technical questions.
-- **Sales & Client Calls:** Real-time clarification of technical specs or previous discussion points.
+- **Sales & Client Calls:** Real-time clarification of specs or previous discussion points.
 - **Meeting Summaries:** Automatically extract action items and core decisions.
+- **Performance Reviews:** Preparation and real-time recall of past accomplishments.
 
 ### Development & Technical Work
 
@@ -793,11 +739,16 @@ timeline
 - **Debugging:** Context-aware assistance for resolving logs or terminal errors.
 - **Architecture:** Guidance on system design and integration patterns.
 
+### Academic & Learning
+
+- **Live Assistance:** Explanations for complex lecture topics in real-time.
+- **Problem Solving:** Immediate help with coding or mathematical problems.
+
 ---
 
 ## Architecture Overview
 
-Natively processes audio, screen context, and user input locally, maintains a rolling context window, and sends only the required prompt data to the selected AI provider (local or cloud).
+REINIT processes audio, screen context, and user input locally, maintains a rolling context window, and sends only the required prompt data to the selected AI provider (local or cloud).
 
 No raw audio, screenshots, or transcripts are stored or transmitted unless explicitly enabled by the user.
 
@@ -809,7 +760,7 @@ No raw audio, screenshots, or transcripts are stored or transmitted unless expli
 
 - **React, Vite, TypeScript, TailwindCSS**
 - **Electron**
-- **Rust** (native audio with **Zero-Copy ABI Transfers** via `napi::Buffer` — enabling continuous audio capture without V8 garbage collection pressure, achieving significantly lower latency and CPU usage than typical Electron-based competitors)
+- **Rust** (native audio with **Zero-Copy ABI Transfers** via `napi::Buffer`)
 - **SQLite** (local storage with `sqlite-vec`)
 
 ### Supported Models
@@ -830,12 +781,12 @@ No raw audio, screenshots, or transcripts are stored or transmitted unless expli
 
 ## Responsible Use
 
-Natively is intended for:
+REINIT is intended for:
 
-- Learning
-- Productivity
+- Learning and skill development
+- Productivity and meeting efficiency
 - Accessibility
-- Professional assistance
+- Professional career advancement
 
 Users are responsible for complying with:
 
@@ -857,15 +808,13 @@ This project does not encourage misuse or deception.
 
 ## Contributing
 
-Contributions are welcome! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines on how to get started.
+Contributions are welcome! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
 
 - Bug fixes
 - Feature improvements
 - Documentation
 - UI/UX enhancements
 - New AI integrations
-
-Quality pull requests will be reviewed and merged.
 
 ### Maintainers
 
@@ -882,68 +831,55 @@ Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
 
 If you run or modify this software over a network, you must provide the full source code under the same license.
 
-This repository contains the open-source core of the project.
+This repository contains the open-source core of the project. Some features available in official releases are part of the commercial Premium Edition and are not included in this repository.
 
-Some features available in official releases are part of the
-commercial Premium Edition and are not included in this repository.
-
-> **Note:** This project is available for sponsorships, ads, or partnerships – perfect for companies in the AI, productivity, or developer tools space.
+> **Note:** This project is available for sponsorships, ads, or partnerships — perfect for companies in the AI, productivity, or developer tools space.
 
 ---
 
-**Star this repo if Natively helps you succeed in meetings, interviews, or presentations!**
+**Star this repo if REINIT helps you succeed in meetings, interviews, or the most important conversations of your career.**
 
 ---
 
 ## FAQ
 
-#### Is Natively really free?
+#### Is REINIT really free?
 
-Yes. Natively is an open-source project. You only pay for what you use by bringing your own API keys (Gemini, OpenAI, Anthropic, etc.), or use it **100% free** by connecting to a local Ollama instance.
+Yes. REINIT is an open-source project. You only pay for what you use by bringing your own API keys (Gemini, OpenAI, Anthropic, etc.), or use it **100% free** by connecting to a local Ollama instance.
 
-#### Does Natively work with Zoom, Teams, and Google Meet?
+#### Does REINIT work with Zoom, Teams, and Google Meet?
 
-Yes. Natively uses a Rust-based system audio capture that works universally across any desktop application, including Zoom, Microsoft Teams, Google Meet, Slack, and Discord.
+Yes. REINIT uses a Rust-based system audio capture that works universally across any desktop application, including Zoom, Microsoft Teams, Google Meet, Slack, and Discord.
 
 #### Is my data safe?
 
-Natively is built on **Privacy-by-Design**. By default, all transcripts, vector embeddings (Local RAG), and keys are stored locally on your machine. We collect only limited anonymous telemetry (no personal user data).
+REINIT is built on **Privacy-by-Design**. By default, all transcripts, vector embeddings, and keys are stored locally on your machine. We collect only limited anonymous telemetry (no personal user data).
 
-#### Can I use it for technical interviews?
+#### Can I use it for professional meetings and interviews?
 
-Natively is a powerful assistant for any professional situation. However, users are responsible for complying with their company policies and interview guidelines.
+Yes. REINIT is designed for any high-stakes professional conversation. Users are responsible for complying with their company policies and applicable guidelines.
 
 #### How do I use local models?
 
-Simply install **Ollama**, run a model (e.g., `ollama run llama3`), and Natively will automatically detect it. Enable "Ollama" in the AI Providers settings to switch to offline mode.
+Simply install **Ollama**, run a model (e.g., `ollama run llama3`), and REINIT will automatically detect it. Enable "Ollama" in the AI Providers settings to switch to offline mode.
 
-#### How does Natively compare to Cluely?
+#### How does REINIT compare to Cluely?
 
-Cluely is a $20/month cloud-based tool that stores all data on their servers. In mid-2025, Cluely suffered a data breach that exposed personal information, transcripts, and screenshots of 83,000 users. Natively is free, open-source, and stores everything locally. It supports any LLM (not just one vendor), offers local AI via Ollama, and has battle-tested stealth mode. Natively has never had a data breach because there is no server to breach.
+Cluely is a $20/month cloud-based tool that stores all data on their servers. In mid-2025, Cluely suffered a data breach that exposed personal information, transcripts, and screenshots of 83,000 users. REINIT is free, open-source, and stores everything locally. It supports any LLM, offers local AI via Ollama, and has never had a data breach because there is no server to breach.
 
 #### Is stealth mode actually undetectable?
 
-Yes. Natively hides from the dock, disguises process names as harmless system utilities (Terminal, Activity Monitor, System Settings), and syncs state across all windows. It has been hardened across five major releases and tested against screen share detection in Zoom, Teams, and Google Meet.
+Yes. REINIT hides from the dock, disguises process names as harmless system utilities (Terminal, Activity Monitor, System Settings), and syncs state across all windows. Hardened across five major releases and tested against screen share detection in Zoom, Teams, and Google Meet.
 
-#### Does Natively work on LeetCode and HackerRank?
+#### Is REINIT a free alternative to Interview Coder?
 
-Yes. Natively's screenshot + OCR captures any visible coding problem and returns a full solution through the invisible overlay. It works on LeetCode, HackerRank, CoderPad, Codility, HackerEarth, Karat, and any browser-based coding environment.
-
-#### Is Natively detectable during coding interviews?
-
-For standard online assessments (LeetCode, HackerRank, CoderPad, etc.), Natively is not detectable — it runs as a disguised system process and the overlay never appears in screen recordings or screen shares. It is **not** designed to bypass dedicated proctoring software like Pearson VUE, ProctorU, or Respondus Lockdown Browser, which operate at the OS level.
-
-#### Is Natively a free alternative to Interview Coder?
-
-Yes. Natively does everything Interview Coder does — screenshot OCR, real-time coding assistance, invisible overlay — and adds behavioral interview support, system design help, local RAG memory, and any-LLM BYOK. All for free.
+Yes. REINIT does everything Interview Coder does — screenshot OCR, real-time assistance, invisible overlay — and adds behavioral interview support, system design help, local RAG memory, and any-LLM BYOK. All for free.
 
 ---
 
-## Alternatives Natively Replaces
+## Alternatives REINIT Replaces
 
-Natively is a free, open-source alternative to:
-
-| Tool                | What Natively replaces                                                              |
+| Tool                | What REINIT replaces                                                                |
 | :------------------ | :---------------------------------------------------------------------------------- |
 | **Cluely**          | Real-time AI meeting copilot — without the $20/mo fee or data breach risk           |
 | **Final Round AI**  | Live AI interview copilot — without the $149/mo fee or proctor-visible taskbar icon |
@@ -957,10 +893,9 @@ Natively is a free, open-source alternative to:
 
 ---
 
-`ai-assistant` · `meeting-notes` · `interview-helper` · `cluely-alternative` · `cluely` · `lockhead-ai` · `lockheed-ai` · `parakeet-ai` · `interview-coder` · `final-round-ai` · `metaview-alternative` · `otter-ai-alternative` · `fireflies-alternative` · `local-ai` · `ollama` · `electron` · `privacy-first` · `open-source` · `real-time-transcription` · `interview-copilot` · `ai-meeting-assistant` · `moltbot`
+`career-copilot` · `ai-assistant` · `meeting-notes` · `interview-helper` · `cluely-alternative` · `cluely` · `reinit` · `parakeet-ai` · `interview-coder` · `final-round-ai` · `lockedin-ai-alternative` · `metaview-alternative` · `otter-ai-alternative` · `fireflies-alternative` · `local-ai` · `ollama` · `electron` · `privacy-first` · `open-source` · `real-time-transcription` · `interview-copilot` · `ai-meeting-assistant`
 
 ---
-
 
 ## Star History
 
@@ -972,8 +907,6 @@ Natively is a free, open-source alternative to:
  </picture>
 </a>
 
-<!-- SEO: free ai interview copilot · cluely clone · cluely alternative · open source cluely · cluely free version · cluely github · interview coder alternative · interview coder free · interview coder open source · free interview coder · leetcode ai assistant · hackerrank ai helper · coding interview ai · undetectable coding interview ai · ai for leetcode · ai coding interview assistant · final round ai alternative · lockedin ai alternative · parakeet ai alternative · free interview cheating tool · ai interview assistant · real-time interview ai · undetectable interview ai · best ai interview tool 2025 2026 · open source interview ai · stealth interview ai · interview cheating software · ai copilot interview · free interview ai · cluely open source clone · leetcode cheating tool · hackerrank cheat · coding interview cheat sheet ai -->
-
 <sub>
-free-ai-interview-copilot · open-source-cluely · cluely-alternative · cluely-clone · interview-coder-alternative · final-round-ai-alternative · lockedin-ai-alternative · ai-interview-assistant · real-time-interview-ai · undetectable-interview-ai · stealth-mode · local-ai · ollama · byok · rag · electron · rust · privacy-first · meeting-assistant · interview-helper · open-source-interview-ai
+career-copilot · reinit · ai-interview-assistant · real-time-interview-ai · cluely-alternative · cluely-clone · interview-coder-alternative · final-round-ai-alternative · lockedin-ai-alternative · stealth-mode · local-ai · ollama · byok · rag · electron · rust · privacy-first · meeting-assistant · interview-helper · open-source-interview-ai
 </sub>
