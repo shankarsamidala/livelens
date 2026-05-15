@@ -284,6 +284,7 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
     const [sttInterviewerStatus, setSttInterviewerStatus] = useState<'connected' | 'reconnecting' | 'failed'>('connected');
     const [sttInterviewerError, setSttInterviewerError] = useState<string>('');
     const [sttInterviewerProvider, setSttInterviewerProvider] = useState<string>('');
+    const [micMuted, setMicMuted] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [conversationContext, setConversationContext] = useState<string>('');
@@ -299,6 +300,8 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
         const stored = localStorage.getItem('natively_auto_scroll');
         return stored === 'true';
     });
+
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
     // Analytics State
     const requestStartTimeRef = useRef<number | null>(null);
@@ -333,6 +336,17 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
         if (messages.length === 0) return;
         messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }, [messages, autoScroll]);
+
+    // Meeting elapsed time — ticks every second while connected, resets on disconnect.
+    useEffect(() => {
+        if (!isConnected) { setElapsedSeconds(0); return; }
+        setElapsedSeconds(0);
+        const t = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
+        return () => clearInterval(t);
+    }, [isConnected]);
+
+    const [isManualMode, setIsManualMode] = useState(false);
+    const isManualModeRef = useRef(false);
 
     const [rollingTranscript, setRollingTranscript] = useState('');  // For interviewer rolling text bar
     const [isInterviewerSpeaking, setIsInterviewerSpeaking] = useState(false);  // Track if actively speaking
@@ -683,6 +697,8 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
             unsub?.();
         };
     }, []);
+
+    useEffect(() => { isManualModeRef.current = isManualMode; }, [isManualMode]);
 
     // Keep the closure-free isExpanded mirror in sync.
     useEffect(() => { isExpandedRef.current = isExpanded; }, [isExpanded]);
@@ -1162,20 +1178,28 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
             setIsInterviewerSpeaking(!transcript.final);
 
             if (transcript.final) {
-                // Append finalized text to accumulated transcript
-                setRollingTranscript(prev => {
-                    const separator = prev ? '  ·  ' : '';
-                    return prev + separator + transcript.text;
-                });
+                if (isManualModeRef.current) {
+                    // Manual mode: append finalized transcript into the chat input box.
+                    // User reads, edits if needed, then hits Send.
+                    setInputValue(prev => {
+                        const sep = prev.trimEnd().length > 0 ? ' ' : '';
+                        return prev.trimEnd() + sep + transcript.text;
+                    });
+                } else {
+                    // Auto mode: accumulate in the rolling transcript bar as before.
+                    setRollingTranscript(prev => {
+                        const separator = prev ? '  ·  ' : '';
+                        return prev + separator + transcript.text;
+                    });
+                }
 
                 // Clear speaking indicator after pause
                 setTimeout(() => {
                     setIsInterviewerSpeaking(false);
                 }, 3000);
             } else {
-                // For partial transcripts, show current segment appended to accumulated
+                // Partial transcript always shown in the rolling bar regardless of mode.
                 setRollingTranscript(prev => {
-                    // Find where previous finalized content ends (look for last separator)
                     const lastSeparator = prev.lastIndexOf('  ·  ');
                     const accumulated = lastSeparator >= 0 ? prev.substring(0, lastSeparator + 5) : '';
                     return accumulated + transcript.text;
@@ -1210,12 +1234,14 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
 
 
         cleanups.push(window.electronAPI.onIntelligenceSuggestedAnswerToken((data) => {
+            if (isManualModeRef.current) return; // manual mode: user triggers manually
             // Coaching now arrives via onIntelligenceNegotiationCoaching only —
             // sentinel detection on this stream has been removed.
             queueToken('what_to_answer', data.token);
         }));
 
         cleanups.push(window.electronAPI.onIntelligenceSuggestedAnswer((data) => {
+            if (isManualModeRef.current) return;
             // PERF: flush any tokens still pending in the rAF buffer onto the
             // streaming row BEFORE we apply the final-answer setMessages, so no
             // tokens are lost on stream completion.
@@ -1251,6 +1277,9 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
         cleanups.push(window.electronAPI.onIntelligenceTokenBatch((data) => {
             const { kind, items } = data;
             if (!items || items.length === 0) return;
+            // In manual mode, suppress auto-fired suggested answers only.
+            // User-triggered intents (recap, clarify, follow_up, etc.) still go through.
+            if (isManualModeRef.current && kind === 'suggested_answer') return;
             if (kind === 'suggested_answer') {
                 for (const it of items) queueToken('what_to_answer', (it as any).token);
             } else if (kind === 'refined_answer') {
@@ -3121,14 +3150,56 @@ Provide only the answer, nothing else.`;
                                         <span className="truncate">{activeModeLabel ?? 'General'}</span>
                                         <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
                                     </button>
+                                    {/* Auto / Manual mode toggle */}
+                                    <button
+                                        onClick={() => setIsManualMode(prev => !prev)}
+                                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.10em] border interaction-base interaction-press shrink-0 ${
+                                            isManualMode
+                                                ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35)]'
+                                                : `${controlSurfaceClass} overlay-text-muted`
+                                        }`}
+                                        style={isManualMode ? undefined : appearance.controlStyle}
+                                        title={isManualMode ? 'Manual mode — click to switch to Auto' : 'Auto mode — click to switch to Manual'}
+                                    >
+                                        {isManualMode ? 'Manual' : 'Auto'}
+                                    </button>
                                 </div>
 
-                                {/* Center: drag handle — explicit drag region for moving the window */}
+                                {/* Center: drag handle + REC timer */}
                                 <div
-                                    className="drag-region flex-1 flex items-center justify-center self-stretch group/drag"
+                                    className="drag-region flex-1 flex items-center justify-center gap-2 self-stretch group/drag"
                                     title="Drag to move"
                                 >
-                                    <GripHorizontal className="w-4 h-4 overlay-text-muted opacity-40 group-hover/drag:opacity-90 transition-opacity" />
+                                    <GripHorizontal className="w-4 h-4 overlay-text-muted opacity-40 group-hover/drag:opacity-90 transition-opacity shrink-0" />
+                                    {isConnected && (
+                                        <span
+                                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-[0.06em] shrink-0 select-none transition-opacity duration-200"
+                                            style={micMuted ? {
+                                                color: 'rgba(250,249,245,0.35)',
+                                                background: 'rgba(250,249,245,0.05)',
+                                                border: '1px solid rgba(250,249,245,0.10)',
+                                                opacity: 0.5,
+                                            } : {
+                                                color: '#10b981',
+                                                background: 'rgba(16,185,129,0.10)',
+                                                border: '1px solid rgba(16,185,129,0.22)',
+                                            }}
+                                            title={micMuted ? 'Audio paused' : 'Recording'}
+                                        >
+                                            <span
+                                                className="w-1.5 h-1.5 rounded-full shrink-0"
+                                                style={{
+                                                    background: micMuted ? 'rgba(250,249,245,0.35)' : '#10b981',
+                                                    animation: micMuted ? 'none' : 'rt-pulse 1.4s ease-in-out infinite',
+                                                }}
+                                            />
+                                            {micMuted ? 'PAUSED' : (() => {
+                                                const m = Math.floor(elapsedSeconds / 60);
+                                                const s = elapsedSeconds % 60;
+                                                return `REC ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                                            })()}
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* Right: Opacity + actions */}
@@ -3155,20 +3226,27 @@ Provide only the answer, nothing else.`;
 
                                     <div className="w-px h-3.5 mx-1" style={appearance.dividerStyle} />
 
-                                    {/* Mic — STT status indicator (read-only, not a button) */}
-                                    <div
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg shrink-0 ${
-                                            sttUserStatus === 'connected'
-                                                ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35),0_4px_12px_-4px_rgba(217,119,87,0.45)]'
-                                                : sttUserStatus === 'reconnecting'
-                                                    ? 'overlay-icon-surface text-amber-400'
-                                                    : 'overlay-icon-surface text-red-400'
+                                    {/* System audio capture — mutes interviewer STT without stopping capture */}
+                                    <button
+                                        onClick={() => {
+                                            const next = !micMuted;
+                                            setMicMuted(next);
+                                            window.electronAPI?.systemAudioMute?.(next);
+                                        }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg shrink-0 interaction-base interaction-press ${
+                                            micMuted
+                                                ? 'overlay-icon-surface overlay-text-muted'
+                                                : sttInterviewerStatus === 'connected'
+                                                    ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35),0_4px_12px_-4px_rgba(217,119,87,0.45)]'
+                                                    : sttInterviewerStatus === 'reconnecting'
+                                                        ? 'overlay-icon-surface text-amber-400'
+                                                        : 'overlay-icon-surface text-red-400'
                                         }`}
-                                        style={sttUserStatus === 'connected' ? undefined : appearance.iconStyle}
-                                        title={sttUserStatus === 'connected' ? 'Microphone — listening' : sttUserStatus === 'reconnecting' ? 'Microphone — reconnecting…' : 'Microphone — STT not connected'}
+                                        style={(!micMuted && sttInterviewerStatus === 'connected') ? undefined : appearance.iconStyle}
+                                        title={micMuted ? 'System audio paused — click to resume' : sttInterviewerStatus === 'connected' ? 'System audio active — click to pause' : sttInterviewerStatus === 'reconnecting' ? 'System audio — reconnecting…' : 'System audio — not connected'}
                                     >
-                                        <Mic className="w-3.5 h-3.5" />
-                                    </div>
+                                        {micMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                                    </button>
 
                                     {/* Auto-scroll toggle — gates the chat scroll-to-bottom on new messages */}
                                     <button
@@ -3200,7 +3278,7 @@ Provide only the answer, nothing else.`;
                                         }}
                                         className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
                                             stealthTapActive
-                                                ? 'bg-emerald-500/15 text-emerald-300 shadow-[0_0_0_1px_rgba(52,211,153,0.30)]'
+                                                ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35),0_4px_12px_-4px_rgba(217,119,87,0.45)]'
                                                 : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'
                                         }`}
                                         style={stealthTapActive ? undefined : appearance.iconStyle}
@@ -3223,8 +3301,12 @@ Provide only the answer, nothing else.`;
                                             const y = window.screenY + contentRect.bottom + GAP;
                                             window.electronAPI.toggleSettingsWindow({ x, y });
                                         }}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isSettingsOpen ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
-                                        style={appearance.iconStyle}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
+                                            isSettingsOpen
+                                                ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35),0_4px_12px_-4px_rgba(217,119,87,0.45)]'
+                                                : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'
+                                        }`}
+                                        style={isSettingsOpen ? undefined : appearance.iconStyle}
                                         title="Settings"
                                     >
                                         <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -3320,25 +3402,23 @@ Provide only the answer, nothing else.`;
                                 </div>
                             )}
 
-                            {/* Rolling Transcript Bar — includes STT status indicator inline */}
-                            {(showTranscript && rollingTranscript) || interviewerSttIndicatorStatus !== 'connected' || sttUserStatus !== 'connected' ? (
-                                <RollingTranscript
-                                    text={showTranscript ? rollingTranscript : ''}
-                                    isActive={isInterviewerSpeaking}
-                                    surfaceStyle={showTranscript ? appearance.transcriptStyle : undefined}
-                                    interviewerChannel={{
-                                        status: interviewerSttIndicatorStatus,
-                                        error: interviewerSttIndicatorError,
-                                        provider: sttInterviewerProvider,
-                                    }}
-                                    microphoneChannel={{
-                                        status: sttUserStatus,
-                                        error: sttUserError,
-                                        provider: sttUserProvider,
-                                    }}
-                                    onCopyDiagnostics={copyDiagnostics}
-                                />
-                            ) : null}
+                            {/* Rolling Transcript Bar — always visible during a session */}
+                            <RollingTranscript
+                                text={showTranscript ? rollingTranscript : ''}
+                                isActive={isInterviewerSpeaking}
+                                surfaceStyle={showTranscript ? appearance.transcriptStyle : undefined}
+                                interviewerChannel={{
+                                    status: interviewerSttIndicatorStatus,
+                                    error: interviewerSttIndicatorError,
+                                    provider: sttInterviewerProvider,
+                                }}
+                                microphoneChannel={{
+                                    status: sttUserStatus,
+                                    error: sttUserError,
+                                    provider: sttUserProvider,
+                                }}
+                                onCopyDiagnostics={copyDiagnostics}
+                            />
 
                             {/* Chat History - Only show if there are messages OR active states */}
                             {(messages.length > 0 || isManualRecording || isProcessing) && (
@@ -3535,7 +3615,7 @@ Provide only the answer, nothing else.`;
                                     padding landed on a non-engage element and the input felt dead. */}
                                 <div
                                     data-stealth-engage="true"
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all duration-150 ${inputClass} ${stealthTapActive ? 'ring-2 ring-emerald-400/30 border-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.15)]' : ''}`}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all duration-150 ${inputClass} ${stealthTapActive ? 'ring-2 ring-[#d97757]/30 border-[#d97757]/40 shadow-[0_0_12px_rgba(217,119,87,0.15)]' : ''}`}
                                     style={appearance.inputStyle}
                                 >
                                     <div className="relative flex-1 min-w-0">
@@ -3588,7 +3668,7 @@ Provide only the answer, nothing else.`;
                                             stealth type
                                         </span>
                                     </div>
-                                    <div className={`flex items-center gap-1.5 text-[10px] ${stealthTapActive ? 'text-emerald-400' : 'overlay-text-muted'}`}>
+                                    <div className={`flex items-center gap-1.5 text-[10px] ${stealthTapActive ? 'text-[#d97757]' : 'overlay-text-muted'}`}>
                                         <Ghost className="w-3 h-3" />
                                         {stealthTapActive ? 'Stealth active' : 'Stealth ready'}
                                     </div>

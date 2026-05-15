@@ -327,6 +327,8 @@ interface ElectronAPI {
   // Tavily Search API
   setTavilyApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>;
 
+  systemAudioMute: (muted: boolean) => Promise<void>;
+
   // Overlay Opacity (Stealth Mode)
   setOverlayOpacity: (opacity: number) => Promise<void>;
   onOverlayOpacityChanged: (callback: (opacity: number) => void) => () => void;
@@ -1285,6 +1287,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.removeListener('modes-active-cleared', subscription);
     };
   },
+
+  // System audio mute (silences interviewer/meeting STT without stopping capture)
+  systemAudioMute: (muted: boolean) => ipcRenderer.invoke('system-audio-mute', muted),
 
   // Overlay Opacity (Stealth Mode)
   setOverlayOpacity: (opacity: number) => ipcRenderer.invoke('set-overlay-opacity', opacity),

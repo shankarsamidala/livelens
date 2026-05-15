@@ -3373,6 +3373,10 @@ export function initializeIpcHandlers(appState: AppState): void {
   // Overlay Opacity (Stealth Mode)
   // ==========================================
 
+  safeHandle("system-audio-mute", (_, muted: boolean) => {
+    appState._systemAudioMuted = muted;
+  });
+
   safeHandle("set-overlay-opacity", async (_, opacity: number) => {
     // Clamp to valid range
     const clamped = Math.min(1.0, Math.max(0.35, opacity));

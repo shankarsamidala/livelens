@@ -274,6 +274,7 @@ export class AppState {
   // session. Reset on every reconfigureAudio / new pipeline build so the next
   // first-chunk handler reads the freshly-detected native rate.
   private _sysSttRateApplied: boolean = false;
+  public _systemAudioMuted: boolean = false;
   private _micSttRateApplied: boolean = false;
   private _disguiseTimers: NodeJS.Timeout[] = []; // Track forceUpdate timeouts
   private _dockDebounceTimer: NodeJS.Timeout | null = null; // Debounce dock state changes
@@ -1396,7 +1397,9 @@ export class AppState {
         }
       }
 
-      this.googleSTT?.write(chunk);
+      if (!this._systemAudioMuted) {
+        this.googleSTT?.write(chunk);
+      }
     });
     capture.on('sample_rate_changed', (rate: number) => {
       console.log(`${prefix}SystemAudioCapture rate updated dynamically to ${rate}Hz`);
