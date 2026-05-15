@@ -584,6 +584,23 @@ export class DatabaseManager {
             this.db.pragma('user_version = 14');
         }
 
+        // Version 14 → 15: Add index on embedding_queue(status) for O(1) pending-row lookups.
+        // Without this, EmbeddingPipeline's `WHERE status = 'pending'` scans the entire table
+        // on every polling tick — linear cost grows with history and will noticeably slow post-
+        // meeting processing once a user has hundreds of meetings.
+        if (version < 15) {
+            console.log('[DatabaseManager] Applying migration v14 → v15: Add embedding_queue status index');
+            try {
+                this.db.exec(
+                    'CREATE INDEX IF NOT EXISTS idx_eq_status ON embedding_queue(status);'
+                );
+                console.log('[DatabaseManager] v15 migration: idx_eq_status created ✓');
+            } catch (e) {
+                console.error('[DatabaseManager] v15 migration failed (non-fatal):', e);
+            }
+            this.db.pragma('user_version = 15');
+        }
+
         console.log('[DatabaseManager] Migrations completed.');
     }
 
@@ -652,15 +669,18 @@ export class DatabaseManager {
     public updateMode(id: string, updates: { name?: string; templateType?: string; customContext?: string }): void {
         if (!this.db) return;
         try {
-            if (updates.name !== undefined) {
-                this.db.prepare('UPDATE modes SET name = ? WHERE id = ?').run(updates.name, id);
-            }
-            if (updates.templateType !== undefined) {
-                this.db.prepare('UPDATE modes SET template_type = ? WHERE id = ?').run(updates.templateType, id);
-            }
-            if (updates.customContext !== undefined) {
-                this.db.prepare('UPDATE modes SET custom_context = ? WHERE id = ?').run(updates.customContext, id);
-            }
+            const txn = this.db.transaction(() => {
+                if (updates.name !== undefined) {
+                    this.db!.prepare('UPDATE modes SET name = ? WHERE id = ?').run(updates.name, id);
+                }
+                if (updates.templateType !== undefined) {
+                    this.db!.prepare('UPDATE modes SET template_type = ? WHERE id = ?').run(updates.templateType, id);
+                }
+                if (updates.customContext !== undefined) {
+                    this.db!.prepare('UPDATE modes SET custom_context = ? WHERE id = ?').run(updates.customContext, id);
+                }
+            });
+            txn();
         } catch (e) {
             console.error('[DatabaseManager] updateMode failed:', e);
         }
@@ -754,15 +774,18 @@ export class DatabaseManager {
     public updateNoteSection(id: string, updates: { title?: string; description?: string; sortOrder?: number }): void {
         if (!this.db) return;
         try {
-            if (updates.title !== undefined) {
-                this.db.prepare('UPDATE mode_note_sections SET title = ? WHERE id = ?').run(updates.title, id);
-            }
-            if (updates.description !== undefined) {
-                this.db.prepare('UPDATE mode_note_sections SET description = ? WHERE id = ?').run(updates.description, id);
-            }
-            if (updates.sortOrder !== undefined) {
-                this.db.prepare('UPDATE mode_note_sections SET sort_order = ? WHERE id = ?').run(updates.sortOrder, id);
-            }
+            const txn = this.db.transaction(() => {
+                if (updates.title !== undefined) {
+                    this.db!.prepare('UPDATE mode_note_sections SET title = ? WHERE id = ?').run(updates.title, id);
+                }
+                if (updates.description !== undefined) {
+                    this.db!.prepare('UPDATE mode_note_sections SET description = ? WHERE id = ?').run(updates.description, id);
+                }
+                if (updates.sortOrder !== undefined) {
+                    this.db!.prepare('UPDATE mode_note_sections SET sort_order = ? WHERE id = ?').run(updates.sortOrder, id);
+                }
+            });
+            txn();
         } catch (e) {
             console.error('[DatabaseManager] updateNoteSection failed:', e);
         }
@@ -844,7 +867,7 @@ export class DatabaseManager {
                             insert.run(row.id, row.embedding);
                         } catch (err) {
                             // On mismatch (e.g. mixed 768 and 3072 dims), nullify to re-embed later
-                            this.db.prepare('UPDATE chunks SET embedding = NULL WHERE id = ?').run(row.id);
+                            this.db!.prepare('UPDATE chunks SET embedding = NULL WHERE id = ?').run(row.id);
                         }
                     }
                 });
@@ -870,7 +893,7 @@ export class DatabaseManager {
                         try {
                             insert.run(row.id, row.embedding);
                         } catch (err) {
-                            this.db.prepare('UPDATE chunk_summaries SET embedding = NULL WHERE id = ?').run(row.id);
+                            this.db!.prepare('UPDATE chunk_summaries SET embedding = NULL WHERE id = ?').run(row.id);
                         }
                     }
                 });
