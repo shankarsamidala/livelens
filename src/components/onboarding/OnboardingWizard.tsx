@@ -63,8 +63,6 @@ export function OnboardingWizard({ onComplete }: Props) {
 function WizardShell({
   step, onBack, onNext, onSkip,
 }: { step: number; onBack: () => void; onNext: () => void; onSkip: () => void }) {
-  const progress = (step / TOTAL) * 100;
-
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', gridTemplateColumns: '1fr 1fr', fontFamily: FONT }}>
       {/* ── Left: dot background + form ── */}
@@ -76,18 +74,14 @@ function WizardShell({
           <span style={{ fontSize: 16, fontWeight: 700, color: INK_900, letterSpacing: '-0.02em' }}>reinit.in</span>
         </div>
 
-        {/* Progress */}
+        {/* Step indicator */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ background: `rgba(217,119,87,0.18)`, borderRadius: 99, height: 4, width: '100%' }}>
-            <motion.div
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as any }}
-              style={{ height: 4, borderRadius: 99, background: BRAND }}
-            />
-          </div>
-          <p style={{ fontSize: 11, color: 'rgba(26,26,26,0.45)', marginTop: 6, textAlign: 'right' }}>
+          <span style={{
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase',
+            color: BRAND,
+          }}>
             Step {step} of {TOTAL}
-          </p>
+          </span>
         </div>
 
         {/* Step form */}
