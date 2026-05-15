@@ -265,8 +265,8 @@ const App: React.FC = () => {
         // First ever launch — show permissions toaster
         setShowPermissionsToaster(true);
       } else {
-        // Subsequent launches — trial promo will self-gate via TrialPromoToaster
-        setShowTrialPromo(true);
+        // Trial promo disabled — REINIT is positioned as a free career copilot
+        // setShowTrialPromo(true);
       }
     }
 

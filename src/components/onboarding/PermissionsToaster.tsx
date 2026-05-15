@@ -1,49 +1,36 @@
 // src/components/onboarding/PermissionsToaster.tsx
 //
-// Skills: ui-ux-pro-max · ui-design-system · canvas-designer · frontend-design
-//
-// Premium Apple-style permissions request card.
-// Shows once on first launch, after the launcher UI is visible.
-// macOS: requests mic via system dialog, opens System Preferences for screen recording.
-// Windows: shows a simple instruction notice (OS handles permissions at first use).
+// REINIT-branded first-launch permissions screen.
+// Matches the REINIT dashboard design system:
+//   — dot background (light #F5F5F5 + gray radial dots)
+//   — brand orange #D97757 for accents and CTA
+//   — dark right column #1A1A1A with value props
+//   — Inter typography
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { X, Monitor, Mic, CheckCircle, AlertCircle, ExternalLink, ArrowRight } from 'lucide-react';
+import { X, Monitor, Mic, CheckCircle, AlertCircle, ExternalLink, ArrowRight, Check } from 'lucide-react';
+import logoAsset from '../../assets/logo.png';
 
-const STORAGE_KEY  = 'natively_perms_shown_v1';
+const STORAGE_KEY      = 'natively_perms_shown_v1';
 const STARTUP_DELAY_MS = 1_400;
 
-// ─── Design tokens ────────────────────────────────────────────
-const T = {
-  font:    '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
-  violet:  '#8B5CF6',
-  violetG: 'rgba(139,92,246,0.38)',
-  green:   '#34D399',
-  greenG:  'rgba(52,211,153,0.32)',
-  amber:   '#FBBF24',
-  red:     '#F87171',
-  t1: '#FFFFFF',
-  t2: 'rgba(255,255,255,0.72)',
-  t3: 'rgba(255,255,255,0.44)',
-  t4: 'rgba(255,255,255,0.26)',
-  glass:    'rgba(255,255,255,0.04)',
-  glassMid: 'rgba(255,255,255,0.07)',
-  rule:     'rgba(255,255,255,0.08)',
+const BRAND   = '#D97757';
+const INK_900 = '#1A1A1A';
+
+const dotBgStyle: React.CSSProperties = {
+  backgroundColor:  '#F5F5F5',
+  backgroundImage:  'radial-gradient(circle, rgba(200,200,200,0.6) 2px, transparent 2px)',
+  backgroundSize:   '36px 36px',
 };
 
-const GT: React.CSSProperties = {
-  background: 'linear-gradient(140deg, #FFFFFF 25%, rgba(196,181,253,0.9) 100%)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text',
-};
+const VALUE_PROPS = [
+  'Capture every meeting — automatic and private',
+  'Real-time AI coaching during interviews',
+  'Your career history, always at your fingertips',
+];
 
-const STAGGER = { hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } } };
-const ITEM    = {
-  hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
-  show:   { opacity: 1, y: 0,  filter: 'blur(0px)', transition: { duration: 0.46, ease: [0.22, 1, 0.36, 1] as any } },
-};
+const FONT = 'Inter, -apple-system, BlinkMacSystemFont, sans-serif';
 
 type PermStatus = 'granted' | 'denied' | 'not-determined' | 'restricted' | 'loading';
 
@@ -51,6 +38,12 @@ interface Props {
   isOpen:    boolean;
   onDismiss: () => void;
 }
+
+const STAGGER = { hidden: {}, show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } } };
+const ITEM    = {
+  hidden: { opacity: 0, y: 10 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as any } },
+};
 
 export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
   const [visible,    setVisible]    = useState(false);
@@ -82,7 +75,6 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
     return () => clearTimeout(t);
   }, [isOpen, refreshStatus]);
 
-  // Re-check permissions when window regains focus (user returned from System Preferences)
   useEffect(() => {
     if (!visible) return;
     const onFocus = () => refreshStatus();
@@ -112,26 +104,6 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
 
   return (
     <AnimatePresence>
-      <style>{`
-        @keyframes perm-border-flow {
-          0%, 100% { background-position: 0% 50%; }
-          50%       { background-position: 100% 50%; }
-        }
-        .perm-border {
-          background: linear-gradient(145deg,
-            rgba(139,92,246,0.75),
-            rgba(59,130,246,0.55),
-            rgba(139,92,246,0.7),
-            rgba(52,211,153,0.5)
-          );
-          background-size: 300% 300%;
-          animation: perm-border-flow 6s ease infinite;
-        }
-        .perm-border-reduced {
-          background: linear-gradient(145deg, rgba(139,92,246,0.55), rgba(59,130,246,0.4), rgba(52,211,153,0.38));
-        }
-      `}</style>
-
       {/* Backdrop */}
       <motion.div
         key="perm-backdrop"
@@ -140,128 +112,178 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
         style={{
           position: 'fixed', inset: 0, zIndex: 9998,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(139,92,246,0.06) 0%, rgba(0,0,0,0.84) 100%)',
-          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.52)',
+          backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
         } as React.CSSProperties}
         onClick={e => { if (e.target === e.currentTarget) handleDismiss(); }}
       >
-        {/* Gradient border wrapper */}
+        {/* Two-column card */}
         <motion.div
           key="perm-card"
-          initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.93, y: 20, filter: 'blur(10px)' }}
-          animate={reduced ? { opacity: 1 } : { opacity: 1, scale: 1,    y: 0,  filter: 'blur(0px)' }}
-          exit={   reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 14, filter: 'blur(4px)' }}
-          transition={{ type: 'spring', stiffness: 290, damping: 25, mass: 0.82 }}
-          className={reduced ? 'perm-border-reduced' : 'perm-border'}
-          style={{ padding: '1.5px', borderRadius: '23px', boxShadow: '0 48px 120px -20px rgba(0,0,0,0.95), 0 0 80px rgba(139,92,246,0.06)' }}
+          initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 16 }}
+          animate={reduced ? { opacity: 1 } : { opacity: 1, scale: 1,    y: 0  }}
+          exit={   reduced ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 10 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.8 }}
+          style={{
+            display: 'flex',
+            width: '760px',
+            maxWidth: 'calc(100vw - 48px)',
+            borderRadius: '20px',
+            overflow: 'hidden',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.38), 0 0 0 1px rgba(0,0,0,0.07)',
+            fontFamily: FONT,
+          }}
         >
-          <div style={{
-            position: 'relative', width: '430px', borderRadius: '22px', overflow: 'hidden',
-            background: 'linear-gradient(150deg, rgba(10,10,18,0.99) 0%, rgba(6,6,11,1) 100%)',
-            fontFamily: T.font,
-          }}>
-            {/* Catch-light */}
-            <div aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.14)', pointerEvents: 'none', zIndex: 5 }} />
+          {/* ── Left column: dot background + form ── */}
+          <div style={{ ...dotBgStyle, flex: 1, padding: '32px 32px 28px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
-            {/* Aurora glow */}
-            {!reduced && (
-              <motion.div aria-hidden
-                animate={{ opacity: [0.07, 0.15, 0.07] }}
-                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ position: 'absolute', top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '400px', height: '280px', background: 'radial-gradient(ellipse, rgba(139,92,246,0.28) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 1 }}
-              />
-            )}
-
-            {/* Grain texture */}
-            <div aria-hidden style={{
-              position: 'absolute', inset: 0, borderRadius: '22px', pointerEvents: 'none', zIndex: 4, opacity: 0.028, mixBlendMode: 'overlay',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              backgroundSize: '180px 180px',
-            }} />
-
-            <div style={{ padding: '26px 28px 28px', position: 'relative', zIndex: 6 }}>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px', paddingBottom: '16px', borderBottom: `1px solid ${T.rule}` }}>
-                <span style={{ fontSize: '10.5px', fontWeight: 660, letterSpacing: '0.14em', textTransform: 'uppercase', color: T.t2 }}>
-                  Natively · Permissions
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <img src={logoAsset} alt="REINIT" style={{ height: '26px', width: 'auto' }} />
+                <span style={{ fontSize: '16px', fontWeight: 700, color: INK_900, letterSpacing: '-0.02em', fontFamily: FONT }}>
+                  reinit.in
                 </span>
-                <button onClick={handleDismiss} aria-label="Dismiss"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', opacity: 0.35, padding: 0, transition: 'opacity 150ms, background 150ms' }}
-                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.35'; e.currentTarget.style.background = 'transparent'; }}>
-                  <X size={13} strokeWidth={2.3} color="#fff" />
+              </div>
+              <button
+                onClick={handleDismiss}
+                aria-label="Dismiss"
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: '50%', color: 'rgba(26,26,26,0.38)', padding: 0,
+                  transition: 'background 150ms, color 150ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.07)'; e.currentTarget.style.color = INK_900; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(26,26,26,0.38)'; }}
+              >
+                <X size={14} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            <motion.div variants={STAGGER} initial="hidden" animate="show" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+              {/* Headline */}
+              <motion.div variants={ITEM}>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: INK_900, letterSpacing: '-0.03em', lineHeight: 1.2, margin: '0 0 6px', fontFamily: FONT }}>
+                  One-time setup
+                </h2>
+                <p style={{ fontSize: '13px', lineHeight: 1.65, color: 'rgba(26,26,26,0.52)', margin: 0, fontFamily: FONT }}>
+                  {platform === 'darwin'
+                    ? 'REINIT needs screen and microphone access to capture meetings and coach you in real time.'
+                    : 'Click "Allow" if Windows asks for microphone or screen access when you start a meeting.'}
+                </p>
+              </motion.div>
+
+              {/* Permission rows */}
+              <motion.div variants={ITEM} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <PermRow
+                  icon={Monitor}
+                  label="Screen Recording"
+                  description="Required to capture meeting content"
+                  status={scrStatus}
+                  platform={platform}
+                  actionLabel="Open Settings"
+                  actionIcon={ExternalLink}
+                  onAction={platform === 'darwin' ? openScreenSettings : undefined}
+                />
+                <PermRow
+                  icon={Mic}
+                  label="Microphone"
+                  description="Required for speech transcription"
+                  status={micStatus}
+                  platform={platform}
+                  actionLabel={requesting ? 'Requesting…' : 'Request Access'}
+                  onAction={micStatus !== 'granted' && !requesting ? handleMicRequest : undefined}
+                />
+              </motion.div>
+
+              {/* CTA */}
+              <motion.div variants={ITEM} style={{ marginTop: 'auto' }}>
+                <button
+                  onClick={handleDismiss}
+                  style={{
+                    width: '100%', height: '48px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    borderRadius: '12px', border: 'none', cursor: 'pointer',
+                    fontFamily: FONT, fontSize: '14px', fontWeight: 600, letterSpacing: '-0.01em',
+                    background: allGranted ? BRAND : 'rgba(26,26,26,0.08)',
+                    color:      allGranted ? '#fff' : 'rgba(26,26,26,0.45)',
+                    boxShadow:  allGranted
+                      ? '0 0 0 1px rgba(217,119,87,0.35), 0 4px 12px -4px rgba(217,119,87,0.45)'
+                      : 'none',
+                    transition: 'background 0.25s, box-shadow 0.25s, color 0.25s',
+                  }}
+                  onMouseEnter={e => {
+                    if (allGranted) { e.currentTarget.style.opacity = '0.9'; }
+                    else { e.currentTarget.style.background = 'rgba(26,26,26,0.12)'; }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.opacity = '1';
+                    if (!allGranted) e.currentTarget.style.background = 'rgba(26,26,26,0.08)';
+                  }}
+                >
+                  {allGranted ? 'All set — continue' : 'Continue'}
+                  <ArrowRight size={15} strokeWidth={2.2} />
                 </button>
+                {!allGranted && (
+                  <p style={{ fontSize: '11px', color: 'rgba(26,26,26,0.35)', textAlign: 'center', marginTop: '8px', fontFamily: FONT }}>
+                    You can grant permissions later in System Preferences.
+                  </p>
+                )}
+              </motion.div>
+
+            </motion.div>
+          </div>
+
+          {/* ── Right column: dark + value props ── */}
+          <div style={{
+            width: '272px', flexShrink: 0,
+            background: INK_900,
+            padding: '32px 28px',
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div>
+                <p style={{
+                  fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: BRAND, margin: '0 0 10px', fontFamily: FONT,
+                }}>
+                  Your AI Career Copilot
+                </p>
+                <h3 style={{
+                  fontSize: '21px', fontWeight: 700, color: '#fff',
+                  letterSpacing: '-0.03em', lineHeight: 1.22, margin: 0, fontFamily: FONT,
+                }}>
+                  Local. Private.<br />Always on.
+                </h3>
               </div>
 
-              <motion.div variants={STAGGER} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* Headline */}
-                <motion.div variants={ITEM}>
-                  <h2 style={{ ...GT, fontSize: '22px', fontWeight: 720, letterSpacing: '-0.03em', lineHeight: 1.2, margin: '0 0 8px' }}>
-                    Before we start
-                  </h2>
-                  <p style={{ fontSize: '13px', lineHeight: 1.64, color: T.t3, margin: 0, maxWidth: '340px' }}>
-                    {platform === 'darwin'
-                      ? 'Natively needs access to your screen and microphone to capture meetings and transcribe speech.'
-                      : 'Click "Allow" if Windows asks for microphone or screen access when you start a meeting.'}
-                  </p>
-                </motion.div>
-
-                {/* Permission rows — macOS only shows real status */}
-                <motion.div variants={ITEM} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <PermRow
-                    icon={Monitor}
-                    label="Screen Recording"
-                    description={platform === 'darwin' ? 'Required to capture meeting content' : 'Required to capture meeting content'}
-                    status={scrStatus}
-                    platform={platform}
-                    actionLabel="Open Settings"
-                    actionIcon={ExternalLink}
-                    onAction={platform === 'darwin' ? openScreenSettings : undefined}
-                    reduced={reduced}
-                  />
-                  <PermRow
-                    icon={Mic}
-                    label="Microphone"
-                    description="Required for speech transcription"
-                    status={micStatus}
-                    platform={platform}
-                    actionLabel={requesting ? 'Requesting…' : 'Request Access'}
-                    onAction={micStatus !== 'granted' && !requesting ? handleMicRequest : undefined}
-                    reduced={reduced}
-                  />
-                </motion.div>
-
-                {/* CTA */}
-                <motion.div variants={ITEM}>
-                  <button
-                    onClick={handleDismiss}
-                    style={{
-                      width: '100%', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '0 20px', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                      background: allGranted
-                        ? 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 50%, #5B21B6 100%)'
-                        : 'rgba(255,255,255,0.07)',
-                      boxShadow: allGranted ? `0 0 0 1px rgba(109,40,217,0.5), 0 8px 28px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.18)` : `0 0 0 1px ${T.rule}`,
-                      transition: 'background 0.3s, box-shadow 0.3s',
-                      fontFamily: T.font,
-                    }}
-                    onMouseEnter={e => { if (!allGranted) e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                    onMouseLeave={e => { if (!allGranted) e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
-                  >
-                    <span style={{ fontSize: '14px', fontWeight: 640, color: allGranted ? '#fff' : T.t2, letterSpacing: '-0.01em' }}>
-                      {allGranted ? 'All set — continue' : 'Continue'}
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px', listStyle: 'none', padding: 0, margin: 0 }}>
+                {VALUE_PROPS.map(prop => (
+                  <li key={prop} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{
+                      width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0, marginTop: '1px',
+                      background: 'rgba(217,119,87,0.14)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Check size={10} strokeWidth={2.8} color={BRAND} />
+                    </div>
+                    <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.68)', lineHeight: 1.52, fontFamily: FONT }}>
+                      {prop}
                     </span>
-                    <ArrowRight size={15} strokeWidth={2.2} color={allGranted ? '#fff' : T.t3} />
-                  </button>
-                  {!allGranted && (
-                    <p style={{ fontSize: '11px', color: T.t4, textAlign: 'center', marginTop: '10px', fontFamily: T.font }}>
-                      You can grant permissions later in System Preferences.
-                    </p>
-                  )}
-                </motion.div>
-              </motion.div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.32)', lineHeight: 1.55, margin: 0, fontFamily: FONT }}>
+                Built from a real career restart story. Everything stays on your machine — private by design.
+              </p>
             </div>
           </div>
+
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -271,7 +293,7 @@ export const PermissionsToaster: React.FC<Props> = ({ isOpen, onDismiss }) => {
 // ─── Single permission row ─────────────────────────────────────
 function PermRow({
   icon: Icon, label, description, status, platform,
-  actionLabel, actionIcon: ActionIcon, onAction, reduced,
+  actionLabel, actionIcon: ActionIcon, onAction,
 }: {
   icon:         React.ElementType;
   label:        string;
@@ -281,38 +303,48 @@ function PermRow({
   actionLabel:  string;
   actionIcon?:  React.ElementType;
   onAction?:    () => void;
-  reduced:      boolean;
 }) {
-  const isGranted  = status === 'granted';
-  const isDenied   = status === 'denied' || status === 'restricted';
-  const isPending  = status === 'loading' || status === 'not-determined';
+  const isGranted = status === 'granted';
+  const isDenied  = status === 'denied' || status === 'restricted';
+  const isPending = status === 'loading' || status === 'not-determined';
 
-  const statusColor = isGranted ? T.green : isDenied ? T.red : T.amber;
-  const statusLabel = platform !== 'darwin' ? 'System handles this'
-    : isGranted ? 'Granted' : isDenied ? 'Denied — re-enable in Settings' : 'Not yet granted';
+  const GREEN = '#10b981';
+  const RED   = '#ef4444';
+
+  const statusLabel = platform !== 'darwin'
+    ? 'System handles this'
+    : isGranted  ? 'Granted'
+    : isDenied   ? 'Denied — re-enable in Settings'
+    : 'Not yet granted';
+
+  const iconWellBg     = isGranted ? 'rgba(16,185,129,0.10)'  : isDenied ? 'rgba(239,68,68,0.08)'   : 'rgba(217,119,87,0.10)';
+  const iconWellBorder = isGranted ? 'rgba(16,185,129,0.20)'  : isDenied ? 'rgba(239,68,68,0.15)'   : 'rgba(217,119,87,0.20)';
+  const iconColor      = isGranted ? GREEN                     : isDenied ? RED                      : BRAND;
 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '14px',
-      padding: '14px 16px', borderRadius: '13px',
-      background: T.glass, border: `1px solid ${T.rule}`,
+      padding: '13px 16px', borderRadius: '12px',
+      background: 'rgba(255,255,255,0.72)',
+      border: `1px solid ${isGranted ? 'rgba(16,185,129,0.20)' : 'rgba(0,0,0,0.08)'}`,
       transition: 'border-color 0.3s',
-      ...(isGranted ? { borderColor: 'rgba(52,211,153,0.2)' } : {}),
+      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
     }}>
       {/* Icon well */}
       <div style={{
         width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: isGranted ? 'rgba(52,211,153,0.12)' : isDenied ? 'rgba(248,113,113,0.1)' : 'rgba(139,92,246,0.12)',
-        border: `1px solid ${isGranted ? 'rgba(52,211,153,0.22)' : isDenied ? 'rgba(248,113,113,0.18)' : 'rgba(139,92,246,0.2)'}`,
+        background: iconWellBg, border: `1px solid ${iconWellBorder}`,
       }}>
-        <Icon size={16} strokeWidth={1.75} color={isGranted ? T.green : isDenied ? T.red : T.violet} />
+        <Icon size={16} strokeWidth={1.75} color={iconColor} />
       </div>
 
       {/* Text */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '13px', fontWeight: 580, color: T.t1, letterSpacing: '-0.01em', fontFamily: T.font }}>{label}</div>
-        <div style={{ fontSize: '11.5px', color: T.t3, marginTop: '2px', fontFamily: T.font }}>
+        <div style={{ fontSize: '13px', fontWeight: 600, color: INK_900, letterSpacing: '-0.01em', fontFamily: FONT }}>
+          {label}
+        </div>
+        <div style={{ fontSize: '11.5px', color: 'rgba(26,26,26,0.48)', marginTop: '2px', fontFamily: FONT }}>
           {isPending || platform !== 'darwin' ? description : statusLabel}
         </div>
       </div>
@@ -321,11 +353,11 @@ function PermRow({
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         {/* Dot indicator */}
         {platform === 'darwin' && !isPending && (
-          <motion.div
-            initial={{ scale: 0 }} animate={{ scale: 1 }}
-            transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 20 }}
-            style={{ width: '6px', height: '6px', borderRadius: '50%', background: statusColor, boxShadow: `0 0 8px ${isGranted ? T.greenG : 'rgba(248,113,113,0.5)'}` }}
-          />
+          <div style={{
+            width: '6px', height: '6px', borderRadius: '50%',
+            background: isGranted ? GREEN : isDenied ? RED : BRAND,
+            boxShadow: `0 0 6px ${isGranted ? 'rgba(16,185,129,0.4)' : isDenied ? 'rgba(239,68,68,0.4)' : 'rgba(217,119,87,0.4)'}`,
+          }} />
         )}
 
         {/* Action button (only when not granted) */}
@@ -335,20 +367,21 @@ function PermRow({
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-              background: 'rgba(139,92,246,0.18)', fontSize: '11.5px', fontWeight: 600,
-              color: 'rgba(196,181,253,0.9)', fontFamily: T.font, transition: 'background 150ms',
+              background: 'rgba(217,119,87,0.12)',
+              fontSize: '11.5px', fontWeight: 600, color: BRAND,
+              fontFamily: FONT, transition: 'background 150ms',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.28)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(139,92,246,0.18)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,119,87,0.20)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(217,119,87,0.12)'}
           >
             {ActionIcon && <ActionIcon size={11} strokeWidth={2} />}
             {actionLabel}
           </button>
         )}
 
-        {/* Granted checkmark */}
-        {isGranted && <CheckCircle size={16} strokeWidth={1.75} color={T.green} />}
-        {isDenied && platform === 'darwin' && <AlertCircle size={16} strokeWidth={1.75} color={T.red} />}
+        {/* Status icons */}
+        {isGranted && <CheckCircle size={16} strokeWidth={1.75} color={GREEN} />}
+        {isDenied && platform === 'darwin' && <AlertCircle size={16} strokeWidth={1.75} color={RED} />}
       </div>
     </div>
   );
