@@ -363,7 +363,7 @@
         <button class="topbar-btn" title="Auto-scroll">
           <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
         </button>
-        <button class="topbar-btn" title="Stealth typing">
+        <button class="topbar-btn" title="Stealth typing" onclick="this.classList.toggle('is-active'); var footer = document.getElementById('footer-ghost'); footer.style.color = this.classList.contains('is-active') ? '#d97757' : 'rgba(250,249,245,0.35)';">
           <i data-lucide="ghost" class="w-3.5 h-3.5"></i>
         </button>
         <button class="topbar-btn" title="Settings">
@@ -527,6 +527,8 @@
             <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--success);"></span>
             REC 02:14
           </span>
+          <!-- Ghost icon — syncs with topbar ghost button -->
+          <i id="footer-ghost" data-lucide="ghost" class="w-3.5 h-3.5" style="color:rgba(250,249,245,0.35); cursor:default;" title="Stealth ready"></i>
         </div>
       </div>
     </div>
