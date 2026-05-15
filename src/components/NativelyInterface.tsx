@@ -3150,56 +3150,14 @@ Provide only the answer, nothing else.`;
                                         <span className="truncate">{activeModeLabel ?? 'General'}</span>
                                         <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
                                     </button>
-                                    {/* Auto / Manual mode toggle */}
-                                    <button
-                                        onClick={() => setIsManualMode(prev => !prev)}
-                                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.10em] border interaction-base interaction-press shrink-0 ${
-                                            isManualMode
-                                                ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35)]'
-                                                : `${controlSurfaceClass} overlay-text-muted`
-                                        }`}
-                                        style={isManualMode ? undefined : appearance.controlStyle}
-                                        title={isManualMode ? 'Manual mode — click to switch to Auto' : 'Auto mode — click to switch to Manual'}
-                                    >
-                                        {isManualMode ? 'Manual' : 'Auto'}
-                                    </button>
                                 </div>
 
-                                {/* Center: drag handle + REC timer */}
+                                {/* Center: drag handle only */}
                                 <div
-                                    className="drag-region flex-1 flex items-center justify-center gap-2 self-stretch group/drag"
+                                    className="drag-region flex-1 flex items-center justify-center self-stretch group/drag"
                                     title="Drag to move"
                                 >
                                     <GripHorizontal className="w-4 h-4 overlay-text-muted opacity-40 group-hover/drag:opacity-90 transition-opacity shrink-0" />
-                                    {isConnected && (
-                                        <span
-                                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-[0.06em] shrink-0 select-none transition-opacity duration-200"
-                                            style={micMuted ? {
-                                                color: 'rgba(250,249,245,0.35)',
-                                                background: 'rgba(250,249,245,0.05)',
-                                                border: '1px solid rgba(250,249,245,0.10)',
-                                                opacity: 0.5,
-                                            } : {
-                                                color: '#10b981',
-                                                background: 'rgba(16,185,129,0.10)',
-                                                border: '1px solid rgba(16,185,129,0.22)',
-                                            }}
-                                            title={micMuted ? 'Audio paused' : 'Recording'}
-                                        >
-                                            <span
-                                                className="w-1.5 h-1.5 rounded-full shrink-0"
-                                                style={{
-                                                    background: micMuted ? 'rgba(250,249,245,0.35)' : '#10b981',
-                                                    animation: micMuted ? 'none' : 'rt-pulse 1.4s ease-in-out infinite',
-                                                }}
-                                            />
-                                            {micMuted ? 'PAUSED' : (() => {
-                                                const m = Math.floor(elapsedSeconds / 60);
-                                                const s = elapsedSeconds % 60;
-                                                return `REC ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                                            })()}
-                                        </span>
-                                    )}
                                 </div>
 
                                 {/* Right: Opacity + actions */}
@@ -3668,9 +3626,57 @@ Provide only the answer, nothing else.`;
                                             stealth type
                                         </span>
                                     </div>
-                                    <div className={`flex items-center gap-1.5 text-[10px] ${stealthTapActive ? 'text-[#d97757]' : 'overlay-text-muted'}`}>
-                                        <Ghost className="w-3 h-3" />
-                                        {stealthTapActive ? 'Stealth active' : 'Stealth ready'}
+                                    <div className="flex items-center gap-2">
+                                        {/* Auto / Manual toggle */}
+                                        <button
+                                            onClick={() => setIsManualMode(prev => !prev)}
+                                            className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-[0.10em] border interaction-base interaction-press shrink-0 ${
+                                                isManualMode
+                                                    ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35)]'
+                                                    : `${controlSurfaceClass} overlay-text-muted`
+                                            }`}
+                                            style={isManualMode ? undefined : appearance.controlStyle}
+                                            title={isManualMode ? 'Manual mode — click to switch to Auto' : 'Auto mode — click to switch to Manual'}
+                                        >
+                                            {isManualMode ? 'Manual' : 'Auto'}
+                                        </button>
+                                        {/* REC timer */}
+                                        {isConnected && (
+                                            <span
+                                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-[0.06em] shrink-0 select-none transition-opacity duration-200"
+                                                style={micMuted ? {
+                                                    color: 'rgba(250,249,245,0.35)',
+                                                    background: 'rgba(250,249,245,0.05)',
+                                                    border: '1px solid rgba(250,249,245,0.10)',
+                                                    opacity: 0.5,
+                                                } : {
+                                                    color: '#10b981',
+                                                    background: 'rgba(16,185,129,0.10)',
+                                                    border: '1px solid rgba(16,185,129,0.22)',
+                                                }}
+                                                title={micMuted ? 'Audio paused' : 'Recording'}
+                                            >
+                                                <span
+                                                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                                                    style={{
+                                                        background: micMuted ? 'rgba(250,249,245,0.35)' : '#10b981',
+                                                        animation: micMuted ? 'none' : 'rt-pulse 1.4s ease-in-out infinite',
+                                                    }}
+                                                />
+                                                {micMuted ? 'PAUSED' : (() => {
+                                                    const m = Math.floor(elapsedSeconds / 60);
+                                                    const s = elapsedSeconds % 60;
+                                                    return `REC ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                                                })()}
+                                            </span>
+                                        )}
+                                        {/* Ghost icon — colored when stealth tap is active */}
+                                        <span title={stealthTapActive ? 'Stealth active' : 'Stealth ready'}>
+                                            <Ghost
+                                                className="w-3.5 h-3.5 transition-colors"
+                                                style={{ color: stealthTapActive ? '#d97757' : 'rgba(250,249,245,0.35)' }}
+                                            />
+                                        </span>
                                     </div>
                                 </div>
                             </div>
