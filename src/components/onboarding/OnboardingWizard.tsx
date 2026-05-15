@@ -75,12 +75,10 @@ function WizardShell({
         </div>
 
         {/* Step indicator */}
-        <div style={{ marginBottom: 32 }}>
-          <span style={{
-            fontSize: 12, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase',
-            color: BRAND,
-          }}>
-            Step {step} of {TOTAL}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <span style={{ color: BRAND }}>Step {step}</span>
+            <span style={{ color: 'rgba(26,26,26,0.35)' }}> of {TOTAL}</span>
           </span>
         </div>
 
