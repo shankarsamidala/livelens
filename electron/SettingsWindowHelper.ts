@@ -150,8 +150,8 @@ export class SettingsWindowHelper {
     private createWindow(x?: number, y?: number, showWhenReady: boolean = true): void {
         const isMac = process.platform === 'darwin';
         const windowSettings: Electron.BrowserWindowConstructorOptions = {
-            width: 200, // Match React component width
-            height: 238, // Increased to accommodate new Transcript toggle
+            width: 236, // Match React component width (LiveLens parity)
+            height: 340, // ResizeObserver auto-fits; this is the initial size
             frame: false,
             transparent: true,
             resizable: false,

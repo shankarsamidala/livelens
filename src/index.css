@@ -923,6 +923,53 @@ body {
   -webkit-backdrop-filter: blur(var(--overlay-shell-blur)) saturate(140%);
 }
 
+/* Overlay chat input — no focus outline. The global *:focus-visible rule
+   draws a 2px accent outline on any focused element; the chat input shows
+   its focus state via the surrounding shell instead, so suppress it here. */
+.overlay-chat-input:focus,
+.overlay-chat-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Overlay "Capture & Process" button — pixel-exact port of
+   overlay-prototype.html .solve-btn */
+.overlay-solve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #d97757;
+  border: 1px solid rgba(217, 119, 87, 0.30);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px -8px rgba(217, 119, 87, 0.55);
+  transition: background 120ms ease, transform 120ms ease;
+}
+.overlay-solve-btn:hover { background: #c4623e; }
+.overlay-solve-btn:active { transform: scale(0.97); }
+
+/* Overlay keyboard chip — pixel-exact port of overlay-prototype.html .kbd */
+.overlay-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(250, 249, 245, 0.06);
+  border: 1px solid rgba(250, 249, 245, 0.06);
+  color: rgba(250, 249, 245, 0.55);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
 /* Hide native spinner arrows on overlay numeric inputs (e.g. opacity pill).
    The pill is interacted with via ↑/↓ keys + drag, not visible spinners. */
 .overlay-numeric-input::-webkit-inner-spin-button,

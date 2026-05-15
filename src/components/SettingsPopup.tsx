@@ -1,141 +1,290 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { MessageSquare, Link, Camera, Zap, Heart, User } from 'lucide-react';
+import { Camera, Zap, Heart, User, Link } from 'lucide-react';
 import { useShortcuts } from '../hooks/useShortcuts';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
 
+// ── Inline-style design tokens (LiveLens overlay-settings palette) ──────────
+const D = {
+    panelBgDark:       '#0d0f14',
+    panelBgLight:      '#F3F4F6',
+    borderDark:        'rgba(255,255,255,0.09)',
+    borderLight:       'rgba(0,0,0,0.10)',
+    sectionColorDark:  'rgba(226,229,237,0.25)',
+    sectionColorLight: 'rgba(0,0,0,0.30)',
+    rowNameDark:       'rgba(226,229,237,0.60)',
+    rowNameLight:      'rgba(0,0,0,0.55)',
+    rowNameActiveDark: '#e2e5ed',
+    rowNameActiveLight:'#111',
+    rowHoverDark:      'rgba(255,255,255,0.05)',
+    rowHoverLight:     'rgba(0,0,0,0.04)',
+    dividerDark:       'rgba(255,255,255,0.06)',
+    dividerLight:      'rgba(0,0,0,0.07)',
+    keyBorderDark:     'rgba(255,255,255,0.09)',
+    keyBorderLight:    'rgba(0,0,0,0.10)',
+    keyBgDark:         'rgba(255,255,255,0.06)',
+    keyBgLight:        'rgba(0,0,0,0.04)',
+    keyTextDark:       'rgba(226,229,237,0.45)',
+    keyTextLight:      'rgba(0,0,0,0.45)',
+    iconDimDark:       'rgba(226,229,237,0.35)',
+    iconDimLight:      'rgba(0,0,0,0.30)',
+    trackOff:          'rgba(255,255,255,0.14)',
+    trackOffLight:     'rgba(0,0,0,0.18)',
+    knobDark:          '#e2e5ed',
+    knobLight:         '#ffffff',
+};
+
+// ── Toggle ──────────────────────────────────────────────────────────────────
+interface ToggleProps {
+    on: boolean;
+    onColor: string;
+    onShadow?: string;
+    isLight: boolean;
+    onClick: () => void;
+    disabled?: boolean;
+}
+const Toggle = ({ on, onColor, onShadow, isLight, onClick, disabled }: ToggleProps) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        style={{
+            width: 30, height: 18,
+            borderRadius: 99,
+            padding: 1.5,
+            flexShrink: 0,
+            background: on ? onColor : (isLight ? D.trackOffLight : D.trackOff),
+            boxShadow: on && onShadow ? onShadow : 'none',
+            border: 'none',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'background 0.25s',
+        }}
+    >
+        <div style={{
+            width: 15, height: 15,
+            borderRadius: '50%',
+            background: isLight ? D.knobLight : D.knobDark,
+            transform: on ? 'translateX(12px)' : 'translateX(0)',
+            transition: 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+            flexShrink: 0,
+            boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.18)' : '0 1px 3px rgba(0,0,0,0.4)',
+        }} />
+    </button>
+);
+
+// ── Row ─────────────────────────────────────────────────────────────────────
+interface RowProps {
+    isLight: boolean;
+    children: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    hoverBgOverride?: string;
+    title?: string;
+}
+const Row = ({ isLight, children, onClick, disabled, hoverBgOverride, title }: RowProps) => {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <div
+            onClick={disabled ? undefined : onClick}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            title={title}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '7px 10px',
+                borderRadius: 9,
+                gap: 8,
+                background: hovered && !disabled
+                    ? (hoverBgOverride ?? (isLight ? D.rowHoverLight : D.rowHoverDark))
+                    : 'transparent',
+                cursor: disabled ? 'not-allowed' : 'default',
+                opacity: disabled ? 0.5 : 1,
+                transition: 'background 0.12s',
+            }}
+        >
+            {children}
+        </div>
+    );
+};
+
+// ── Section header ──────────────────────────────────────────────────────────
+const SectionHeader = ({ label, isLight }: { label: string; isLight: boolean }) => (
+    <div style={{
+        padding: '6px 10px 3px',
+        fontSize: 9.5,
+        fontWeight: 700,
+        letterSpacing: '0.09em',
+        textTransform: 'uppercase' as const,
+        color: isLight ? D.sectionColorLight : D.sectionColorDark,
+    }}>
+        {label}
+    </div>
+);
+
+// ── Divider ─────────────────────────────────────────────────────────────────
+const Divider = ({ isLight }: { isLight: boolean }) => (
+    <div style={{ height: 1, background: isLight ? D.dividerLight : D.dividerDark, margin: '3px 6px' }} />
+);
+
+// ── Shortcut keys ───────────────────────────────────────────────────────────
+const ShortcutKeys = ({ keys, isLight }: { keys: string[]; isLight: boolean }) => (
+    <div style={{ display: 'flex', gap: 3, flexShrink: 0, opacity: 0.55 }}>
+        {keys.map((k, i) => (
+            <span key={i} style={{
+                padding: '1px 5px',
+                borderRadius: 5,
+                border: `1px solid ${isLight ? D.keyBorderLight : D.keyBorderDark}`,
+                background: isLight ? D.keyBgLight : D.keyBgDark,
+                fontSize: 10,
+                fontWeight: 500,
+                color: isLight ? D.keyTextLight : D.keyTextDark,
+                minWidth: 20,
+                textAlign: 'center' as const,
+            }}>
+                {k}
+            </span>
+        ))}
+    </div>
+);
+
+// ── Ghost icon ──────────────────────────────────────────────────────────────
+const GhostIcon = ({ active, isLight }: { active: boolean; isLight: boolean }) => (
+    <svg width="14" height="14" viewBox="0 0 24 24"
+        fill={active ? 'currentColor' : 'none'}
+        stroke={active ? 'none' : 'currentColor'}
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        style={{ color: active ? (isLight ? '#111' : '#e2e5ed') : (isLight ? D.iconDimLight : D.iconDimDark), flexShrink: 0 }}
+    >
+        <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" />
+        <path d="M9 10h.01 M15 10h.01"
+            stroke={active ? (isLight ? 'white' : '#0d0f14') : (isLight ? '#334155' : 'rgba(226,229,237,0.6)')}
+            strokeWidth="2.5" fill="none"
+        />
+    </svg>
+);
+
+// ── Row label ───────────────────────────────────────────────────────────────
+const Label = ({ active, isLight, children }: { active: boolean; isLight: boolean; children: React.ReactNode }) => (
+    <span style={{
+        fontSize: 12,
+        fontWeight: 500,
+        color: active ? (isLight ? D.rowNameActiveLight : D.rowNameActiveDark) : (isLight ? D.rowNameLight : D.rowNameDark),
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    }}>
+        {children}
+    </span>
+);
+
+// ── Icon style helper ───────────────────────────────────────────────────────
+const Ic = ({ color, isLight }: { color?: string; isLight: boolean }): React.CSSProperties => ({
+    width: 14, height: 14, flexShrink: 0,
+    color: color ?? (isLight ? D.iconDimLight : D.iconDimDark),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const SettingsPopup = () => {
     const { shortcuts } = useShortcuts();
-    const isLightTheme = useResolvedTheme() === 'light';
+    const isLight = useResolvedTheme() === 'light';
+
     const [isUndetectable, setIsUndetectable] = useState(false);
-    const [useGroqFastText, setUseGroqFastText] = useState(() => {
-        return localStorage.getItem('natively_groq_fast_text') === 'true';
-    });
+    const [useGroqFastText, setUseGroqFastText] = useState(() =>
+        localStorage.getItem('natively_groq_fast_text') === 'true'
+    );
     const [profileMode, setProfileMode] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
     const [isPremium, setIsPremium] = useState(false);
-
-    const isFirstRender = React.useRef(true);
-
     const [hasStoredKey, setHasStoredKey] = useState<Record<string, boolean>>({});
+    const [actionButtonMode, setActionButtonModeState] = useState<'recap' | 'brainstorm'>('recap');
+    const [showTranscript, setShowTranscript] = useState(() =>
+        localStorage.getItem('natively_interviewer_transcript') !== 'false'
+    );
 
-    // Load credentials func
+    const isFirstRender = useRef(true);
+    const contentRef = useRef<HTMLDivElement>(null);
+
     const loadCredentials = async () => {
         try {
             // @ts-ignore
             const creds = await window.electronAPI?.getStoredCredentials?.();
             if (creds) {
                 setHasStoredKey({
-                    gemini: !!creds.hasGeminiKey,
-                    groq: !!creds.hasGroqKey,
-                    openai: !!creds.hasOpenaiKey,
-                    claude: !!creds.hasClaudeKey,
-                    natively: !!creds.hasNativelyKey
+                    gemini:   !!creds.hasGeminiKey,
+                    groq:     !!creds.hasGroqKey,
+                    openai:   !!creds.hasOpenaiKey,
+                    claude:   !!creds.hasClaudeKey,
+                    natively: !!creds.hasNativelyKey,
                 });
             }
-        } catch (e) {
-            console.error("Failed to load settings:", e);
-        }
+        } catch (e) { console.error("Failed to load settings:", e); }
     };
 
-    // Load Initial Data and refresh on focus
     useEffect(() => {
         loadCredentials();
         const handleFocus = () => loadCredentials();
         window.addEventListener('focus', handleFocus);
 
-        // Load profile status
         const loadProfile = async () => {
             try {
                 // @ts-ignore
                 const status = await window.electronAPI?.profileGetStatus?.();
-                if (status) {
-                    setHasProfile(status.hasProfile);
-                    setProfileMode(status.profileMode);
-                }
-                // Check premium status
+                if (status) { setHasProfile(status.hasProfile); setProfileMode(status.profileMode); }
                 const premium = await window.electronAPI?.licenseCheckPremium?.();
                 setIsPremium(!!premium);
             } catch (e) { console.warn('[SettingsPopup] Failed to load profile/premium status:', e); }
-
         };
         loadProfile();
-
         return () => window.removeEventListener('focus', handleFocus);
     }, []);
 
-    // Fetch initial undetectable state from main process (source of truth)
     useEffect(() => {
         if (window.electronAPI?.getUndetectable) {
-            window.electronAPI.getUndetectable().then((state: boolean) => {
-                setIsUndetectable(state);
-            });
-        }
-    }, []);
-
-    // One-way listener: receive state changes from main process, never echo back
-    useEffect(() => {
-        if (window.electronAPI?.onUndetectableChanged) {
-            const unsubscribe = window.electronAPI.onUndetectableChanged((newState: boolean) => {
-                setIsUndetectable(newState);
-                localStorage.setItem('natively_undetectable', String(newState));
-            });
-            return () => unsubscribe();
+            window.electronAPI.getUndetectable().then((state: boolean) => setIsUndetectable(state));
         }
     }, []);
 
     useEffect(() => {
-        // Listen for changes from other windows (2-way sync)
-        if (window.electronAPI?.onGroqFastTextChanged) {
-            const unsubscribe = window.electronAPI.onGroqFastTextChanged((enabled: boolean) => {
-                setUseGroqFastText(enabled);
-                localStorage.setItem('natively_groq_fast_text', String(enabled));
-            });
-            return () => unsubscribe();
-        }
+        if (!window.electronAPI?.onUndetectableChanged) return;
+        const unsub = window.electronAPI.onUndetectableChanged((s: boolean) => {
+            setIsUndetectable(s);
+            localStorage.setItem('natively_undetectable', String(s));
+        });
+        return () => unsub();
     }, []);
 
     useEffect(() => {
-        // Skip initial render to avoid unnecessary IPC calls
+        if (!window.electronAPI?.onGroqFastTextChanged) return;
+        const unsub = window.electronAPI.onGroqFastTextChanged((enabled: boolean) => {
+            setUseGroqFastText(enabled);
+            localStorage.setItem('natively_groq_fast_text', String(enabled));
+        });
+        return () => unsub();
+    }, []);
+
+    useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
-            // Ensure backend is synced on mount (even if no change)
-            try {
-                // @ts-ignore
+            try { // @ts-ignore
                 window.electronAPI?.invoke('set-groq-fast-text-mode', useGroqFastText);
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
             return;
         }
-
-        // Apply Groq Text Mode
         localStorage.setItem('natively_groq_fast_text', String(useGroqFastText));
-        try {
-            // @ts-ignore - electronAPI not typed in this file yet
+        try { // @ts-ignore
             window.electronAPI?.invoke('set-groq-fast-text-mode', useGroqFastText);
-        } catch (e) {
-            console.error(e);
-        }
+        } catch (e) { console.error(e); }
     }, [useGroqFastText]);
 
-    const [actionButtonMode, setActionButtonModeState] = useState<'recap' | 'brainstorm'>('recap');
-
-    const [showTranscript, setShowTranscript] = useState(() => {
-        const stored = localStorage.getItem('natively_interviewer_transcript');
-        return stored !== 'false'; // Default to true if not set
-    });
-
     useEffect(() => {
-        const handleStorage = () => {
-            const stored = localStorage.getItem('natively_interviewer_transcript');
-            setShowTranscript(stored !== 'false');
-        };
-
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
+        const handle = () => setShowTranscript(localStorage.getItem('natively_interviewer_transcript') !== 'false');
+        window.addEventListener('storage', handle);
+        return () => window.removeEventListener('storage', handle);
     }, []);
 
-    // Load action button mode and subscribe to changes from other windows
     useEffect(() => {
         // @ts-ignore
         window.electronAPI?.getActionButtonMode?.()?.then((mode: 'recap' | 'brainstorm') => {
@@ -144,276 +293,226 @@ const SettingsPopup = () => {
         // @ts-ignore
         if (!window.electronAPI?.onActionButtonModeChanged) return;
         // @ts-ignore
-        const unsubscribe = window.electronAPI.onActionButtonModeChanged((mode: 'recap' | 'brainstorm') => {
+        const unsub = window.electronAPI.onActionButtonModeChanged((mode: 'recap' | 'brainstorm') => {
             setActionButtonModeState(mode);
         });
-        return () => unsubscribe();
+        return () => unsub();
     }, []);
 
-    const contentRef = useRef<HTMLDivElement>(null);
-
-    // Auto-resize Window
+    // Auto-fit the BrowserWindow to the rendered panel.
     useLayoutEffect(() => {
         if (!contentRef.current) return;
-
         const observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
                 const rect = entry.target.getBoundingClientRect();
-                // Send exact dimensions to Electron
-                try {
-                    // @ts-ignore
+                try { // @ts-ignore
                     window.electronAPI?.updateContentDimensions({
                         width: Math.ceil(rect.width),
-                        height: Math.ceil(rect.height)
+                        height: Math.ceil(rect.height),
                     });
-                } catch (e) {
-                    console.warn("Failed to update dimensions", e);
-                }
+                } catch (e) { console.warn("Failed to update dimensions", e); }
             }
         });
-
         observer.observe(contentRef.current);
         return () => observer.disconnect();
     }, []);
 
-    const popupPanelClass = isLightTheme
-        ? 'bg-[#F3F4F6]/92 border-black/10 shadow-black/10'
-        : 'bg-[#1E1E1E]/80 border-white/10 shadow-black/40';
-    const itemHoverClass = isLightTheme ? 'hover:bg-black/[0.04]' : 'hover:bg-white/5';
-    const labelInactiveClass = isLightTheme ? 'text-slate-700 group-hover:text-slate-900' : 'text-slate-400 group-hover:text-slate-200';
-    const iconInactiveClass = isLightTheme ? 'text-slate-500 group-hover:text-slate-700' : 'text-slate-500 group-hover:text-slate-300';
-    const dividerClass = isLightTheme ? 'bg-black/[0.06]' : 'bg-white/[0.04]';
-    const shortcutKeyClass = isLightTheme
-        ? 'border-black/10 bg-black/[0.04] text-slate-600'
-        : 'border-white/10 bg-white/5 text-slate-500';
-    const defaultToggleTrackClass = isLightTheme ? 'bg-black/[0.22]' : 'bg-white/10';
-    const toggleKnobClass = isLightTheme ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.18)]' : 'bg-black shadow-sm';
+    const fastTextEnabled = hasStoredKey.groq || hasStoredKey.natively;
+    const profileActive   = profileMode && isPremium;
 
     return (
-        <div className="w-fit h-fit bg-transparent flex flex-col">
-            <div ref={contentRef} className={`w-[200px] max-h-[280px] backdrop-blur-md border rounded-[16px] overflow-hidden shadow-2xl p-2 flex flex-col animate-scale-in origin-top-left ${popupPanelClass}`}>
-                <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col min-h-0">
+        <div style={{ background: 'transparent' }}>
+            <div
+                ref={contentRef}
+                style={{
+                    width: 220,
+                    maxHeight: 320,
+                    borderRadius: 14,
+                    overflow: 'hidden',
+                    backgroundColor: isLight ? D.panelBgLight : D.panelBgDark,
+                    border: `1px solid ${isLight ? D.borderLight : D.borderDark}`,
+                    boxShadow: 'none',
+                    padding: 6,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                }}
+            >
+                {/* ── Options ── */}
+                <SectionHeader label="Options" isLight={isLight} />
 
-                {/* Undetectability */}
-                <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group cursor-default ${itemHoverClass}`}>
-                    <div className="flex items-center gap-3">
-                        <CustomGhost
-                            className={`w-4 h-4 transition-colors ${isUndetectable ? (isLightTheme ? 'text-slate-900' : 'text-white') : iconInactiveClass}`}
-                            fill={isUndetectable ? "currentColor" : "none"}
-                            stroke={isUndetectable ? "none" : "currentColor"}
-                            eyeColor={isUndetectable ? (isLightTheme ? "white" : "black") : (isLightTheme ? "#334155" : "white")}
-                        />
-                        <span className={`text-[12px] font-medium transition-colors ${isUndetectable ? (isLightTheme ? 'text-slate-950' : 'text-white') : labelInactiveClass}`}>{isUndetectable ? 'Undetectable' : 'Detectable'}</span>
+                {/* Undetectable */}
+                <Row isLight={isLight}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                        <GhostIcon active={isUndetectable} isLight={isLight} />
+                        <Label active={isUndetectable} isLight={isLight}>
+                            {isUndetectable ? 'Undetectable' : 'Detectable'}
+                        </Label>
                     </div>
-                    <button
+                    <Toggle
+                        on={isUndetectable}
+                        onColor={isLight ? '#1e293b' : '#ffffff'}
+                        onShadow={isLight ? '0 2px 8px rgba(15,23,42,0.18)' : '0 2px 8px rgba(255,255,255,0.20)'}
+                        isLight={isLight}
                         onClick={() => {
-                            const newState = !isUndetectable;
-                            setIsUndetectable(newState);
-                            localStorage.setItem('natively_undetectable', String(newState));
-                            window.electronAPI?.setUndetectable(newState);
+                            const next = !isUndetectable;
+                            setIsUndetectable(next);
+                            localStorage.setItem('natively_undetectable', String(next));
+                            window.electronAPI?.setUndetectable(next);
                         }}
-                        className={`w-[30px] h-[18px] rounded-full p-[1.5px] transition-all duration-300 ease-spring active:scale-[0.92] ${isUndetectable
-                            ? (isLightTheme ? 'bg-slate-900 shadow-[0_2px_8px_rgba(15,23,42,0.18)]' : 'bg-white shadow-[0_2px_8px_rgba(255,255,255,0.2)]')
-                            : defaultToggleTrackClass}`}
-                    >
-                        <div className={`w-[15px] h-[15px] rounded-full transition-transform duration-300 ease-spring ${toggleKnobClass} ${isUndetectable ? 'translate-x-[12px]' : 'translate-x-0'}`} />
-                    </button>
-                </div>
+                    />
+                </Row>
 
-
-                {/* Groq (Fast Text) Toggle — enabled with Groq key OR Natively API key */}
-                <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group ${!(hasStoredKey.groq || hasStoredKey.natively) ? 'opacity-50 grayscale cursor-not-allowed' : `${itemHoverClass} cursor-default`}`} title={!(hasStoredKey.groq || hasStoredKey.natively) ? "Requires Groq or Natively API key" : ""}>
-                    <div className="flex items-center gap-3">
-                        <Zap
-                            className={`w-4 h-4 transition-colors ${useGroqFastText ? 'text-orange-500' : iconInactiveClass}`}
-                            fill={useGroqFastText ? "currentColor" : "none"}
-                        />
-                        <span className={`text-[12px] font-medium transition-colors ${useGroqFastText ? (isLightTheme ? 'text-slate-950' : 'text-white') : labelInactiveClass}`}>Fast Response</span>
+                {/* Fast Response */}
+                <Row isLight={isLight} disabled={!fastTextEnabled} title={!fastTextEnabled ? 'Requires Groq or Natively API key' : ''}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                        <Zap style={Ic({ color: useGroqFastText ? '#f97316' : undefined, isLight })} fill={useGroqFastText ? 'currentColor' : 'none'} />
+                        <Label active={useGroqFastText} isLight={isLight}>Fast Response</Label>
                     </div>
-                    <button
-                        onClick={() => {
-                            if (!(hasStoredKey.groq || hasStoredKey.natively)) return;
-                            setUseGroqFastText(!useGroqFastText);
-                        }}
-                        className={`w-[30px] h-[18px] rounded-full p-[1.5px] transition-all duration-300 ease-spring active:scale-[0.92] ${useGroqFastText ? 'bg-orange-500 shadow-[0_2px_10px_rgba(249,115,22,0.3)]' : defaultToggleTrackClass}`}
-                        disabled={!(hasStoredKey.groq || hasStoredKey.natively)}
-                    >
-                        <div className={`w-[15px] h-[15px] rounded-full transition-transform duration-300 ease-spring ${toggleKnobClass} ${useGroqFastText ? 'translate-x-[12px]' : 'translate-x-0'}`} />
-                    </button>
-                </div>
+                    <Toggle
+                        on={useGroqFastText}
+                        onColor="#f97316"
+                        onShadow="0 2px 10px rgba(249,115,22,0.30)"
+                        isLight={isLight}
+                        disabled={!fastTextEnabled}
+                        onClick={() => { if (fastTextEnabled) setUseGroqFastText(v => !v); }}
+                    />
+                </Row>
 
-                {/* Interviewer Transcript Toggle */}
-                <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group cursor-default ${itemHoverClass}`}>
-                    <div className="flex items-center gap-3">
-                        <MessageSquare
-                            className={`w-3.5 h-3.5 transition-colors ${showTranscript ? 'text-emerald-400' : iconInactiveClass}`}
-                            fill={showTranscript ? "currentColor" : "none"}
-                        />
-                        <span className={`text-[12px] font-medium transition-colors ${showTranscript ? (isLightTheme ? 'text-slate-950' : 'text-white') : labelInactiveClass}`}>Transcript</span>
+                {/* Transcript */}
+                <Row isLight={isLight}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24"
+                            fill={showTranscript ? '#34d399' : 'none'}
+                            stroke={showTranscript ? 'none' : (isLight ? D.iconDimLight : D.iconDimDark)}
+                            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                            style={{ flexShrink: 0 }}
+                        >
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <Label active={showTranscript} isLight={isLight}>Transcript</Label>
                     </div>
-                    <button
+                    <Toggle
+                        on={showTranscript}
+                        onColor="#10b981"
+                        onShadow="0 2px 10px rgba(16,185,129,0.30)"
+                        isLight={isLight}
                         onClick={() => {
-                            const newState = !showTranscript;
-                            setShowTranscript(newState);
-                            localStorage.setItem('natively_interviewer_transcript', String(newState));
-                            // Dispatch event for same-window listeners
+                            const next = !showTranscript;
+                            setShowTranscript(next);
+                            localStorage.setItem('natively_interviewer_transcript', String(next));
                             window.dispatchEvent(new Event('storage'));
                         }}
-                        className={`w-[30px] h-[18px] rounded-full p-[1.5px] transition-all duration-300 ease-spring active:scale-[0.92] ${showTranscript ? 'bg-emerald-500 shadow-[0_2px_10px_rgba(16,185,129,0.3)]' : defaultToggleTrackClass}`}
-                    >
-                        <div className={`w-[15px] h-[15px] rounded-full transition-transform duration-300 ease-spring ${toggleKnobClass} ${showTranscript ? 'translate-x-[12px]' : 'translate-x-0'}`} />
-                    </button>
-                </div>
+                    />
+                </Row>
 
-                {/* Interview Mode (Brainstorm) Toggle */}
-                <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group cursor-default ${itemHoverClass}`}>
-                    <div className="flex items-center gap-3">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className={`w-3.5 h-3.5 transition-colors ${actionButtonMode === 'brainstorm' ? 'text-violet-400' : iconInactiveClass}`}
+                {/* Interview Mode */}
+                <Row isLight={isLight}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            style={{ flexShrink: 0, color: actionButtonMode === 'brainstorm' ? '#a78bfa' : (isLight ? D.iconDimLight : D.iconDimDark) }}
                         >
                             <line x1="6" y1="3" x2="6" y2="15" />
                             <circle cx="18" cy="6" r="3" />
                             <circle cx="6" cy="18" r="3" />
                             <path d="M18 9a9 9 0 0 1-9 9" />
                         </svg>
-                        <span className={`text-[12px] font-medium transition-colors ${actionButtonMode === 'brainstorm' ? (isLightTheme ? 'text-slate-950' : 'text-white') : labelInactiveClass}`}>Interview Mode</span>
+                        <Label active={actionButtonMode === 'brainstorm'} isLight={isLight}>Interview Mode</Label>
                     </div>
-                    <button
+                    <Toggle
+                        on={actionButtonMode === 'brainstorm'}
+                        onColor="#8b5cf6"
+                        onShadow="0 2px 10px rgba(139,92,246,0.30)"
+                        isLight={isLight}
                         onClick={async () => {
-                            const newMode: 'recap' | 'brainstorm' = actionButtonMode === 'brainstorm' ? 'recap' : 'brainstorm';
-                            setActionButtonModeState(newMode);
-                            try {
-                                // @ts-ignore
-                                await window.electronAPI?.setActionButtonMode?.(newMode);
+                            const next: 'recap' | 'brainstorm' = actionButtonMode === 'brainstorm' ? 'recap' : 'brainstorm';
+                            setActionButtonModeState(next);
+                            try { // @ts-ignore
+                                await window.electronAPI?.setActionButtonMode?.(next);
                             } catch (e) { console.error(e); }
                         }}
-                        className={`w-[30px] h-[18px] rounded-full p-[1.5px] transition-all duration-300 ease-spring active:scale-[0.92] ${actionButtonMode === 'brainstorm' ? 'bg-violet-500 shadow-[0_2px_10px_rgba(139,92,246,0.3)]' : defaultToggleTrackClass}`}
-                    >
-                        <div className={`w-[15px] h-[15px] rounded-full transition-transform duration-300 ease-spring ${toggleKnobClass} ${actionButtonMode === 'brainstorm' ? 'translate-x-[12px]' : 'translate-x-0'}`} />
-                    </button>
-                </div>
+                    />
+                </Row>
 
-                {/* Profile Mode Toggle */}
+                {/* Profile Mode (only if user has a profile) */}
                 {hasProfile && (
-                    <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group ${!isPremium ? 'opacity-50 grayscale cursor-not-allowed' : `${itemHoverClass} cursor-default`}`} title={!isPremium ? 'Requires Pro license to be active' : ''}>
-                        <div className="flex items-center gap-3">
-                            <User
-                                className={`w-3.5 h-3.5 transition-colors ${profileMode && isPremium ? 'text-accent-primary' : iconInactiveClass}`}
-                                fill={profileMode && isPremium ? "currentColor" : "none"}
-                            />
-                            <span className={`text-[12px] font-medium transition-colors ${profileMode && isPremium ? (isLightTheme ? 'text-slate-950' : 'text-white') : labelInactiveClass}`}>Profile Mode</span>
+                    <Row isLight={isLight} disabled={!isPremium} title={!isPremium ? 'Requires Pro license to be active' : ''}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                            <User style={Ic({ color: profileActive ? '#d97757' : undefined, isLight })} fill={profileActive ? 'currentColor' : 'none'} />
+                            <Label active={profileActive} isLight={isLight}>Profile Mode</Label>
                         </div>
-                        <button
+                        <Toggle
+                            on={profileActive}
+                            onColor="#d97757"
+                            onShadow="0 2px 10px rgba(217,119,87,0.30)"
+                            isLight={isLight}
+                            disabled={!isPremium}
                             onClick={async () => {
                                 if (!isPremium) return;
-                                const newState = !profileMode;
-                                setProfileMode(newState);
-                                try {
-                                    // @ts-ignore
-                                    await window.electronAPI?.profileSetMode?.(newState);
+                                const next = !profileMode;
+                                setProfileMode(next);
+                                try { // @ts-ignore
+                                    await window.electronAPI?.profileSetMode?.(next);
                                 } catch (e) { console.error(e); }
                             }}
-                            className={`w-[30px] h-[18px] rounded-full p-[1.5px] transition-all duration-300 ease-spring active:scale-[0.92] ${profileMode && isPremium ? 'bg-accent-primary shadow-[0_2px_10px_rgba(var(--color-accent-primary),0.3)]' : defaultToggleTrackClass}`}
-                            disabled={!isPremium}
-                        >
-                            <div className={`w-[15px] h-[15px] rounded-full transition-transform duration-300 ease-spring ${toggleKnobClass} ${profileMode && isPremium ? 'translate-x-[12px]' : 'translate-x-0'}`} />
-                        </button>
-                    </div>
+                        />
+                    </Row>
                 )}
 
-                <div className={`h-px my-0.5 mx-2 ${dividerClass}`} />
+                <Divider isLight={isLight} />
 
-                {/* Show/Hide Natively */}
-                <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group interaction-base interaction-press ${itemHoverClass}`}>
-                    <div className="flex items-center gap-3">
-                        <MessageSquare className={`w-3.5 h-3.5 transition-colors ${iconInactiveClass}`} />
-                        <span className={`text-[12px] transition-colors ${labelInactiveClass}`}>Show/Hide</span>
+                {/* ── Shortcuts ── */}
+                <SectionHeader label="Shortcuts" isLight={isLight} />
+
+                {/* Show / Hide */}
+                <Row isLight={isLight}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            style={{ flexShrink: 0, color: isLight ? D.iconDimLight : D.iconDimDark }}
+                        >
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <line x1="3" y1="9" x2="21" y2="9" />
+                        </svg>
+                        <Label active={false} isLight={isLight}>Show / Hide</Label>
                     </div>
-                    <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                        {/* Dynamic Keys for Toggle Visibility */}
-                        {(shortcuts.toggleVisibility || ['⌘', 'B']).map((key, index) => (
-                            <div key={index} className={`px-1.5 py-0.5 rounded border text-[10px] font-medium min-w-[20px] text-center ${shortcutKeyClass}`}>
-                                {key}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                    <ShortcutKeys keys={shortcuts.toggleVisibility || ['⌘', 'B']} isLight={isLight} />
+                </Row>
 
                 {/* Screenshot */}
-                <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors duration-200 group interaction-base interaction-press ${itemHoverClass}`}>
-                    <div className="flex items-center gap-3">
-                        <Camera className={`w-3.5 h-3.5 transition-colors ${iconInactiveClass}`} />
-                        <span className={`text-[12px] transition-colors ${labelInactiveClass}`}>Screenshot</span>
+                <Row isLight={isLight}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                        <Camera style={Ic({ isLight })} />
+                        <Label active={false} isLight={isLight}>Screenshot</Label>
                     </div>
-                    <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                        {/* Dynamic Keys for Take Screenshot */}
-                        {(shortcuts.takeScreenshot || ['⌘', 'H']).map((key, index) => (
-                            <div key={index} className={`px-1.5 py-0.5 rounded border text-[10px] font-medium min-w-[20px] text-center ${shortcutKeyClass}`}>
-                                {key}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                    <ShortcutKeys keys={shortcuts.takeScreenshot || ['⌘', 'H']} isLight={isLight} />
+                </Row>
 
-                <div className={`h-px my-0.5 mx-2 ${dividerClass}`} />
+                <Divider isLight={isLight} />
 
                 {/* Donate */}
-                <div
-                    // @ts-ignore
-                    onClick={() => window.electronAPI.openExternal('https://buymeacoffee.com/evinjohnn')}
-                    className="flex items-center justify-between px-3 py-2 hover:bg-pink-500/10 rounded-lg transition-colors duration-200 group interaction-base interaction-press"
+                <Row
+                    isLight={isLight}
+                    hoverBgOverride="rgba(244,114,182,0.08)"
+                    onClick={() => {
+                        // @ts-ignore
+                        window.electronAPI?.openExternal('https://buymeacoffee.com/evinjohnn');
+                    }}
                 >
-                    <div className="flex items-center gap-3">
-                        <Heart className="w-3.5 h-3.5 text-pink-400 group-hover:fill-pink-400 transition-all duration-300" />
-                        <span className={`text-[12px] transition-colors ${isLightTheme ? 'text-slate-700 group-hover:text-pink-700' : 'text-slate-400 group-hover:text-pink-100'}`}>Donate</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+                        <Heart style={{ ...Ic({ isLight }), color: '#f472b6' }} />
+                        <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(244,114,182,0.70)' }}>
+                            Donate
+                        </span>
                     </div>
-                    <div className="opacity-60 group-hover:opacity-100 transition-opacity">
-                        <Link className={`w-3 h-3 group-hover:text-pink-400 ${isLightTheme ? 'text-slate-600' : 'text-slate-500'}`} />
-                    </div>
-                </div>
-
-                </div>
+                    <Link style={{ width: 12, height: 12, flexShrink: 0, color: isLight ? D.iconDimLight : D.iconDimDark }} />
+                </Row>
             </div>
         </div>
     );
 };
-
-interface CustomGhostProps {
-    className?: string;
-    fill?: string;
-    stroke?: string;
-    eyeColor?: string;
-}
-
-// Custom Ghost with dynamic eye color support
-const CustomGhost = ({ className, fill, stroke, eyeColor }: CustomGhostProps) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill={fill || "none"}
-        stroke={stroke || "currentColor"}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        {/* Body */}
-        <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" />
-        {/* Eyes - No stroke, just fill */}
-        <path
-            d="M9 10h.01 M15 10h.01"
-            stroke={eyeColor || "currentColor"}
-            strokeWidth="2.5" // Slightly bolder for visibility
-            fill="none"
-        />
-    </svg>
-);
 
 export default SettingsPopup;

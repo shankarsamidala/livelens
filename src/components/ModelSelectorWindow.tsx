@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { CODEX_CLI_MODEL, CODEX_CLI_MODEL_PRESETS, codexCliSelectorId, getCodexCliModelDisplayName, STANDARD_CLOUD_MODELS, prettifyModelId } from '../utils/modelUtils';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
 
-// Define Model Types
 interface ModelOption {
     id: string;
     name: string;
@@ -11,7 +10,28 @@ interface ModelOption {
     provider?: string;
 }
 
+const PROVIDER_DOTS: Record<string, string> = {
+    gemini:      '#4285F4',
+    openai:      '#10a37f',
+    groq:        '#f97316',
+    claude:      '#c77dff',
+    anthropic:   '#c77dff',
+    natively:    '#d97757',
+    'codex-cli': '#22d3ee',
+};
 
+function ProviderDot({ provider, type }: { provider?: string; type: ModelOption['type'] }) {
+    const isLocal = type === 'ollama' || type === 'local';
+    const color = isLocal
+        ? 'rgba(226,229,237,0.35)'
+        : (provider ? (PROVIDER_DOTS[provider] ?? 'rgba(226,229,237,0.35)') : 'rgba(226,229,237,0.35)');
+    return (
+        <span style={{
+            width: 6, height: 6, borderRadius: '50%',
+            backgroundColor: color, flexShrink: 0, display: 'inline-block',
+        }} />
+    );
+}
 
 const ModelSelectorWindow = () => {
     const isLight = useResolvedTheme() === 'light';
@@ -24,49 +44,30 @@ const ModelSelectorWindow = () => {
     });
     const [isLoading, setIsLoading] = useState<boolean>(() => availableModels.length === 0);
 
-
-
-
-
-    // Load Data
     useEffect(() => {
         const loadModels = async () => {
             try {
-                // If we already have models, don't show loading to avoid flicker
-                if (availableModels.length === 0) {
-                    setIsLoading(true);
-                }
-                
-                // 1. Get Stored Credentials (to know which Cloud providers are active)
+                if (availableModels.length === 0) setIsLoading(true);
+
                 const creds = await window.electronAPI?.getStoredCredentials?.();
-
-                // 2. Custom Providers
                 const customProviders = await window.electronAPI?.getCustomProviders?.() || [];
-
-                // 3. Codex CLI
                 const codexCliConfig = await window.electronAPI?.getCodexCliConfig?.();
 
-                // 4. Ollama — quietly skip if not available. Previously this
-                // auto-fired forceRestartOllama() on an empty list, which spawned
-                // a kill-by-PID routine that took out Electron's own process when
-                // port 11434 was bound to a non-Ollama PID. If the user wants
-                // Ollama, they'll start it themselves; we just list what exists.
+                // Ollama — quietly skip if not available. (No auto force-restart:
+                // that routine ran kill -9 on whatever held port 11434, which
+                // occasionally took out Electron's own PID.)
                 let ollamaModels: string[] = [];
                 try {
                     const oModels = await window.electronAPI?.getAvailableOllamaModels?.();
                     if (oModels) ollamaModels = oModels;
-                } catch (e) {
-                    // Ignore ollama errors here
-                }
+                } catch (e) { /* ignore */ }
 
-                // Build the list
                 const models: ModelOption[] = [];
 
                 if (creds?.hasNativelyKey) {
                     models.push({ id: 'natively', name: 'Natively API', type: 'cloud', provider: 'natively' });
                 }
 
-                // Cloud Models — standard models + unique preferred models
                 for (const [prov, cfg] of Object.entries(STANDARD_CLOUD_MODELS)) {
                     if (!cfg.hasKeyCheck(creds)) continue;
                     cfg.ids.forEach((id, i) => {
@@ -78,12 +79,10 @@ const ModelSelectorWindow = () => {
                     }
                 }
 
-                // Custom Providers
                 customProviders.forEach((p: any) => {
                     models.push({ id: p.id, name: p.name, type: 'custom' });
                 });
 
-                // Codex CLI
                 if (codexCliConfig?.enabled) {
                     models.push({ id: CODEX_CLI_MODEL.id, name: `${CODEX_CLI_MODEL.name} (${prettifyModelId(codexCliConfig.model)})`, type: 'codex-cli', provider: 'codex-cli' });
                     CODEX_CLI_MODEL_PRESETS.forEach(model => {
@@ -92,21 +91,18 @@ const ModelSelectorWindow = () => {
                     });
                 }
 
-                // Ollama
                 ollamaModels.forEach((m: string) => {
-                    models.push({ id: `ollama-${m}`, name: `${m} (Local)`, type: 'ollama' });
+                    models.push({ id: `ollama-${m}`, name: m, type: 'ollama' });
                 });
 
                 localStorage.setItem('cached-models', JSON.stringify(models));
                 setAvailableModels(models);
 
-                // 4. Get Current Active Model
-                const config = await window.electronAPI?.getCurrentLlmConfig?.(); // Get runtime model
+                const config = await window.electronAPI?.getCurrentLlmConfig?.();
                 if (config && config.model) {
                     setCurrentModel(config.model);
                     localStorage.setItem('cached-current-model', config.model);
                 }
-
             } catch (err) {
                 console.error("Failed to load models:", err);
             } finally {
@@ -117,7 +113,6 @@ const ModelSelectorWindow = () => {
         loadModels();
         window.addEventListener('focus', loadModels);
 
-        // Listen for changes
         const unsubscribe = window.electronAPI?.onModelChanged?.((modelId: string) => {
             setCurrentModel(modelId);
         });
@@ -127,57 +122,155 @@ const ModelSelectorWindow = () => {
         };
     }, []);
 
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+        if (!panelRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const rect = entry.target.getBoundingClientRect();
+                try {
+                    window.electronAPI?.updateContentDimensions?.({
+                        width: Math.ceil(rect.width),
+                        height: Math.ceil(rect.height),
+                    });
+                } catch (e) { console.warn('ModelSelector resize failed', e); }
+            }
+        });
+        observer.observe(panelRef.current);
+        return () => observer.disconnect();
+    }, []);
+
     const handleSelectFn = (modelId: string) => {
         setCurrentModel(modelId);
         localStorage.setItem('cached-current-model', modelId);
-        
         window.electronAPI?.setModel(modelId)
             .catch((err: any) => console.error("Failed to set model:", err));
     };
 
-    const panelClass = isLight
-        ? 'bg-[#F3F4F6]/92 border-black/10 shadow-black/10'
-        : 'bg-[#1E1E1E]/80 border-white/10 shadow-black/40';
+    // Split models into cloud and local groups
+    const cloudModels = availableModels.filter(m => m.type === 'cloud' || m.type === 'custom');
+    const localModels = availableModels.filter(m => m.type === 'ollama' || m.type === 'local' || m.type === 'codex-cli');
+
+    // Light / dark tokens
+    const panelBg     = isLight ? '#F3F4F6'                    : '#0d0f14';
+    const panelBorder = isLight ? 'rgba(0,0,0,0.10)'           : 'rgba(255,255,255,0.09)';
+    const panelShadow = 'none';
+
+    const sectionHeaderColor  = isLight ? 'rgba(0,0,0,0.30)'           : 'rgba(226,229,237,0.25)';
+    const rowNameColor        = isLight ? 'rgba(0,0,0,0.55)'           : 'rgba(226,229,237,0.65)';
+
+    const rowNameActiveColor  = isLight ? '#111'                        : '#e2e5ed';
+    const rowHoverBg          = isLight ? 'rgba(0,0,0,0.04)'           : 'rgba(255,255,255,0.06)';
+    const rowActiveBg         = isLight ? 'rgba(0,0,0,0.07)'           : 'rgba(255,255,255,0.09)';
+    const rowActiveBorder     = isLight ? 'rgba(0,0,0,0.08)'           : 'rgba(255,255,255,0.08)';
+    const dividerColor        = isLight ? 'rgba(0,0,0,0.07)'           : 'rgba(255,255,255,0.06)';
+    const loadingColor        = isLight ? 'rgba(0,0,0,0.35)'           : 'rgba(226,229,237,0.40)';
+    const emptyColor          = isLight ? 'rgba(0,0,0,0.35)'           : 'rgba(226,229,237,0.35)';
+    const checkColor          = isLight ? 'rgba(0,0,0,0.50)'           : 'rgba(226,229,237,0.65)';
+
+    const renderRow = (model: ModelOption) => {
+        const isSelected = currentModel === model.id;
+        return (
+            <button
+                key={model.id}
+                onClick={() => handleSelectFn(model.id)}
+                style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '7px 10px',
+                    borderRadius: 9,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    background: isSelected ? rowActiveBg : 'transparent',
+                    border: isSelected ? `1px solid ${rowActiveBorder}` : '1px solid transparent',
+                    cursor: 'pointer',
+                    transition: 'background 0.12s',
+                }}
+                onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = rowHoverBg; }}
+                onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+            >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
+                    <ProviderDot provider={model.provider} type={model.type} />
+                    <span style={{
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: isSelected ? rowNameActiveColor : rowNameColor,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                    }}>
+                        {model.name}
+                    </span>
+                </span>
+                {isSelected && (
+                    <Check style={{ width: 12, height: 12, flexShrink: 0, color: checkColor }} />
+                )}
+            </button>
+        );
+    };
 
     return (
-        <div className="w-fit h-fit bg-transparent flex flex-col">
-            <div className={`w-[140px] h-[200px] backdrop-blur-md border rounded-[16px] overflow-hidden shadow-2xl p-2 flex flex-col animate-scale-in origin-top-left ${panelClass}`}>
-
+        <div style={{ background: 'transparent' }}>
+            <div
+                ref={panelRef}
+                style={{
+                    width: 200,
+                    maxHeight: 280,
+                    borderRadius: 14,
+                    overflow: 'hidden',
+                    backgroundColor: panelBg,
+                    border: `1px solid ${panelBorder}`,
+                    boxShadow: panelShadow,
+                    padding: 6,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                }}
+            >
                 {isLoading ? (
-                    <div className={`flex items-center justify-center py-4 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        <span className="text-xs">Loading models...</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 0', color: loadingColor, gap: 6 }}>
+                        <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" />
+                        <span style={{ fontSize: 12 }}>Loading…</span>
+                    </div>
+                ) : availableModels.length === 0 ? (
+                    <div style={{ padding: '12px 10px', textAlign: 'center', fontSize: 11.5, color: emptyColor, lineHeight: 1.5 }}>
+                        No models connected.<br />Check Settings.
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col gap-0.5">
-                        {availableModels.length === 0 ? (
-                            <div className={`px-4 py-3 text-center text-xs ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                                No models connected.<br />Check Settings.
-                            </div>
-                        ) : (
-                            availableModels.map((model) => {
-                                const isSelected = currentModel === model.id;
-                                return (
-                                    <button
-                                        key={model.id}
-                                        onClick={() => handleSelectFn(model.id)}
-                                        className={`
-                                            w-full text-left px-3 py-2 flex items-center justify-between group transition-colors duration-200 rounded-lg
-                                            ${isSelected
-                                                ? (isLight ? 'bg-black/[0.07] text-slate-900' : 'bg-white/10 text-white')
-                                                : (isLight ? 'text-slate-500 hover:bg-black/[0.04] hover:text-slate-800' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200')
-                                            }
-                                        `}
-                                    >
-                                        <span className="text-[12px] font-medium truncate flex-1 min-w-0">{model.name}</span>
-                                        {isSelected && <Check className={`w-3.5 h-3.5 shrink-0 ml-2 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />}
-                                    </button>
-                                );
-                            })
+                    <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {/* Cloud section */}
+                        {cloudModels.length > 0 && (
+                            <>
+                                {localModels.length > 0 && (
+                                    <div style={{ padding: '4px 10px 2px', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: sectionHeaderColor }}>
+                                        Cloud
+                                    </div>
+                                )}
+                                {cloudModels.map(renderRow)}
+                            </>
+                        )}
+
+                        {/* Divider */}
+                        {cloudModels.length > 0 && localModels.length > 0 && (
+                            <div style={{ height: 1, background: dividerColor, margin: '3px 6px' }} />
+                        )}
+
+                        {/* Local section */}
+                        {localModels.length > 0 && (
+                            <>
+                                {cloudModels.length > 0 && (
+                                    <div style={{ padding: '4px 10px 2px', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: sectionHeaderColor }}>
+                                        Local
+                                    </div>
+                                )}
+                                {localModels.map(renderRow)}
+                            </>
                         )}
                     </div>
                 )}
-
             </div>
         </div>
     );

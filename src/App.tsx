@@ -5,6 +5,7 @@ import NativelyInterface from "./components/NativelyInterface"
 import SettingsPopup from "./components/SettingsPopup" // Keeping for legacy/specific window support if needed
 import Launcher from "./components/Launcher"
 import ModelSelectorWindow from "./components/ModelSelectorWindow"
+import ModeSelectorWindow from "./components/ModeSelectorWindow"
 import StartupSequence from "./components/StartupSequence"
 import { AnimatePresence, motion } from "framer-motion"
 import UpdateBanner from "./components/UpdateBanner"
@@ -37,10 +38,11 @@ const App: React.FC = () => {
   const isLauncherWindow = new URLSearchParams(window.location.search).get('window') === 'launcher';
   const isOverlayWindow = new URLSearchParams(window.location.search).get('window') === 'overlay';
   const isModelSelectorWindow = new URLSearchParams(window.location.search).get('window') === 'model-selector';
+  const isModeSelectorWindow = new URLSearchParams(window.location.search).get('window') === 'mode-selector';
   const isCropperWindow = new URLSearchParams(window.location.search).get('window') === 'cropper';
 
   // Default to launcher if not specified (dev mode safety)
-  const isDefault = !isSettingsWindow && !isOverlayWindow && !isModelSelectorWindow && !isCropperWindow;
+  const isDefault = !isSettingsWindow && !isOverlayWindow && !isModelSelectorWindow && !isModeSelectorWindow && !isCropperWindow;
 
   if (isCropperWindow) {
     const Cropper = React.lazy(() => import('./components/Cropper'));
@@ -448,6 +450,21 @@ const App: React.FC = () => {
           <QueryClientProvider client={queryClient}>
             <ToastProvider>
               <ModelSelectorWindow />
+              <ToastViewport />
+            </ToastProvider>
+          </QueryClientProvider>
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  if (isModeSelectorWindow) {
+    return (
+      <ErrorBoundary context="ModeSelector">
+        <div className="h-full min-h-0 w-full overflow-hidden">
+          <QueryClientProvider client={queryClient}>
+            <ToastProvider>
+              <ModeSelectorWindow />
               <ToastViewport />
             </ToastProvider>
           </QueryClientProvider>

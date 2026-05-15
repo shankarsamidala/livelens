@@ -214,6 +214,8 @@ export function initializeIpcHandlers(appState: AppState): void {
       const settingsWin = appState.settingsWindowHelper.getSettingsWindow()
       const overlayWin = appState.getWindowHelper().getOverlayWindow()
       const launcherWin = appState.getWindowHelper().getLauncherWindow()
+      const modelSelectorWin = appState.modelSelectorWindowHelper.getWindow()
+      const modeSelectorWin = appState.modeSelectorWindowHelper.getWindow()
 
       if (settingsWin && !settingsWin.isDestroyed() && settingsWin.webContents.id === senderWebContents.id) {
         appState.settingsWindowHelper.setWindowDimensions(settingsWin, width, height)
@@ -222,6 +224,18 @@ export function initializeIpcHandlers(appState: AppState): void {
       ) {
         // NativelyInterface logic - Resize ONLY the overlay window using dedicated method
         appState.getWindowHelper().setOverlayDimensions(width, height)
+      } else if (
+        modelSelectorWin && !modelSelectorWin.isDestroyed() && modelSelectorWin.webContents.id === senderWebContents.id
+      ) {
+        // Model selector dropdown — auto-fit the BrowserWindow to its React panel
+        // (ResizeObserver in ModelSelectorWindow.tsx). Without this branch the
+        // window stayed at its 216x300 creation size and could clip the panel.
+        appState.modelSelectorWindowHelper.setWindowDimensions(width, height)
+      } else if (
+        modeSelectorWin && !modeSelectorWin.isDestroyed() && modeSelectorWin.webContents.id === senderWebContents.id
+      ) {
+        // Mode selector dropdown — auto-fit, same as the model selector above.
+        appState.modeSelectorWindowHelper.setWindowDimensions(width, height)
       } else if (
         launcherWin && !launcherWin.isDestroyed() && launcherWin.webContents.id === senderWebContents.id
       ) {
@@ -2350,6 +2364,28 @@ export function initializeIpcHandlers(appState: AppState): void {
     const win = appState.modelSelectorWindowHelper.getWindow();
     if (win && !win.isDestroyed() && win.isVisible()) {
       appState.modelSelectorWindowHelper.hideWindow();
+    }
+  });
+
+  // ── Mode selector — parallel to the model selector handlers above ──
+  safeHandle("show-mode-selector", (_, coords: { x: number; y: number }) => {
+    appState.modeSelectorWindowHelper.showWindow(coords.x, coords.y);
+  });
+
+  safeHandle("hide-mode-selector", () => {
+    appState.modeSelectorWindowHelper.hideWindow();
+  });
+
+  safeHandle("toggle-mode-selector", (_, coords: { x: number; y: number }) => {
+    appState.modeSelectorWindowHelper.toggleWindow(coords.x, coords.y);
+  });
+
+  // Click-outside close for the Mode selector — same rationale as the model
+  // selector handler above (panel-nonactivating means blur fires unreliably).
+  safeHandle("mode-selector:close-if-open", () => {
+    const win = appState.modeSelectorWindowHelper.getWindow();
+    if (win && !win.isDestroyed() && win.isVisible()) {
+      appState.modeSelectorWindowHelper.hideWindow();
     }
   });
 

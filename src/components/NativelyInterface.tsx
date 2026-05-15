@@ -32,13 +32,9 @@ import {
     ChevronsDown,
     EyeOff,
     Square,
-    Cpu,
-    GripHorizontal,
-    Plus,
-    Settings2
+    GripHorizontal
 } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
-import { createPortal } from 'react-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // import { ModelSelector } from './ui/ModelSelector'; // REMOVED
@@ -269,17 +265,6 @@ const MessageRow = React.memo(function MessageRow({
     prev.onCopy === next.onCopy
 );
 
-// ─── Mode templates (mirrors electron/services/ModesManager.ts:MODE_TEMPLATES) ──
-const MODE_TEMPLATES: Array<{ type: string; label: string; description: string }> = [
-    { type: 'general',              label: 'General',              description: 'Universal adaptive copilot for any meeting.' },
-    { type: 'sales',                label: 'Sales',                description: 'Discovery + objection handling.' },
-    { type: 'recruiting',           label: 'Recruiting',           description: 'Structured candidate evaluation.' },
-    { type: 'team-meet',            label: 'Team Meet',            description: 'Track action items + decisions.' },
-    { type: 'looking-for-work',     label: 'Looking for work',     description: 'Confident interview answers.' },
-    { type: 'technical-interview',  label: 'Technical Interview',  description: 'Whiteboard coding + system design.' },
-    { type: 'lecture',              label: 'Lecture',              description: 'Capture key concepts from lectures.' },
-];
-
 const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
     onEndMeeting,
     overlayOpacity = OVERLAY_OPACITY_DEFAULT,
@@ -418,9 +403,6 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
     // Active mode name (shown as a badge near the Modes button)
     const [activeModeLabel, setActiveModeLabel] = useState<string | null>(null);
 
-    // Top-bar auto-scroll toggle — local UI preference (defaults to on)
-    const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
-
     useEffect(() => {
         // Load initial active mode name
         window.electronAPI?.modesGetActive?.()
@@ -433,63 +415,19 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
         return () => unsub?.();
     }, []);
 
-    // ── Mode dropdown (hybrid: user's modes + 7 templates) ──────────────────
-    const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
-    const [userModes, setUserModes] = useState<Array<{ id: string; name: string; templateType: string; isActive: boolean }>>([]);
-    const [modeDropdownPos, setModeDropdownPos] = useState<{ top: number; left: number } | null>(null);
-    const modeButtonRef = useRef<HTMLButtonElement>(null);
-    const modeDropdownRef = useRef<HTMLDivElement>(null);
-
-    const refreshUserModes = useCallback(async () => {
-        try {
-            const all = await window.electronAPI?.modesGetAll?.();
-            if (Array.isArray(all)) setUserModes(all as any);
-        } catch { /* no-op */ }
-    }, []);
-
-    const openModeDropdown = useCallback(() => {
-        if (modeButtonRef.current) {
-            const rect = modeButtonRef.current.getBoundingClientRect();
-            setModeDropdownPos({ top: rect.bottom + 6, left: rect.left });
-        }
-        setIsModeDropdownOpen(true);
-        refreshUserModes();
-    }, [refreshUserModes]);
-
-    const handleActivateMode = useCallback(async (id: string | null) => {
-        try { await window.electronAPI?.modesSetActive?.(id); } catch { /* no-op */ }
-        setIsModeDropdownOpen(false);
-    }, []);
-
-    const handleCreateFromTemplate = useCallback(async (templateType: string, label: string) => {
-        try {
-            const res = await window.electronAPI?.modesCreate?.({ name: label, templateType });
-            if (res?.success && res.mode?.id) {
-                await window.electronAPI?.modesSetActive?.(res.mode.id);
-            }
-        } catch { /* no-op */ }
-        setIsModeDropdownOpen(false);
-    }, []);
-
-    // Close on outside click + Escape
+    // ── Mode selector — detached BrowserWindow (parallels the model selector).
+    // Click-outside close: the overlay fires this on any mousedown that isn't
+    // the Mode pill itself; the main process hides the window if it's open.
     useEffect(() => {
-        if (!isModeDropdownOpen) return;
-        const handleClick = (e: MouseEvent) => {
-            const target = e.target as Node;
-            if (modeDropdownRef.current?.contains(target)) return;
-            if (modeButtonRef.current?.contains(target)) return;
-            setIsModeDropdownOpen(false);
+        if (!window.electronAPI?.modeSelectorCloseIfOpen) return;
+        const onMouseDown = (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (target?.closest?.('[data-mode-selector-toggle="true"]')) return;
+            window.electronAPI.modeSelectorCloseIfOpen().catch(() => {});
         };
-        const handleKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsModeDropdownOpen(false);
-        };
-        document.addEventListener('mousedown', handleClick);
-        document.addEventListener('keydown', handleKey);
-        return () => {
-            document.removeEventListener('mousedown', handleClick);
-            document.removeEventListener('keydown', handleKey);
-        };
-    }, [isModeDropdownOpen]);
+        document.addEventListener('mousedown', onMouseDown);
+        return () => document.removeEventListener('mousedown', onMouseDown);
+    }, []);
 
     // Model Selection State
     const [currentModel, setCurrentModel] = useState<string>('gemini-3-flash-preview');
@@ -620,8 +558,8 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
     //
     // The 90px transparent gutters on each side when shellWidth == 600 are
     // invisible (window background is transparent) and click-through.
-    const SHELL_WIDTH_COLLAPSED = 880;
-    const SHELL_WIDTH_EXPANDED = 880;
+    const SHELL_WIDTH_COLLAPSED = 720;
+    const SHELL_WIDTH_EXPANDED = 720;
     const STABLE_OVERLAY_WIDTH = SHELL_WIDTH_EXPANDED;
     const shellWidth = useMotionValue(SHELL_WIDTH_COLLAPSED);
     // When collapsed/expanded widths are identical, useTransform's input range is
@@ -3034,28 +2972,20 @@ Provide only the answer, nothing else.`;
         return () => document.removeEventListener('mousedown', onMouseDown);
     }, []);
 
-    // ── Input-click DOM-focus block ──
+    // ── Input focus + stealth handoff ──
     //
-    // When the user clicks the chat input, the browser tries to focus the
-    // <input> element. That focus promotes the NSPanel to key window —
-    // which fires window.onblur on whatever app was previously focused
-    // (Zoom, browser, IDE). preventDefault() on mousedown blocks the focus
-    // attempt entirely. The above mousedown listener has already fired
-    // stealthTapStart() in capture phase, so by the time we get here, the
-    // tap is engaging and DOM focus is no longer the typing path.
-    const blockInputFocus = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
-        // When auto-engage is disabled (composition IME present), the click
-        // does NOT engage the tap — so blocking DOM focus would leave the
-        // user with no way to type. Let the browser focus the input so the
-        // OS Text Input System can route keystrokes through the active IME
-        // and compose CJK characters normally.
-        if (!stealthAutoEngageOkRef.current) return;
-        e.preventDefault();
-        // Don't blur an already-focused element — that itself fires events.
-        if (document.activeElement === textInputRef.current) {
+    // Clicking the chat input focuses it normally — a click must ALWAYS work,
+    // even if the CGEventTap can't engage (e.g. Accessibility permission not
+    // granted). The capture-phase mousedown listener above still fires
+    // stealthTapStart(); once the tap actually becomes active we blur the
+    // input here, so the NSPanel stops being key window (the signal that
+    // interview platforms detect via window.onblur). If the tap never
+    // engages, DOM focus simply stays and typing works the conventional way.
+    useEffect(() => {
+        if (stealthTapActive && document.activeElement === textInputRef.current) {
             textInputRef.current?.blur();
         }
-    }, []);
+    }, [stealthTapActive]);
 
     // ── Derived STT status for the rolling transcript indicator (interviewer channel) ──
     const interviewerSttIndicatorStatus = sttInterviewerStatus;
@@ -3153,7 +3083,6 @@ Provide only the answer, nothing else.`;
                                         style={appearance.controlStyle}
                                         title="Switch model"
                                     >
-                                        <Cpu className="w-3 h-3 opacity-60 shrink-0" />
                                         <span className="truncate">
                                             {(() => {
                                                 const m = currentModel;
@@ -3171,19 +3100,26 @@ Provide only the answer, nothing else.`;
                                         <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
                                     </button>
 
-                                    {/* Analysis mode pill — next to the model selector. Dropdown is rendered
-                                        via portal (escapes shell's overflow: hidden) and positioned with
-                                        position: fixed so it can extend beyond the shell. */}
+                                    {/* Analysis mode pill — opens the detached Mode Selector window
+                                        (parallels the model selector; never clips, no OS shadow). */}
                                     <button
-                                        ref={modeButtonRef}
-                                        onClick={() => isModeDropdownOpen ? setIsModeDropdownOpen(false) : openModeDropdown()}
+                                        data-mode-selector-toggle="true"
+                                        onClick={(e) => {
+                                            if (!contentRef.current) return;
+                                            const contentRect = contentRef.current.getBoundingClientRect();
+                                            const buttonRect = e.currentTarget.getBoundingClientRect();
+                                            const GAP = 8;
+                                            const x = window.screenX + buttonRect.left;
+                                            const y = window.screenY + contentRect.bottom + GAP;
+                                            window.electronAPI.toggleModeSelector({ x, y });
+                                        }}
                                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border max-w-[160px] interaction-base interaction-press ${controlSurfaceClass}`}
                                         style={appearance.controlStyle}
                                         title="Switch analysis mode"
                                     >
                                         <span className="text-[9px] font-bold uppercase tracking-[0.12em] opacity-60 shrink-0">Mode</span>
                                         <span className="truncate">{activeModeLabel ?? 'General'}</span>
-                                        <ChevronDown className={`w-3 h-3 opacity-50 shrink-0 transition-transform ${isModeDropdownOpen ? 'rotate-180' : ''}`} />
+                                        <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
                                     </button>
                                 </div>
 
@@ -3219,10 +3155,9 @@ Provide only the answer, nothing else.`;
 
                                     <div className="w-px h-3.5 mx-1" style={appearance.dividerStyle} />
 
-                                    {/* Mic / listening indicator — read-only, reflects STT status */}
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); /* no-op: indicator only */ }}
-                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
+                                    {/* Mic — STT status indicator (read-only, not a button) */}
+                                    <div
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg shrink-0 ${
                                             sttUserStatus === 'connected'
                                                 ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35),0_4px_12px_-4px_rgba(217,119,87,0.45)]'
                                                 : sttUserStatus === 'reconnecting'
@@ -3230,35 +3165,46 @@ Provide only the answer, nothing else.`;
                                                     : 'overlay-icon-surface text-red-400'
                                         }`}
                                         style={sttUserStatus === 'connected' ? undefined : appearance.iconStyle}
-                                        title={sttUserStatus === 'connected' ? 'Listening' : sttUserStatus === 'reconnecting' ? 'Reconnecting…' : 'STT not connected'}
+                                        title={sttUserStatus === 'connected' ? 'Microphone — listening' : sttUserStatus === 'reconnecting' ? 'Microphone — reconnecting…' : 'Microphone — STT not connected'}
                                     >
                                         <Mic className="w-3.5 h-3.5" />
-                                    </button>
+                                    </div>
 
-                                    {/* Auto-scroll toggle */}
+                                    {/* Auto-scroll toggle — gates the chat scroll-to-bottom on new messages */}
                                     <button
-                                        onClick={() => setAutoScrollEnabled(v => !v)}
+                                        onClick={() => {
+                                            const next = !autoScroll;
+                                            setAutoScroll(next);
+                                            localStorage.setItem('natively_auto_scroll', String(next));
+                                            window.dispatchEvent(new Event('storage'));
+                                        }}
                                         className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
-                                            autoScrollEnabled
-                                                ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary'
-                                                : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-muted'
+                                            autoScroll
+                                                ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35),0_4px_12px_-4px_rgba(217,119,87,0.45)]'
+                                                : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'
                                         }`}
-                                        style={appearance.iconStyle}
-                                        title={autoScrollEnabled ? 'Auto-scroll on' : 'Auto-scroll off'}
+                                        style={autoScroll ? undefined : appearance.iconStyle}
+                                        title={autoScroll ? 'Auto-scroll on — click to disable' : 'Auto-scroll off — click to enable'}
                                     >
                                         <ChevronsDown className="w-3.5 h-3.5" />
                                     </button>
 
-                                    {/* Stealth indicator — read-only, reflects active state */}
+                                    {/* Stealth toggle — start/stop the invisible CGEventTap typing */}
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); }}
+                                        onClick={() => {
+                                            if (stealthTapActive) {
+                                                window.electronAPI?.stealthTapStop?.().catch(() => {});
+                                            } else {
+                                                window.electronAPI?.stealthTapStart?.().catch(() => {});
+                                            }
+                                        }}
                                         className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
                                             stealthTapActive
                                                 ? 'bg-emerald-500/15 text-emerald-300 shadow-[0_0_0_1px_rgba(52,211,153,0.30)]'
                                                 : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'
                                         }`}
                                         style={stealthTapActive ? undefined : appearance.iconStyle}
-                                        title={stealthTapActive ? 'Stealth typing active' : 'Stealth typing — click the input to engage'}
+                                        title={stealthTapActive ? 'Stealth typing active — click to stop' : 'Stealth typing off — click to start'}
                                     >
                                         <Ghost className="w-3.5 h-3.5" />
                                     </button>
@@ -3495,36 +3441,45 @@ Provide only the answer, nothing else.`;
 
                             {/* Input Area */}
                             <div className="px-3 pt-0 pb-3 no-drag">
-                                {/* Screenshot thumbnail row + inline Capture & Process button */}
+                                {/* Screenshot thumbnail row — pixel-exact port of overlay-prototype.html */}
                                 {attachedContext.length > 0 && (
-                                    <div className="flex items-center gap-1.5 mb-2 px-0.5">
-                                        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 min-w-0 flex-1">
-                                            {attachedContext.map((ctx, idx) => (
-                                                <div key={ctx.path} className="relative group/thumb flex-shrink-0">
+                                    <div className="flex items-center gap-1.5 mb-2 px-1">
+                                        {attachedContext.map((ctx, idx) => (
+                                            <div key={ctx.path} className="relative shrink-0">
+                                                <div
+                                                    className="h-10 w-14 rounded-md border border-white/10 overflow-hidden flex items-center justify-center"
+                                                    style={{ background: 'rgba(255,255,255,0.04)' }}
+                                                >
                                                     <img
                                                         src={ctx.preview}
                                                         alt={`Screenshot ${idx + 1}`}
-                                                        className="h-9 w-auto rounded-md border border-white/10"
+                                                        className="h-full w-full object-cover"
                                                     />
-                                                    <button
-                                                        onClick={() => setAttachedContext(prev => prev.filter((_, i) => i !== idx))}
-                                                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
-                                                        title="Remove"
-                                                    >
-                                                        <X className="w-2.5 h-2.5 text-white" />
-                                                    </button>
                                                 </div>
-                                            ))}
-                                        </div>
-                                        <span className="text-[10px] overlay-text-muted shrink-0 whitespace-nowrap">
-                                            {attachedContext.length} attached
+                                                <button
+                                                    onClick={() => setAttachedContext(prev => prev.filter((_, i) => i !== idx))}
+                                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                                                    style={{ background: '#ef4444', color: 'white' }}
+                                                    title="Remove"
+                                                >
+                                                    <X className="w-2.5 h-2.5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <span className="text-[10px]" style={{ color: 'var(--overlay-text-muted)' }}>
+                                            {attachedContext.length} screenshot{attachedContext.length > 1 ? 's' : ''} attached
                                         </span>
+                                        <div className="flex-1" />
                                         <button
-                                            onClick={() => setAttachedContext([])}
-                                            className="text-[10px] overlay-text-muted hover:overlay-text-primary px-1.5 py-0.5 rounded shrink-0"
-                                            title="Remove all"
+                                            className="overlay-solve-btn"
+                                            title="Process the attached screenshot(s)"
+                                            onClick={() => handleWhatToSay()}
                                         >
-                                            Clear
+                                            <Sparkles className="w-3 h-3" />
+                                            Process
+                                            <span className="overlay-kbd">
+                                                {(shortcuts.processScreenshots || ['⌘', '↵']).join('')}
+                                            </span>
                                         </button>
                                     </div>
                                 )}
@@ -3590,10 +3545,15 @@ Provide only the answer, nothing else.`;
                                             value={inputValue}
                                             onChange={(e) => setInputValue(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                                            onMouseDown={blockInputFocus}
+                                            // Click focuses the input normally — clicking must always
+                                            // work. The CGEventTap still engages via the capture-phase
+                                            // mousedown listener; once it's actually active the input
+                                            // is blurred (see the stealthTapActive effect) so the panel
+                                            // stops being key window. If the tap fails (no Accessibility
+                                            // permission), DOM focus stays and typing works regardless.
                                             readOnly={stealthTapActive}
                                             placeholder="Ask anything, or hit ⌘K to autopilot…"
-                                            className="w-full bg-transparent border-0 outline-none text-[13px] leading-relaxed overlay-text-primary placeholder:overlay-text-muted px-0.5"
+                                            className="overlay-chat-input w-full bg-transparent border-0 outline-none text-[13px] leading-relaxed overlay-text-primary placeholder:overlay-text-muted px-0.5"
                                         />
                                     </div>
 
@@ -3638,104 +3598,6 @@ Provide only the answer, nothing else.`;
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            {/* ──────── Mode dropdown — portalled so it can escape the shell's overflow:hidden ──────── */}
-            {isModeDropdownOpen && modeDropdownPos && createPortal(
-                <div
-                    ref={modeDropdownRef}
-                    className="rounded-xl border overflow-hidden shadow-2xl no-drag"
-                    style={{
-                        position: 'fixed',
-                        top: modeDropdownPos.top,
-                        left: modeDropdownPos.left,
-                        width: 280,
-                        zIndex: 9999,
-                        background: 'rgba(20, 22, 28, 0.96)',
-                        borderColor: 'rgba(250, 249, 245, 0.10)',
-                        backdropFilter: 'blur(20px) saturate(150%)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(150%)',
-                        boxShadow: '0 24px 60px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)',
-                    }}
-                >
-                    {/* YOUR MODES */}
-                    <div className="px-3 pt-2.5 pb-1">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[9.5px] font-bold uppercase tracking-[0.12em] overlay-text-muted">Your modes</span>
-                            {userModes.length > 0 && (
-                                <span className="text-[9.5px] overlay-text-muted tabular-nums">{userModes.length}</span>
-                            )}
-                        </div>
-                    </div>
-                    <div className="px-1.5 pb-1.5 max-h-[180px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-                        {userModes.length === 0 ? (
-                            <div className="px-2.5 py-3 text-[11px] overlay-text-muted text-center">
-                                No saved modes yet. Pick a template below to create your first one.
-                            </div>
-                        ) : (
-                            userModes.map((m) => (
-                                <button
-                                    key={m.id}
-                                    onClick={() => handleActivateMode(m.id)}
-                                    className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.05]"
-                                >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        {m.isActive ? (
-                                            <Check className="w-3.5 h-3.5 text-[#d97757] shrink-0" strokeWidth={2.5} />
-                                        ) : (
-                                            <span className="w-3.5 h-3.5 shrink-0" />
-                                        )}
-                                        <span className={`text-[12px] truncate ${m.isActive ? 'overlay-text-primary font-semibold' : 'overlay-text-secondary'}`}>
-                                            {m.name}
-                                        </span>
-                                    </div>
-                                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0 overlay-text-muted" style={{ background: 'rgba(250,249,245,0.05)' }}>
-                                        {m.templateType.replace(/-/g, ' ')}
-                                    </span>
-                                </button>
-                            ))
-                        )}
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-px mx-3" style={{ background: 'rgba(250,249,245,0.08)' }} />
-
-                    {/* NEW FROM TEMPLATE */}
-                    <div className="px-3 pt-2 pb-1">
-                        <span className="text-[9.5px] font-bold uppercase tracking-[0.12em] overlay-text-muted">New from template</span>
-                    </div>
-                    <div className="px-1.5 pb-2 max-h-[220px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-                        {MODE_TEMPLATES.map((t) => (
-                            <button
-                                key={t.type}
-                                onClick={() => handleCreateFromTemplate(t.type, t.label)}
-                                className="w-full flex items-start gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.05] group/template"
-                                title={t.description}
-                            >
-                                <Plus className="w-3.5 h-3.5 overlay-text-muted shrink-0 mt-0.5 group-hover/template:text-[#d97757] transition-colors" strokeWidth={2.5} />
-                                <div className="min-w-0 flex-1">
-                                    <div className="text-[12px] font-medium overlay-text-secondary truncate">{t.label}</div>
-                                    <div className="text-[10px] overlay-text-muted truncate">{t.description}</div>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Footer — link to launcher Modes manager */}
-                    <div className="px-1.5 pt-1.5 pb-2 border-t" style={{ borderColor: 'rgba(250,249,245,0.06)' }}>
-                        <button
-                            onClick={() => {
-                                setIsModeDropdownOpen(false);
-                                window.electronAPI?.openSettingsTab?.('modes');
-                            }}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors hover:bg-white/[0.05] text-[11px] overlay-text-secondary"
-                        >
-                            <Settings2 className="w-3 h-3 opacity-70" />
-                            Manage modes…
-                        </button>
-                    </div>
-                </div>,
-                document.body
-            )}
         </div>
     );
 };

@@ -149,6 +149,7 @@ import { initializeIpcHandlers } from "./ipcHandlers"
 import { WindowHelper } from "./WindowHelper"
 import { SettingsWindowHelper } from "./SettingsWindowHelper"
 import { ModelSelectorWindowHelper } from "./ModelSelectorWindowHelper"
+import { ModeSelectorWindowHelper } from "./ModeSelectorWindowHelper"
 import { CropperWindowHelper } from "./CropperWindowHelper"
 import { ScreenshotHelper } from "./ScreenshotHelper"
 import { KeybindManager } from "./services/KeybindManager"
@@ -196,6 +197,7 @@ interface ScreenshotCaptureSession {
   windowMode: ScreenshotWindowMode;
   wasSettingsVisible: boolean;
   wasModelSelectorVisible: boolean;
+  wasModeSelectorVisible: boolean;
   overlayBounds: Electron.Rectangle | null;
   overlayDisplayId: number | null;
   restoreWithoutFocus: boolean;
@@ -224,6 +226,7 @@ export class AppState {
   private windowHelper: WindowHelper
   public settingsWindowHelper: SettingsWindowHelper
   public modelSelectorWindowHelper: ModelSelectorWindowHelper
+  public modeSelectorWindowHelper: ModeSelectorWindowHelper
   public cropperWindowHelper: CropperWindowHelper
   private screenshotHelper: ScreenshotHelper
   public processingHelper: ProcessingHelper
@@ -310,6 +313,7 @@ export class AppState {
     this.windowHelper = new WindowHelper(this)
     this.settingsWindowHelper = new SettingsWindowHelper()
     this.modelSelectorWindowHelper = new ModelSelectorWindowHelper()
+    this.modeSelectorWindowHelper = new ModeSelectorWindowHelper()
     this.cropperWindowHelper = new CropperWindowHelper()
 
     // 3. Initialize other helpers
@@ -319,6 +323,7 @@ export class AppState {
     this.windowHelper.setContentProtection(this.isUndetectable);
     this.settingsWindowHelper.setContentProtection(this.isUndetectable);
     this.modelSelectorWindowHelper.setContentProtection(this.isUndetectable);
+    this.modeSelectorWindowHelper.setContentProtection(this.isUndetectable);
     this.cropperWindowHelper.setContentProtection(this.isUndetectable);
 
     if (process.platform === 'win32' || process.platform === 'darwin') {
@@ -538,6 +543,7 @@ export class AppState {
     // Inject WindowHelper into other helpers
     this.settingsWindowHelper.setWindowHelper(this.windowHelper);
     this.modelSelectorWindowHelper.setWindowHelper(this.windowHelper);
+    this.modeSelectorWindowHelper.setWindowHelper(this.windowHelper);
 
 
 
@@ -3147,6 +3153,7 @@ export class AppState {
   ): ScreenshotCaptureSession {
     const settingsWindow = this.settingsWindowHelper.getSettingsWindow();
     const modelSelectorWindow = this.modelSelectorWindowHelper.getWindow();
+    const modeSelectorWindow = this.modeSelectorWindowHelper.getWindow();
 
     return {
       captureKind,
@@ -3154,6 +3161,7 @@ export class AppState {
       windowMode: this.windowHelper.getCurrentWindowMode(),
       wasSettingsVisible: !!settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isVisible(),
       wasModelSelectorVisible: !!modelSelectorWindow && !modelSelectorWindow.isDestroyed() && modelSelectorWindow.isVisible(),
+      wasModeSelectorVisible: !!modeSelectorWindow && !modeSelectorWindow.isDestroyed() && modeSelectorWindow.isVisible(),
       overlayBounds: this.windowHelper.getLastOverlayBounds(),
       overlayDisplayId: this.windowHelper.getLastOverlayDisplayId(),
       restoreWithoutFocus: process.platform === 'darwin' || !restoreFocus
@@ -3181,6 +3189,10 @@ export class AppState {
   private hideWindowsForScreenshot(session: ScreenshotCaptureSession): void {
     if (session.wasModelSelectorVisible) {
       this.modelSelectorWindowHelper.hideWindow();
+    }
+
+    if (session.wasModeSelectorVisible) {
+      this.modeSelectorWindowHelper.hideWindow();
     }
 
     if (session.wasSettingsVisible) {
@@ -3217,6 +3229,14 @@ export class AppState {
       if (modelSelectorWindow && !modelSelectorWindow.isDestroyed()) {
         const { x, y } = modelSelectorWindow.getBounds();
         this.modelSelectorWindowHelper.showWindow(x, y, { activate });
+      }
+    }
+
+    if (session.wasModeSelectorVisible) {
+      const modeSelectorWindow = this.modeSelectorWindowHelper.getWindow();
+      if (modeSelectorWindow && !modeSelectorWindow.isDestroyed()) {
+        const { x, y } = modeSelectorWindow.getBounds();
+        this.modeSelectorWindowHelper.showWindow(x, y, { activate });
       }
     }
   }
@@ -3463,6 +3483,7 @@ export class AppState {
     this.windowHelper.setContentProtection(state)
     this.settingsWindowHelper.setContentProtection(state)
     this.modelSelectorWindowHelper.setContentProtection(state)
+    this.modeSelectorWindowHelper.setContentProtection(state)
     this.cropperWindowHelper.setContentProtection(state)
 
     // Persist state via SettingsManager
@@ -3768,6 +3789,7 @@ export class AppState {
       this.windowHelper.getOverlayWindow(),
       this.settingsWindowHelper.getSettingsWindow(),
       this.modelSelectorWindowHelper.getWindow(),
+      this.modeSelectorWindowHelper.getWindow(),
     ];
     const sent = new Set<number>();
     for (const win of windows) {

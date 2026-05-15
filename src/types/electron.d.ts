@@ -227,6 +227,8 @@ export interface ElectronAPI {
   setDefaultModel: (modelId: string) => Promise<{ success: boolean; error?: string }>;
   toggleModelSelector: (coords: { x: number; y: number }) => Promise<void>;
   modelSelectorCloseIfOpen: () => Promise<void>;
+  toggleModeSelector: (coords: { x: number; y: number }) => Promise<void>;
+  modeSelectorCloseIfOpen: () => Promise<void>;
   forceRestartOllama: () => Promise<void>;
 
   // Settings Window
