@@ -92,6 +92,12 @@ const App: React.FC = () => {
   // shown the wizard again after upgrading.
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try {
+      // Dev reset: add ?reset-onboarding to the window URL to force the wizard
+      if (window.location.search.includes('reset-onboarding')) {
+        localStorage.removeItem('natively_onboarding_complete_v1');
+        localStorage.removeItem('natively_seen_startup_v1');
+        return true;
+      }
       const newDone = localStorage.getItem('natively_onboarding_complete_v1') === 'true';
       const oldDone = localStorage.getItem('natively_seen_startup_v1')        === 'true';
       return !newDone && !oldDone;
