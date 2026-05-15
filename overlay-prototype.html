@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Natively Overlay — LiveLens-style Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Overlay tokens — borrowed from LiveLens, accent kept Natively */
+      --overlay-bg: rgba(20, 22, 28, 0.92);
+      --overlay-border: rgba(250,249,245,0.09);
+      --overlay-border-soft: rgba(250,249,245,0.06);
+      --overlay-chip-bg: rgba(250,249,245,0.06);
+      --overlay-chip-hover: rgba(250,249,245,0.10);
+      --overlay-input-bg: rgba(250,249,245,0.04);
+      --overlay-control-bg: rgba(250,249,245,0.05);
+      --overlay-icon-bg: rgba(250,249,245,0.05);
+      --overlay-icon-hover: rgba(250,249,245,0.10);
+      --overlay-bubble-bg: rgba(255,255,255,0.05);
+      --overlay-bubble-border: rgba(255,255,255,0.09);
+
+      --text-primary: #faf9f5;
+      --text-secondary: rgba(250,249,245,0.78);
+      --text-muted: rgba(250,249,245,0.55);
+      --text-faint: rgba(250,249,245,0.38);
+
+      /* Natively brand */
+      --accent: #d97757;
+      --accent-hover: #c4623e;
+      --accent-soft: rgba(217,119,87,0.12);
+      --accent-border: rgba(217,119,87,0.30);
+
+      --interviewer: #d97757;
+      --assistant: #6a9bcc;
+      --send-blue: #007AFF;
+      --send-blue-hover: #0071E3;
+
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(217,119,87,0.10) 0%, transparent 40%),
+        radial-gradient(circle at 70% 80%, rgba(106,155,204,0.08) 0%, transparent 40%),
+        #07080b;
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Faux "desktop window" backdrop so blur shows */
+    .desktop-bg {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.15  0 0 0 0.25 0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 600px;
+    }
+
+    /* Overlay shell — LiveLens recipe with Natively accent */
+    .overlay-shell {
+      width: 680px;
+      background: var(--overlay-bg);
+      border: 1px solid var(--overlay-border);
+      border-radius: 24px;
+      backdrop-filter: blur(20px) saturate(150%);
+      -webkit-backdrop-filter: blur(20px) saturate(150%);
+      box-shadow:
+        0 24px 60px -20px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.04),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    /* Top-bar buttons (icon-only 28px squares) */
+    .topbar-btn {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      background: transparent;
+      transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+      cursor: pointer;
+    }
+    .topbar-btn:hover {
+      background: var(--overlay-icon-hover);
+      color: var(--text-primary);
+    }
+    .topbar-btn:active { transform: scale(0.95); }
+    .topbar-btn.is-active {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 0 0 1px rgba(217,119,87,0.35), 0 4px 12px -4px rgba(217,119,87,0.45);
+    }
+
+    /* Model pill in top bar */
+    .model-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      background: var(--overlay-control-bg);
+      border: 1px solid var(--overlay-border-soft);
+      transition: background 120ms ease;
+      cursor: pointer;
+    }
+    .model-pill:hover { background: var(--overlay-chip-hover); }
+
+    .opacity-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--overlay-control-bg);
+      border: 1px solid var(--overlay-border-soft);
+      cursor: pointer;
+    }
+    .opacity-pill input {
+      width: 26px;
+      background: transparent;
+      color: var(--text-primary);
+      border: none;
+      outline: none;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .topbar-divider {
+      width: 1px; height: 14px;
+      background: var(--overlay-border-soft);
+    }
+
+    /* Transcript bar (Natively-specific, kept) */
+    .transcript-bar {
+      background: rgba(250,249,245,0.025);
+      border-top: 1px solid var(--overlay-border-soft);
+      border-bottom: 1px solid var(--overlay-border-soft);
+    }
+    .transcript-mask {
+      mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+    }
+
+    /* Message bubbles — LiveLens shape, Natively accent */
+    .bubble-user {
+      background: var(--overlay-bubble-bg);
+      border: 1px solid var(--overlay-bubble-border);
+      border-radius: 12px 4px 12px 12px;
+      padding: 8px 12px;
+      max-width: 84%;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .bubble-assistant {
+      background: var(--overlay-bubble-bg);
+      border: 1px solid var(--overlay-bubble-border);
+      border-radius: 4px 12px 12px 12px;
+      padding: 10px 14px;
+      max-width: 88%;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .bubble-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-bottom: 5px;
+    }
+    .bubble-label-user { color: var(--interviewer); }
+    .bubble-label-assistant { color: var(--assistant); }
+
+    /* Quick action chips — universal under assistant replies */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--overlay-chip-bg);
+      border: 1px solid var(--overlay-border-soft);
+      transition: background 120ms ease, transform 120ms ease, color 120ms ease;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .chip:hover { background: var(--overlay-chip-hover); color: var(--text-primary); }
+    .chip:active { transform: scale(0.96); }
+    .chip i { opacity: 0.7; }
+
+    /* Input row */
+    .input-shell {
+      border: 1px solid var(--overlay-border);
+      background: var(--overlay-input-bg);
+      border-radius: 14px;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .input-shell:focus-within {
+      border-color: rgba(217,119,87,0.45);
+      box-shadow: 0 0 0 1px rgba(217,119,87,0.22);
+    }
+
+    /* Mode dropdown trigger */
+    .mode-trigger {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--overlay-control-bg);
+      border: 1px solid var(--overlay-border-soft);
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .mode-trigger:hover { background: var(--overlay-chip-hover); color: var(--text-primary); }
+
+    /* Send button — LiveLens iOS-blue */
+    .send-btn {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: var(--send-blue);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
+      box-shadow: 0 4px 12px -4px rgba(0,122,255,0.55);
+    }
+    .send-btn:hover { background: var(--send-blue-hover); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn.disabled {
+      background: var(--overlay-icon-bg);
+      color: var(--text-faint);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Pulse dot animations */
+    @keyframes soft-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.55; }
+    }
+    .pulse-dot { animation: soft-pulse 1.4s ease-in-out infinite; }
+
+    @keyframes bounce-dot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .listen-dot { animation: bounce-dot 1.2s ease-in-out infinite; }
+    .listen-dot:nth-child(2) { animation-delay: 0.15s; }
+    .listen-dot:nth-child(3) { animation-delay: 0.30s; }
+
+    /* Quick-jump labels above bubbles */
+    .label-divider { color: var(--text-faint); font-size: 10px; }
+
+    /* Two-state hint badge */
+    .kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 16px; height: 16px;
+      padding: 0 4px;
+      border-radius: 4px;
+      background: var(--overlay-chip-bg);
+      border: 1px solid var(--overlay-border-soft);
+      color: var(--text-muted);
+      font-size: 9.5px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Capture & Process inline mini button — LiveLens "Solve" equivalent */
+    .solve-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 9px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+      background: var(--accent);
+      border: 1px solid var(--accent-border);
+      cursor: pointer;
+      transition: background 120ms ease, transform 120ms ease;
+      box-shadow: 0 6px 16px -8px rgba(217,119,87,0.55);
+    }
+    .solve-btn:hover { background: var(--accent-hover); }
+    .solve-btn:active { transform: scale(0.97); }
+
+    /* Recording indicator pill */
+    .rec-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--success);
+      background: rgba(16,185,129,0.10);
+      border: 1px solid rgba(16,185,129,0.22);
+      letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body class="desktop-bg flex items-center justify-center p-12">
+
+  <div class="overlay-shell">
+
+    <!-- ════════════════ TOP BAR ════════════════ -->
+    <div class="flex items-center justify-between px-3 py-2.5" style="border-bottom:1px solid var(--overlay-border-soft);">
+      <!-- Left: logo + model -->
+      <div class="flex items-center gap-2">
+        <button class="topbar-btn" title="Home">
+          <div class="w-5 h-5 rounded-md flex items-center justify-center text-white font-bold text-[10px]" style="background: linear-gradient(135deg, #d97757, #b05530); box-shadow: 0 4px 12px -4px rgba(217,119,87,0.55);">N</div>
+        </button>
+        <button class="model-pill" title="Switch model">
+          <i data-lucide="cpu" class="w-3 h-3 opacity-70"></i>
+          Claude Sonnet 4.6
+          <i data-lucide="chevron-down" class="w-3 h-3 opacity-50"></i>
+        </button>
+        <button class="mode-trigger" title="Interview mode">
+          <i data-lucide="briefcase" class="w-3 h-3 opacity-70"></i>
+          Interview
+          <i data-lucide="chevron-down" class="w-2.5 h-2.5 opacity-50"></i>
+        </button>
+      </div>
+
+      <!-- Right: opacity + actions -->
+      <div class="flex items-center gap-1">
+        <div class="opacity-pill" title="Opacity (↑↓ to adjust)">
+          <i data-lucide="sun" class="w-3 h-3" style="color:var(--text-faint);"></i>
+          <input type="number" min="10" max="100" step="1" value="92" />
+        </div>
+        <div class="topbar-divider mx-1"></div>
+        <!-- Mic / listening -->
+        <button class="topbar-btn is-active" title="Listening">
+          <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+        </button>
+        <!-- Auto-scroll -->
+        <button class="topbar-btn" title="Auto-scroll">
+          <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
+        </button>
+        <!-- Stealth / passthrough -->
+        <button class="topbar-btn" title="Stealth typing">
+          <i data-lucide="ghost" class="w-3.5 h-3.5"></i>
+        </button>
+        <!-- Settings -->
+        <button class="topbar-btn" title="Settings">
+          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+        </button>
+        <div class="topbar-divider mx-1"></div>
+        <!-- Hide -->
+        <button class="topbar-btn" title="Hide overlay">
+          <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+        </button>
+        <!-- End -->
+        <button class="topbar-btn" title="End session" style="color: #f87171;">
+          <i data-lucide="square" class="w-3 h-3" style="fill:currentColor;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════════════ LIVE TRANSCRIPT (kept from Natively) ════════════════ -->
+    <div class="transcript-bar px-4 py-2 flex items-center gap-3">
+      <!-- Listening dots -->
+      <div class="flex items-center gap-1 shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full listen-dot" style="background:var(--success);"></span>
+        <span class="w-1.5 h-1.5 rounded-full listen-dot" style="background:var(--success);"></span>
+        <span class="w-1.5 h-1.5 rounded-full listen-dot" style="background:var(--success);"></span>
+      </div>
+      <span class="rec-pill shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--success);"></span>
+        REC 02:14
+      </span>
+      <div class="flex-1 min-w-0 transcript-mask overflow-hidden whitespace-nowrap">
+        <span class="text-[12px]" style="color:var(--text-muted);">
+          …and walk me through how you'd architect the rate-limiter — like, if traffic spiked 10× overnight, what's the
+          <span style="color:var(--text-primary); font-weight:500;">very first thing</span> you'd
+        </span>
+      </div>
+    </div>
+
+    <!-- ════════════════ CHAT HISTORY ════════════════ -->
+    <div class="px-5 py-4 space-y-5" style="max-height: 360px; overflow-y: auto;">
+
+      <!-- Interviewer message (right) -->
+      <div class="flex flex-col items-end">
+        <div class="bubble-label bubble-label-user">
+          <i data-lucide="user" class="w-2.5 h-2.5"></i>
+          INTERVIEWER
+        </div>
+        <div class="bubble-user">
+          Tell me about a time you scaled a system from prototype to production. What broke first?
+        </div>
+      </div>
+
+      <!-- Assistant message (left) with quick actions -->
+      <div class="flex flex-col items-start">
+        <div class="bubble-label bubble-label-assistant">
+          <span class="w-2 h-2 rounded-full" style="background:var(--assistant); opacity:0.7;"></span>
+          NATIVELY
+        </div>
+        <div class="bubble-assistant">
+          <p>At Acme we scaled our payments pipeline from <strong style="color:var(--text-primary);">200 rps</strong> to <strong style="color:var(--text-primary);">12k rps</strong> over six months. The first thing that broke wasn't compute — it was our Postgres connection pool.</p>
+          <p class="mt-2">We were holding connections open across the entire request lifecycle. Once load doubled, we'd exhaust the pool in under 90 seconds. Fix: moved to PgBouncer transaction-pooling and dropped per-request connection lifetime to ~12ms.</p>
+          <p class="mt-2 text-[12px]" style="color:var(--text-muted);"><em>Want me to elaborate on the migration strategy, the rollback we almost did, or the cost impact?</em></p>
+        </div>
+
+        <!-- Quick action chips — universal under assistant replies -->
+        <div class="flex flex-wrap items-center gap-1.5 mt-2.5">
+          <button class="chip"><i data-lucide="lightbulb" class="w-3 h-3"></i> Example</button>
+          <button class="chip"><i data-lucide="chevrons-down" class="w-3 h-3"></i> Shorter</button>
+          <button class="chip"><i data-lucide="zap" class="w-3 h-3"></i> Deeper</button>
+          <button class="chip"><i data-lucide="arrow-right" class="w-3 h-3"></i> STAR</button>
+          <button class="chip"><i data-lucide="copy" class="w-3 h-3"></i> Copy</button>
+        </div>
+      </div>
+
+      <!-- Streaming assistant (in-progress) -->
+      <div class="flex flex-col items-start">
+        <div class="bubble-label bubble-label-assistant">
+          <span class="w-2 h-2 rounded-full pulse-dot" style="background:var(--assistant);"></span>
+          NATIVELY
+        </div>
+        <div class="bubble-assistant">
+          <p>The connection pool fix bought us 3 weeks. The next bottleneck was<span class="inline-block w-0.5 h-3.5 ml-0.5 align-middle pulse-dot" style="background:var(--text-primary);"></span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ INPUT ROW ════════════════ -->
+    <div class="px-3 pt-2 pb-3" style="border-top:1px solid var(--overlay-border-soft);">
+
+      <!-- Screenshot thumbnail row (when present) -->
+      <div class="flex items-center gap-1.5 mb-2 px-1">
+        <div class="relative shrink-0">
+          <div class="h-10 w-14 rounded-md border border-white/10 flex items-center justify-center" style="background:rgba(255,255,255,0.04);">
+            <i data-lucide="image" class="w-4 h-4" style="color:var(--text-faint);"></i>
+          </div>
+          <button class="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style="background:#ef4444; color:white;">
+            <i data-lucide="x" class="w-2.5 h-2.5"></i>
+          </button>
+        </div>
+        <span class="text-[10px]" style="color:var(--text-faint);">1 screenshot attached</span>
+        <div class="flex-1"></div>
+        <button class="solve-btn">
+          <i data-lucide="sparkles" class="w-3 h-3"></i>
+          Capture &amp; Process
+          <span class="kbd">⌘⇧H</span>
+        </button>
+      </div>
+
+      <!-- Input shell -->
+      <div class="input-shell flex items-end gap-2 px-3 py-2">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--text-faint);">Analysis mode</span>
+            <button class="mode-trigger">
+              General
+              <i data-lucide="chevron-down" class="w-2.5 h-2.5 opacity-50"></i>
+            </button>
+          </div>
+          <input
+            type="text"
+            placeholder="Ask anything, or hit ⌘K to autopilot…"
+            class="w-full bg-transparent outline-none text-[13px] placeholder:text-[var(--text-faint)]"
+            style="color:var(--text-primary);"
+            value=""
+          />
+        </div>
+        <button class="send-btn disabled" title="Send (Enter)">
+          <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Footer hint -->
+      <div class="flex items-center justify-between mt-2 px-1">
+        <div class="flex items-center gap-2 text-[10px]" style="color:var(--text-faint);">
+          <span class="kbd">↵</span> send
+          <span class="kbd">⌘K</span> autopilot
+          <span class="kbd">⌘⇧Space</span> stealth type
+        </div>
+        <div class="flex items-center gap-1.5 text-[10px]" style="color:var(--text-faint);">
+          <i data-lucide="shield-check" class="w-3 h-3"></i>
+          Stealth ready
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

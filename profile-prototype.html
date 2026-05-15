@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile Intelligence — Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-main: #0d0f14;
+      --bg-card: #111419;
+      --bg-sub: #15181f;
+      --bg-input: #0f1217;
+      --border-subtle: rgba(255,255,255,0.07);
+      --border-soft: rgba(255,255,255,0.10);
+      --text-primary: #e2e5ed;
+      --text-secondary: rgba(226,229,237,0.65);
+      --text-tertiary: rgba(226,229,237,0.45);
+      --text-quaternary: rgba(226,229,237,0.28);
+      --accent-primary: #d97757;
+      --accent-secondary: #b05530;
+      --accent-bg: rgba(217,119,87,0.08);
+      --accent-border: rgba(217,119,87,0.22);
+      --success: #34d399;
+      --warning: #f59e0b;
+      --error: #f87171;
+      --info: #60a5fa;
+      --violet: #a78bfa;
+      --cyan: #22d3ee;
+    }
+
+    html, body {
+      background: var(--bg-main);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; }
+    .card-sub { background: var(--bg-sub); border: 1px solid var(--border-subtle); border-radius: 12px; }
+    .card-glass {
+      background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0) 60%), var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+    }
+
+    .tab-pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .tab-pill:hover { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+    .tab-pill.active { color: var(--text-primary); background: rgba(255,255,255,0.07); border-color: var(--border-soft); }
+
+    .status-dot { width: 6px; height: 6px; border-radius: 999px; box-shadow: 0 0 8px currentColor; }
+
+    .ring-bg { stroke: rgba(255,255,255,0.06); }
+    .ring-fg { stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
+
+    .skill-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+    }
+    .skill-pill:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+    .skill-pill.strong {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
+      color: rgba(217,119,87,0.95);
+    }
+
+    .upload-card {
+      background: var(--bg-card);
+      border: 1px dashed var(--border-soft);
+      border-radius: 14px;
+      transition: all 0.18s ease;
+    }
+    .upload-card:hover { border-color: var(--accent-border); background: linear-gradient(180deg, var(--accent-bg) 0%, var(--bg-card) 80%); }
+    .upload-card.has-file { border-style: solid; border-color: var(--border-subtle); }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .inset {
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.25);
+    }
+
+    .star-on { color: var(--accent-primary); }
+    .star-off { color: rgba(255,255,255,0.10); }
+
+    @keyframes soft-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.30); }
+      50%      { box-shadow: 0 0 0 4px rgba(52,211,153,0); }
+    }
+    .pulse-dot { animation: soft-pulse 2s ease-in-out infinite; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(217,119,87,0.40);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -8px rgba(217,119,87,0.45); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-secondary);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-soft);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); border-color: rgba(255,255,255,0.14); }
+
+    .header-blur {
+      background: rgba(13,15,20,0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .hero-bg {
+      background-image:
+        radial-gradient(circle at 100% 0%, rgba(217,119,87,0.10) 0%, transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(167,139,250,0.06) 0%, transparent 40%),
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0);
+      background-size: auto, auto, 16px 16px;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ═══════════════════════════════════════════════════
+       STICKY HEADER
+  ═══════════════════════════════════════════════════ -->
+  <header class="header-blur sticky top-0 z-30">
+    <div class="max-w-[820px] mx-auto px-6 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="relative shrink-0">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#d97757] to-[#b05530] flex items-center justify-center text-white font-bold text-[14px] shadow-lg shadow-[#d97757]/20">SS</div>
+          <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0d0f14] pulse-dot"></span>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="text-[15px] font-bold tracking-[-0.015em] truncate">Profile Intelligence</h1>
+            <span class="text-[8.5px] font-bold px-1.5 py-0.5 rounded-md tracking-[0.08em] uppercase" style="background:rgba(217,119,87,0.12);border:1px solid rgba(217,119,87,0.22);color:#d97757;">Beta</span>
+          </div>
+          <p class="text-[11px] text-[var(--text-tertiary)] truncate">Your AI grounded in your real experience</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style="background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.22);">
+          <i data-lucide="sparkles" class="w-3 h-3" style="color:#fbbf24;stroke-width:2.5;"></i>
+          <span class="text-[10.5px] font-bold tracking-wide" style="color:#fbbf24;">Pro</span>
+        </div>
+        <button class="btn-ghost">
+          <i data-lucide="settings-2" class="w-3.5 h-3.5"></i> Manage
+        </button>
+        <button class="p-2 rounded-lg hover:bg-white/[0.05] transition-colors" aria-label="Close">
+          <i data-lucide="x" class="w-4 h-4 text-[var(--text-tertiary)]"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════
+       PAGE CONTENT
+  ═══════════════════════════════════════════════════ -->
+  <main class="max-w-[820px] mx-auto px-6 py-7 space-y-7">
+
+    <!-- ─── HERO IDENTITY ─────────────────────────────── -->
+    <section class="card-glass hero-bg overflow-hidden">
+      <div class="px-6 py-6">
+        <div class="flex items-start justify-between gap-5">
+
+          <div class="flex items-start gap-4 min-w-0">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#d97757] to-[#b05530] flex items-center justify-center text-white font-bold text-[20px] shadow-lg shadow-[#d97757]/25 shrink-0">SS</div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <h2 class="text-[19px] font-bold tracking-[-0.025em] truncate">Shankar Samidala</h2>
+                <i data-lucide="badge-check" class="w-4 h-4 text-[var(--accent-primary)] shrink-0"></i>
+              </div>
+              <p class="text-[12px] text-[var(--text-secondary)] mb-3">Senior Product Engineer · India</p>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);">
+                  <div class="flex items-center gap-1.5">
+                    <span class="status-dot bg-emerald-400" style="color:#34d399;"></span>
+                    <span class="text-[10.5px] font-bold tracking-wide" style="color:#34d399;">Persona Engine</span>
+                  </div>
+                  <div class="w-8 h-4 rounded-full bg-emerald-500/30 relative">
+                    <div class="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-400 shadow-sm"></div>
+                  </div>
+                </div>
+                <button class="text-[10.5px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] flex items-center gap-1 transition-colors">
+                  <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5 shrink-0">
+            <div class="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl" style="background:rgba(255,255,255,0.025);border:1px solid var(--border-subtle);">
+              <div class="relative w-12 h-12">
+                <svg class="w-12 h-12" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5" class="ring-bg"></circle>
+                  <circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5" class="ring-fg" stroke="#d97757" stroke-dasharray="94" stroke-dashoffset="22"></circle>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-[15px] font-bold tabular-nums">7<span class="text-[10px] font-medium text-[var(--text-tertiary)] ml-0.5">y</span></span>
+                </div>
+              </div>
+              <span class="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">Exp</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl" style="background:rgba(255,255,255,0.025);border:1px solid var(--border-subtle);">
+              <div class="relative w-12 h-12">
+                <svg class="w-12 h-12" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5" class="ring-bg"></circle>
+                  <circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5" class="ring-fg" stroke="#a78bfa" stroke-dasharray="94" stroke-dashoffset="38"></circle>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-[15px] font-bold tabular-nums">12</span>
+                </div>
+              </div>
+              <span class="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">Projects</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl" style="background:rgba(255,255,255,0.025);border:1px solid var(--border-subtle);">
+              <div class="relative w-12 h-12">
+                <svg class="w-12 h-12" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5" class="ring-bg"></circle>
+                  <circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5" class="ring-fg" stroke="#34d399" stroke-dasharray="94" stroke-dashoffset="10"></circle>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-[14px] font-bold tabular-nums">284</span>
+                </div>
+              </div>
+              <span class="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">Knowledge</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 pt-4" style="border-top:1px solid var(--border-subtle);">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="section-label">Top skills</span>
+            <button class="text-[10.5px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] flex items-center gap-1 transition-colors">
+              <i data-lucide="pencil" class="w-3 h-3"></i> Edit
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="skill-pill strong">TypeScript</span>
+            <span class="skill-pill strong">React</span>
+            <span class="skill-pill strong">Node.js</span>
+            <span class="skill-pill">Postgres</span>
+            <span class="skill-pill">Electron</span>
+            <span class="skill-pill">Tailwind</span>
+            <span class="skill-pill">AWS</span>
+            <span class="skill-pill">Python</span>
+            <span class="skill-pill">Docker</span>
+            <span class="skill-pill" style="color:var(--text-tertiary);">+12 more</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── DATA INPUTS ──────────────────────────────── -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <span class="section-label">Data inputs</span>
+        <span class="text-[10.5px] text-[var(--text-tertiary)]">The more we know, the sharper your AI</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="upload-card has-file px-4 py-4 flex flex-col gap-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:rgba(96,165,250,0.10);border:1px solid rgba(96,165,250,0.18);">
+                <i data-lucide="file-text" class="w-4 h-4" style="color:#60a5fa;"></i>
+              </div>
+              <div>
+                <p class="text-[12px] font-bold text-[var(--text-primary)]">Resume</p>
+                <p class="text-[10px] text-[var(--text-tertiary)]">PDF · 2 pages</p>
+              </div>
+            </div>
+            <span class="flex items-center gap-1 px-2 py-0.5 rounded-full" style="background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.20);">
+              <i data-lucide="check" class="w-2.5 h-2.5" style="color:#34d399;stroke-width:3"></i>
+              <span class="text-[9.5px] font-bold tracking-wide" style="color:#34d399;">Parsed</span>
+            </span>
+          </div>
+          <div class="inset px-2.5 py-2 flex items-center justify-between">
+            <span class="text-[10.5px] mono truncate text-[var(--text-secondary)]">shankar_resume_v4.pdf</span>
+            <span class="text-[10px] text-[var(--text-tertiary)] shrink-0 ml-2">98 KB</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="flex-1 text-[11px] font-medium py-1.5 rounded-lg transition-colors" style="background:rgba(255,255,255,0.04);border:1px solid var(--border-soft);color:var(--text-secondary);">Replace</button>
+            <button class="text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors" style="color:#f87171;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.18);">
+              <i data-lucide="trash-2" class="w-3 h-3 inline -mt-0.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="upload-card px-4 py-4 flex flex-col items-center justify-center gap-2 text-center cursor-pointer min-h-[170px]">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);">
+            <i data-lucide="briefcase" class="w-4 h-4 text-[var(--text-tertiary)]"></i>
+          </div>
+          <div>
+            <p class="text-[12px] font-bold text-[var(--text-primary)]">Job Description</p>
+            <p class="text-[10.5px] text-[var(--text-tertiary)] mt-0.5 leading-snug max-w-[200px]">Drop a JD to unlock interview prep, salary research, and a negotiation script.</p>
+          </div>
+          <button class="btn-primary mt-1.5">
+            <i data-lucide="upload" class="w-3 h-3"></i> Upload JD
+          </button>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom:1px solid var(--border-subtle);">
+          <div class="flex items-center gap-2">
+            <i data-lucide="pencil" class="w-3.5 h-3.5 text-[var(--text-tertiary)]"></i>
+            <span class="text-[12px] font-semibold">Custom context</span>
+            <span class="flex items-center gap-1 text-[10px] text-emerald-400/80">
+              <i data-lucide="check" class="w-2.5 h-2.5" style="stroke-width:3"></i> Auto-saved
+            </span>
+          </div>
+          <span class="text-[10.5px] text-[var(--text-tertiary)] tabular-nums mono">412 / 4000</span>
+        </div>
+        <div class="p-3">
+          <textarea
+            class="w-full text-[12.5px] leading-relaxed text-[var(--text-primary)] bg-transparent border-0 outline-none resize-none placeholder:text-[var(--text-quaternary)]"
+            rows="3"
+            placeholder="Add anything else your AI should know — context you didn't put on the resume, side projects, the kind of role you're targeting…"
+          >Looking for Staff/Principal engineering roles at Series B+ infra startups. Strongest at TypeScript + distributed systems. Prefer remote-first, async culture. Avoid trading firms.</textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="px-5 py-3.5 flex items-center justify-between gap-3" style="border-bottom:1px solid var(--border-subtle);">
+          <div class="flex items-center gap-2 min-w-0">
+            <i data-lucide="globe" class="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0"></i>
+            <span class="text-[12px] font-semibold shrink-0">Tavily search key</span>
+            <span class="text-[10.5px] text-[var(--text-tertiary)] truncate hidden sm:inline">— powers web research</span>
+          </div>
+          <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-full shrink-0" style="background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.20);">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+            <span class="text-[9.5px] font-bold tracking-wide" style="color:#34d399;">Connected</span>
+          </span>
+        </div>
+        <div class="p-4 flex items-center gap-2">
+          <div class="flex-1 inset px-3 py-2 flex items-center gap-2">
+            <i data-lucide="key" class="w-3 h-3 text-[var(--text-tertiary)]"></i>
+            <span class="text-[12px] mono text-[var(--text-secondary)]">tvly-•••••••••••••••••••••••••••a8f3</span>
+          </div>
+          <button class="btn-ghost">Replace</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── COMPANY INTELLIGENCE ──────────────────────── -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <span class="section-label flex items-center gap-2">
+          <i data-lucide="building-2" class="w-3 h-3"></i> Company intel
+        </span>
+        <div class="flex items-center gap-2">
+          <span class="text-[10.5px] text-[var(--text-tertiary)]">Last researched 2 min ago</span>
+          <button class="text-[10.5px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] flex items-center gap-1 transition-colors">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden mb-3">
+        <div class="h-[2px]" style="background:linear-gradient(90deg, #a78bfa, transparent 70%);"></div>
+        <div class="px-5 py-4 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-[16px] shrink-0" style="background:linear-gradient(135deg,#a78bfa,#7c3aed);color:white;">S</div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <h3 class="text-[15px] font-bold tracking-[-0.015em]">Stripe</h3>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider" style="background:rgba(167,139,250,0.10);border:1px solid rgba(167,139,250,0.20);color:#a78bfa;">Fintech</span>
+              </div>
+              <p class="text-[11px] text-[var(--text-tertiary)] truncate">Senior Software Engineer · Remote · India</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-[10px] uppercase tracking-[0.08em] font-semibold text-[var(--text-tertiary)]">Match</p>
+            <p class="text-[20px] font-bold tabular-nums" style="color:#34d399;">87<span class="text-[10px] font-medium text-[var(--text-tertiary)]">%</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden mb-3">
+        <div class="px-5 py-4 flex items-center justify-between gap-4" style="border-bottom:1px solid var(--border-subtle);">
+          <div class="flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="text-[12px] font-semibold">Salary estimate</span>
+            <span class="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold" style="background:rgba(52,211,153,0.10);color:#34d399;">High confidence</span>
+          </div>
+          <span class="text-[10.5px] text-[var(--text-tertiary)]">Based on 47 data points</span>
+        </div>
+        <div class="px-5 py-5 grid grid-cols-3 gap-5">
+          <div><p class="text-[10px] uppercase tracking-[0.1em] font-semibold text-[var(--text-tertiary)] mb-1">Base low</p><p class="text-[20px] font-bold tabular-nums tracking-tight">$165k</p></div>
+          <div class="text-center"><p class="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1" style="color:var(--accent-primary);">Target mid</p><p class="text-[26px] font-bold tabular-nums tracking-tight" style="color:var(--accent-primary);">$195k</p></div>
+          <div class="text-right"><p class="text-[10px] uppercase tracking-[0.1em] font-semibold text-[var(--text-tertiary)] mb-1">Stretch</p><p class="text-[20px] font-bold tabular-nums tracking-tight">$235k</p></div>
+        </div>
+        <div class="px-5 pb-5">
+          <div class="relative h-2 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.06);">
+            <div class="absolute inset-y-0 rounded-full" style="left:8%;width:75%;background:linear-gradient(90deg,rgba(217,119,87,0.35),rgba(217,119,87,0.85),rgba(217,119,87,0.35));"></div>
+            <div class="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#0d0f14]" style="left:calc(8% + 33%);background:var(--accent-primary);box-shadow:0 0 0 3px rgba(217,119,87,0.18);"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-[var(--text-tertiary)] mt-1.5 mono"><span>$130k</span><span>$280k</span></div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="px-3 py-2.5 flex items-center gap-1 overflow-x-auto" style="border-bottom:1px solid var(--border-subtle);">
+          <button class="tab-pill active">Hiring</button>
+          <button class="tab-pill">Culture</button>
+          <button class="tab-pill">Reviews</button>
+          <button class="tab-pill">Benefits</button>
+          <button class="tab-pill">News</button>
+          <button class="tab-pill">Competitors</button>
+          <button class="tab-pill flex items-center gap-1">Sources <span class="px-1 py-0 rounded text-[9px] mono" style="background:rgba(255,255,255,0.06);">12</span></button>
+        </div>
+
+        <div class="p-5 space-y-4">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="target" class="w-3.5 h-3.5" style="color:var(--accent-primary);"></i>
+              <span class="text-[11px] font-bold tracking-[0.04em] uppercase" style="color:var(--accent-primary);">Hiring strategy</span>
+            </div>
+            <p class="text-[12.5px] leading-relaxed text-[var(--text-secondary)]">Stripe runs a 5-stage loop: recruiter screen, technical phone screen, virtual onsite (3 panels — coding, system design, behavioral), team match, and final bar-raiser. Decisions are made by committee; expect 2–3 weeks from final round to offer. Strongest signals: production engineering judgment, ownership stories, and clean API design under pressure.</p>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="brain-circuit" class="w-3.5 h-3.5 text-violet-400"></i>
+              <span class="text-[11px] font-bold tracking-[0.04em] uppercase text-violet-400">Interview focus</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded" style="background:rgba(245,158,11,0.10);color:#f59e0b;">Difficulty: Hard</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="card-sub px-3 py-2.5"><p class="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-1">Technical</p><p class="text-[11.5px] leading-snug text-[var(--text-secondary)]">API design, idempotency, distributed systems, payment correctness edge cases.</p></div>
+              <div class="card-sub px-3 py-2.5"><p class="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-1">Behavioral</p><p class="text-[11.5px] leading-snug text-[var(--text-secondary)]">"Strong opinions, loosely held." Bring metric-driven stories of disagreement → outcome.</p></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span class="text-[11px] font-bold tracking-[0.04em] uppercase text-emerald-400">Culture signals</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="card-sub px-3 py-2.5 flex items-center justify-between"><span class="text-[11px] text-[var(--text-secondary)]">Work-life balance</span><span class="flex items-center gap-0.5"><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-off"></i><i data-lucide="star" class="w-3 h-3 star-off"></i></span></div>
+              <div class="card-sub px-3 py-2.5 flex items-center justify-between"><span class="text-[11px] text-[var(--text-secondary)]">Compensation</span><span class="flex items-center gap-0.5"><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i></span></div>
+              <div class="card-sub px-3 py-2.5 flex items-center justify-between"><span class="text-[11px] text-[var(--text-secondary)]">Career growth</span><span class="flex items-center gap-0.5"><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-off"></i></span></div>
+              <div class="card-sub px-3 py-2.5 flex items-center justify-between"><span class="text-[11px] text-[var(--text-secondary)]">Management</span><span class="flex items-center gap-0.5"><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-on" style="fill:currentColor;"></i><i data-lucide="star" class="w-3 h-3 star-off"></i><i data-lucide="star" class="w-3 h-3 star-off"></i></span></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="message-square-quote" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span class="text-[11px] font-bold tracking-[0.04em] uppercase text-cyan-400">What employees say</span>
+            </div>
+            <div class="space-y-2">
+              <div class="card-sub px-3.5 py-3"><p class="text-[11.5px] leading-relaxed text-[var(--text-secondary)] italic">"Top-tier engineering rigor. Code review culture is the best I've seen. Pay is excellent. Downside: scope creep is constant and on-call can be brutal."</p><p class="text-[10px] text-[var(--text-tertiary)] mt-1.5">— Senior Engineer · 3 yrs · Glassdoor</p></div>
+              <div class="card-sub px-3.5 py-3"><p class="text-[11.5px] leading-relaxed text-[var(--text-secondary)] italic">"Smart people, ambitious roadmap. Hiring bar is genuinely high — feedback is fast and direct. Promotion to L5+ takes real impact, no politicking shortcuts."</p><p class="text-[10px] text-[var(--text-tertiary)] mt-1.5">— Staff Engineer · 5 yrs · Levels.fyi</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── NEGOTIATION SCRIPT ──────────────────────── -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <span class="section-label flex items-center gap-2">
+          <i data-lucide="handshake" class="w-3 h-3"></i> Negotiation script
+        </span>
+        <button class="text-[10.5px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] flex items-center gap-1 transition-colors">
+          <i data-lucide="refresh-cw" class="w-3 h-3"></i> Regenerate
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2.5">
+        <div class="card overflow-hidden">
+          <div class="h-[2px]" style="background:linear-gradient(90deg,#60a5fa,transparent);"></div>
+          <div class="px-4 py-4 flex flex-col gap-2.5 h-full">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold" style="background:rgba(96,165,250,0.10);border:1px solid rgba(96,165,250,0.20);color:#60a5fa;">1</div>
+              <span class="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Opening</span>
+            </div>
+            <p class="text-[11.5px] leading-relaxed text-[var(--text-secondary)]">"I'm excited about the role and aligned with Stripe's direction. Based on my research and the scope we discussed, I was hoping we could land closer to <strong class="text-[var(--text-primary)]">$210k base</strong>."</p>
+          </div>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="h-[2px]" style="background:linear-gradient(90deg,#a78bfa,transparent);"></div>
+          <div class="px-4 py-4 flex flex-col gap-2.5 h-full">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold" style="background:rgba(167,139,250,0.10);border:1px solid rgba(167,139,250,0.20);color:#a78bfa;">2</div>
+              <span class="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Justify</span>
+            </div>
+            <p class="text-[11.5px] leading-relaxed text-[var(--text-secondary)]">"I've led production payments work at scale — including the migration that cut p99 latency 40%. That overlaps directly with what you described for the Issuing team."</p>
+          </div>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="h-[2px]" style="background:linear-gradient(90deg,#34d399,transparent);"></div>
+          <div class="px-4 py-4 flex flex-col gap-2.5 h-full">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold" style="background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.20);color:#34d399;">3</div>
+              <span class="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Counter</span>
+            </div>
+            <p class="text-[11.5px] leading-relaxed text-[var(--text-secondary)]">"If base is firm, can we move on equity? An additional <strong class="text-[var(--text-primary)]">$40k in RSUs</strong> over 4 years would close the gap and keep us aligned."</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="flex items-start gap-2 px-3 py-2.5 rounded-xl" style="background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);">
+      <i data-lucide="info" class="w-3 h-3 text-[var(--text-tertiary)] shrink-0 mt-0.5"></i>
+      <p class="text-[10.5px] text-[var(--text-tertiary)] leading-relaxed">Profile Intelligence is in <strong class="text-[var(--text-secondary)]">beta</strong>. AI summaries can be wrong — verify critical claims (especially salary numbers) before acting.</p>
+    </div>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
