@@ -6,7 +6,6 @@ import SettingsPopup from "./components/SettingsPopup" // Keeping for legacy/spe
 import Launcher from "./components/Launcher"
 import ModelSelectorWindow from "./components/ModelSelectorWindow"
 import ModeSelectorWindow from "./components/ModeSelectorWindow"
-import StartupSequence from "./components/StartupSequence"
 import { AnimatePresence, motion } from "framer-motion"
 import UpdateBanner from "./components/UpdateBanner"
 import { SupportToaster } from "./components/SupportToaster"
@@ -14,7 +13,7 @@ import { NativelyQuotaBanner } from "./components/NativelyQuotaBanner"
 import { FreeTrialBanner }      from "./components/trial/FreeTrialBanner"
 import { FreeTrialModal }       from "./components/trial/FreeTrialModal"
 import { TrialPromoToaster }    from "./components/trial/TrialPromoToaster"
-import { PermissionsToaster }   from "./components/onboarding/PermissionsToaster"
+import { OnboardingWizard }     from "./components/onboarding/OnboardingWizard"
 import { AlertCircle } from "lucide-react"
 import { clampOverlayOpacity, OVERLAY_OPACITY_DEFAULT, getDefaultOverlayOpacity } from "./lib/overlayAppearance"
 import { getMeetingInterfaceTheme, type MeetingInterfaceTheme } from './lib/meetingInterfaceTheme'
@@ -88,11 +87,14 @@ const App: React.FC = () => {
   }, [isLauncherWindow, isOverlayWindow, isDefault]);
 
   // State
-  // One-shot first-run startup sequence. Once the user dismisses it (or any
-  // future code flips the flag), it never appears again on subsequent launches.
-  const [showStartup, setShowStartup] = useState<boolean>(() => {
+  // Full onboarding wizard — shown once until completed.
+  // Checks both the new key and the old startup key so existing users aren't
+  // shown the wizard again after upgrading.
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('natively_seen_startup_v1') !== 'true';
+      const newDone = localStorage.getItem('natively_onboarding_complete_v1') === 'true';
+      const oldDone = localStorage.getItem('natively_seen_startup_v1')        === 'true';
+      return !newDone && !oldDone;
     } catch {
       return true;
     }
@@ -137,9 +139,8 @@ const App: React.FC = () => {
   // API check
   const [hasNativelyApi, setHasNativelyApi] = useState<boolean>(false);
 
-  // ── Onboarding / promo toasters ───────────────────────────
-  const [showPermissionsToaster, setShowPermissionsToaster] = useState(false);
-  const [showTrialPromo,         setShowTrialPromo]         = useState(false);
+  // ── Promo toasters ────────────────────────────────────────
+  const [showTrialPromo, setShowTrialPromo] = useState(false);
 
   // ── Free Trial global state ────────────────────────────────
   const [activeTrial, setActiveTrial] = useState<{
@@ -148,7 +149,7 @@ const App: React.FC = () => {
   } | null>(null);
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
 
-  const isAppReady = !isSettingsWindow && !isOverlayWindow && !isModelSelectorWindow && !showStartup && isLauncherMainView;
+  const isAppReady = !isSettingsWindow && !isOverlayWindow && !isModelSelectorWindow && !showOnboarding && isLauncherMainView;
   const { activeAd, dismissAd, previewAd } = useAdCampaigns(
     planDetails,
     hasProfile,
@@ -258,17 +259,8 @@ const App: React.FC = () => {
       setShowTrialExpiredModal(false);
     });
 
-    // ── Onboarding toasters ──────────────────────────────────
-    if (isLauncherWindow || isDefault) {
-      const permsShown = localStorage.getItem('natively_perms_shown_v1');
-      if (!permsShown) {
-        // First ever launch — show permissions toaster
-        setShowPermissionsToaster(true);
-      } else {
-        // Trial promo disabled — REINIT is positioned as a free career copilot
-        // setShowTrialPromo(true);
-      }
-    }
+    // Onboarding is handled by OnboardingWizard (showOnboarding state above).
+    // Trial promo disabled — REINIT is positioned as a free career copilot.
 
     // Listen for open-settings-tab events from other windows — forward to Launcher via DOM event
     const removeOpenSettingsTab = window.electronAPI?.onOpenSettingsTab?.((tab: string) => {
@@ -506,15 +498,20 @@ const App: React.FC = () => {
     <ErrorBoundary context="Launcher">
     <div className="h-full min-h-0 w-full relative bg-[#000000]">
       <AnimatePresence>
-        {showStartup ? (
+        {showOnboarding ? (
           <motion.div
-            key="startup"
+            key="onboarding"
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.1, pointerEvents: "none", transition: { duration: 0.6, ease: "easeInOut" } }}
+            exit={{ opacity: 0, scale: 1.04, pointerEvents: 'none', transition: { duration: 0.5, ease: 'easeInOut' } }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100 }}
           >
-            <StartupSequence onComplete={() => {
-              try { localStorage.setItem('natively_seen_startup_v1', 'true'); } catch {}
-              setShowStartup(false);
+            <OnboardingWizard onComplete={() => {
+              try {
+                localStorage.setItem('natively_onboarding_complete_v1', 'true');
+                localStorage.setItem('natively_seen_startup_v1',        'true');
+                localStorage.setItem('natively_perms_shown_v1',         '1');
+              } catch {}
+              setShowOnboarding(false);
             }} />
           </motion.div>
         ) : (
@@ -599,16 +596,6 @@ const App: React.FC = () => {
           onUpgrade={() => openSettingsExclusive('api')}
         />
       )}
-
-      {/* Permissions toaster — first ever launch */}
-      <PermissionsToaster
-        isOpen={showPermissionsToaster}
-        onDismiss={() => {
-          localStorage.setItem('natively_perms_shown_v1', '1');
-          setShowPermissionsToaster(false);
-          // After permissions, allow trial promo on next launch
-        }}
-      />
 
       {/* Trial promo toaster — 5s after restart (self-gates via localStorage + conditions) */}
       <TrialPromoToaster
