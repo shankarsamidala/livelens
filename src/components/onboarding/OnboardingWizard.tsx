@@ -120,6 +120,7 @@ function WizardShell({
         background: INK_900,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         position: 'relative', overflow: 'hidden',
+        minHeight: '100vh',
       }}>
         {/* Subtle grid */}
         <div style={{
@@ -132,7 +133,7 @@ function WizardShell({
           position: 'absolute', inset: 0, pointerEvents: 'none',
           background: `radial-gradient(ellipse 80% 80% at 50% 50%,transparent 40%,${INK_900} 100%)`,
         }} />
-        <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <OnboardingTestimonial />
         </div>
       </div>
