@@ -27,13 +27,23 @@ import {
     Code,
     Copy,
     Check,
-    PointerOff
+    PointerOff,
+    Sun,
+    ChevronsDown,
+    EyeOff,
+    Square,
+    Cpu,
+    GripHorizontal,
+    Plus,
+    Settings2
 } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // import { ModelSelector } from './ui/ModelSelector'; // REMOVED
 import TopPill from './ui/TopPill';
+import nativelyIcon from './icon.png';
 import RollingTranscript from './ui/RollingTranscript';
 import { NegotiationCoachingCard } from '../premium';
 import ReactMarkdown from 'react-markdown';
@@ -51,7 +61,6 @@ const REMARK_PLUGINS = [remarkGfm, remarkMath];
 const REHYPE_PLUGINS = [rehypeKatex];
 import { analytics, detectProviderType } from '../lib/analytics/analytics.service';
 import { useShortcuts } from '../hooks/useShortcuts';
-import { useResolvedTheme } from '../hooks/useResolvedTheme';
 import { getOverlayAppearance, OVERLAY_OPACITY_DEFAULT, getGlassOverlayAppearance } from '../lib/overlayAppearance';
 import type { MeetingInterfaceTheme } from '../lib/meetingInterfaceTheme';
 import GlassEffectLayer from './ui/GlassEffectLayer';
@@ -175,41 +184,64 @@ const MessageRow = React.memo(function MessageRow({
     msg, isLightTheme, appearance, onCopy, renderMessageText,
 }: MessageRowProps) {
     const isCodeMsg = msg.role === 'system' && (msg.isCode || msg.text.includes('```'));
-    // bubbleMaxClass: user bubbles are tighter; system + code use the same width.
-    const bubbleMaxClass = msg.role === 'user'
-        ? 'max-w-[72%] px-[13.6px] py-[10.2px]'
-        : 'max-w-[85%] px-4 py-3';
+    // LiveLens-style alignment: user + interviewer right (voices on your side),
+    // assistant/system left (the AI helper).
+    const alignRight = msg.role === 'user' || msg.role === 'interviewer';
+
+    // LiveLens bubble shape: subtle neutral surface, asymmetric corner clip
+    // creates a "tail" on the side the bubble is anchored to.
+    const bubbleSizeClass = msg.role === 'user'
+        ? 'max-w-[84%] px-3 py-2'
+        : 'max-w-[88%] px-[14px] py-[10px]';
+
+    // Label colors mirror LiveLens semantics, but use Natively's burnt-orange
+    // for interviewer and a slate-blue for the AI.
+    const labelColor =
+        msg.role === 'user' ? 'rgba(106,155,204,0.85)' :
+        msg.role === 'interviewer' ? '#d97757' :
+        'rgba(106,155,204,0.85)';
+    const labelText =
+        msg.role === 'user' ? 'YOU' :
+        msg.role === 'interviewer' ? 'INTERVIEWER' :
+        'NATIVELY';
+
+    // Bubble surface — user keeps its blue tint; interviewer + assistant use
+    // a neutral translucent surface (LiveLens recipe).
+    const bubbleStyle: React.CSSProperties = msg.role === 'user'
+        ? (isLightTheme
+            ? { background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.22)', color: '#1e3a8a', borderRadius: '12px 4px 12px 12px' }
+            : { background: 'rgba(59,130,246,0.18)',  border: '1px solid rgba(59,130,246,0.28)', color: 'rgba(226,232,255,0.90)', borderRadius: '12px 4px 12px 12px' })
+        : msg.role === 'interviewer'
+            ? { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(226,229,237,0.78)', borderRadius: '12px 4px 12px 12px' }
+            : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(226,229,237,0.85)', borderRadius: '4px 12px 12px 12px' };
+
     return (
         <div
             className="w-full"
             {...(isCodeMsg ? { 'data-code-msg': 'true' } : {})}
         >
-            <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
-                <div className={`
-              ${bubbleMaxClass} text-[14px] leading-relaxed relative group whitespace-pre-wrap
-              ${msg.role === 'user'
-                        ? (isLightTheme
-                            ? 'bg-blue-500/10 backdrop-blur-md border border-blue-500/20 text-blue-900 rounded-[20px] rounded-tr-[4px] shadow-sm font-medium'
-                            : 'bg-blue-600/20 backdrop-blur-md border border-blue-500/30 text-blue-100 rounded-[20px] rounded-tr-[4px] shadow-sm font-medium')
-                        : ''
-                    }
-              ${msg.role === 'system'
-                        ? 'overlay-text-primary font-normal'
-                        : ''
-                    }
-              ${msg.role === 'interviewer'
-                        ? 'overlay-text-muted italic pl-0 text-[13px]'
-                        : ''
-                    }
-            `}>
-                    {msg.role === 'interviewer' && (
-                        <div className="flex items-center gap-1.5 mb-1 text-[10px] font-medium uppercase tracking-wider overlay-text-muted">
-                            Interviewer
-                            {msg.isStreaming && <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />}
-                        </div>
+            <div className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'} animate-fade-in-up gap-[5px]`}>
+                {/* Sender label */}
+                <div
+                    className="flex items-center gap-1.5 text-[9.5px] font-bold tracking-[0.12em] uppercase px-0.5"
+                    style={{ color: labelColor }}
+                >
+                    {msg.role === 'system' && (
+                        <span className={`w-2 h-2 rounded-full ${msg.isStreaming ? 'animate-pulse' : ''}`} style={{ background: labelColor, opacity: 0.7 }} />
                     )}
+                    {msg.role === 'interviewer' && msg.isStreaming && (
+                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: labelColor }} />
+                    )}
+                    {labelText}
+                </div>
+
+                {/* Bubble */}
+                <div
+                    className={`${bubbleSizeClass} text-[13px] leading-[1.55] relative group whitespace-pre-wrap`}
+                    style={bubbleStyle}
+                >
                     {msg.role === 'user' && msg.hasScreenshot && (
-                        <div className={`flex items-center gap-1 text-[10px] opacity-70 mb-1 border-b pb-1 ${isLightTheme ? 'border-black/10' : 'border-white/10'}`}>
+                        <div className="flex items-center gap-1 text-[10px] opacity-60 mb-1 pb-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                             <Image className="w-2.5 h-2.5" />
                             <span>Screenshot attached</span>
                         </div>
@@ -217,11 +249,11 @@ const MessageRow = React.memo(function MessageRow({
                     {msg.role === 'system' && !msg.isStreaming && (
                         <button
                             onClick={() => onCopy(msg.text)}
-                            className="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
+                            className="absolute top-1.5 right-1.5 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
                             title="Copy to clipboard"
                             style={appearance.iconStyle}
                         >
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3 h-3" />
                         </button>
                     )}
                     {renderMessageText(msg)}
@@ -237,12 +269,23 @@ const MessageRow = React.memo(function MessageRow({
     prev.onCopy === next.onCopy
 );
 
+// ─── Mode templates (mirrors electron/services/ModesManager.ts:MODE_TEMPLATES) ──
+const MODE_TEMPLATES: Array<{ type: string; label: string; description: string }> = [
+    { type: 'general',              label: 'General',              description: 'Universal adaptive copilot for any meeting.' },
+    { type: 'sales',                label: 'Sales',                description: 'Discovery + objection handling.' },
+    { type: 'recruiting',           label: 'Recruiting',           description: 'Structured candidate evaluation.' },
+    { type: 'team-meet',            label: 'Team Meet',            description: 'Track action items + decisions.' },
+    { type: 'looking-for-work',     label: 'Looking for work',     description: 'Confident interview answers.' },
+    { type: 'technical-interview',  label: 'Technical Interview',  description: 'Whiteboard coding + system design.' },
+    { type: 'lecture',              label: 'Lecture',              description: 'Capture key concepts from lectures.' },
+];
+
 const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
     onEndMeeting,
     overlayOpacity = OVERLAY_OPACITY_DEFAULT,
     interfaceTheme = 'default',
 }) => {
-    const isLightTheme = useResolvedTheme() === 'light';
+    const isLightTheme = false;
     const isGlassTheme = interfaceTheme === 'liquid-glass';
     const shellRef = React.useRef<HTMLDivElement>(null);
     const [isExpanded, setIsExpanded] = useState(true);
@@ -375,6 +418,9 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
     // Active mode name (shown as a badge near the Modes button)
     const [activeModeLabel, setActiveModeLabel] = useState<string | null>(null);
 
+    // Top-bar auto-scroll toggle — local UI preference (defaults to on)
+    const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
+
     useEffect(() => {
         // Load initial active mode name
         window.electronAPI?.modesGetActive?.()
@@ -386,6 +432,64 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
         });
         return () => unsub?.();
     }, []);
+
+    // ── Mode dropdown (hybrid: user's modes + 7 templates) ──────────────────
+    const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
+    const [userModes, setUserModes] = useState<Array<{ id: string; name: string; templateType: string; isActive: boolean }>>([]);
+    const [modeDropdownPos, setModeDropdownPos] = useState<{ top: number; left: number } | null>(null);
+    const modeButtonRef = useRef<HTMLButtonElement>(null);
+    const modeDropdownRef = useRef<HTMLDivElement>(null);
+
+    const refreshUserModes = useCallback(async () => {
+        try {
+            const all = await window.electronAPI?.modesGetAll?.();
+            if (Array.isArray(all)) setUserModes(all as any);
+        } catch { /* no-op */ }
+    }, []);
+
+    const openModeDropdown = useCallback(() => {
+        if (modeButtonRef.current) {
+            const rect = modeButtonRef.current.getBoundingClientRect();
+            setModeDropdownPos({ top: rect.bottom + 6, left: rect.left });
+        }
+        setIsModeDropdownOpen(true);
+        refreshUserModes();
+    }, [refreshUserModes]);
+
+    const handleActivateMode = useCallback(async (id: string | null) => {
+        try { await window.electronAPI?.modesSetActive?.(id); } catch { /* no-op */ }
+        setIsModeDropdownOpen(false);
+    }, []);
+
+    const handleCreateFromTemplate = useCallback(async (templateType: string, label: string) => {
+        try {
+            const res = await window.electronAPI?.modesCreate?.({ name: label, templateType });
+            if (res?.success && res.mode?.id) {
+                await window.electronAPI?.modesSetActive?.(res.mode.id);
+            }
+        } catch { /* no-op */ }
+        setIsModeDropdownOpen(false);
+    }, []);
+
+    // Close on outside click + Escape
+    useEffect(() => {
+        if (!isModeDropdownOpen) return;
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as Node;
+            if (modeDropdownRef.current?.contains(target)) return;
+            if (modeButtonRef.current?.contains(target)) return;
+            setIsModeDropdownOpen(false);
+        };
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsModeDropdownOpen(false);
+        };
+        document.addEventListener('mousedown', handleClick);
+        document.addEventListener('keydown', handleKey);
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            document.removeEventListener('keydown', handleKey);
+        };
+    }, [isModeDropdownOpen]);
 
     // Model Selection State
     const [currentModel, setCurrentModel] = useState<string>('gemini-3-flash-preview');
@@ -516,11 +620,18 @@ const NativelyInterface: React.FC<NativelyInterfaceProps> = ({
     //
     // The 90px transparent gutters on each side when shellWidth == 600 are
     // invisible (window background is transparent) and click-through.
-    const SHELL_WIDTH_COLLAPSED = 600;
-    const SHELL_WIDTH_EXPANDED = 780;
+    const SHELL_WIDTH_COLLAPSED = 880;
+    const SHELL_WIDTH_EXPANDED = 880;
     const STABLE_OVERLAY_WIDTH = SHELL_WIDTH_EXPANDED;
     const shellWidth = useMotionValue(SHELL_WIDTH_COLLAPSED);
-    const scrollMaxH = useTransform(shellWidth, [SHELL_WIDTH_COLLAPSED, SHELL_WIDTH_EXPANDED], [320, 560]);
+    // When collapsed/expanded widths are identical, useTransform's input range is
+    // degenerate and returns NaN — kills the scroll container's maxHeight. Guard
+    // against that by widening the input range so the transform stays valid.
+    const scrollMaxH = useTransform(
+        shellWidth,
+        [Math.min(SHELL_WIDTH_COLLAPSED, SHELL_WIDTH_EXPANDED - 1), SHELL_WIDTH_EXPANDED],
+        [560, 560]
+    );
 
     // isExpanded mirror for closures inside refs/observers that must not
     // re-bind on every toggle.
@@ -2033,9 +2144,9 @@ Provide only the answer, nothing else.`;
         if (msg.isCode || (msg.role === 'system' && msg.text.includes('```'))) {
             const parts = msg.text.split(/(```[\s\S]*?```)/g);
             return (
-                <div className={`rounded-lg p-3 my-1 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-violet-600' : 'text-purple-300'}`}>
-                        <Code className="w-3.5 h-3.5" />
+                <div>
+                    <div className={`flex items-center gap-2 mb-2 font-semibold text-[10px] uppercase tracking-[0.12em] ${isLightTheme ? 'text-violet-600' : 'text-purple-300'}`}>
+                        <Code className="w-3 h-3" />
                         <span>Code Solution</span>
                     </div>
                     <div className={`space-y-2 text-[13px] leading-relaxed ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
@@ -2082,9 +2193,9 @@ Provide only the answer, nothing else.`;
         // Custom Styled Labels (Shorten, Recap, Follow-up) - also use Markdown for content
         if (msg.intent === 'shorten') {
             return (
-                <div className={`rounded-lg p-3 my-1 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-cyan-700' : 'text-cyan-300'}`}>
-                        <MessageSquare className="w-3.5 h-3.5" />
+                <div>
+                    <div className={`flex items-center gap-2 mb-2 font-semibold text-[10px] uppercase tracking-[0.12em] ${isLightTheme ? 'text-cyan-700' : 'text-cyan-300'}`}>
+                        <MessageSquare className="w-3 h-3" />
                         <span>Shortened</span>
                     </div>
                     <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
@@ -2098,9 +2209,9 @@ Provide only the answer, nothing else.`;
 
         if (msg.intent === 'recap') {
             return (
-                <div className={`rounded-lg p-3 my-1 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-indigo-700' : 'text-indigo-300'}`}>
-                        <RefreshCw className="w-3.5 h-3.5" />
+                <div>
+                    <div className={`flex items-center gap-2 mb-2 font-semibold text-[10px] uppercase tracking-[0.12em] ${isLightTheme ? 'text-indigo-700' : 'text-indigo-300'}`}>
+                        <RefreshCw className="w-3 h-3" />
                         <span>Recap</span>
                     </div>
                     <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
@@ -2114,9 +2225,9 @@ Provide only the answer, nothing else.`;
 
         if (msg.intent === 'follow_up_questions') {
             return (
-                <div className={`rounded-lg p-3 my-1 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                    <div className={`flex items-center gap-2 mb-2 font-semibold text-xs uppercase tracking-wide ${isLightTheme ? 'text-amber-700' : 'text-[#FFD60A]'}`}>
-                        <HelpCircle className="w-3.5 h-3.5" />
+                <div>
+                    <div className={`flex items-center gap-2 mb-2 font-semibold text-[10px] uppercase tracking-[0.12em] ${isLightTheme ? 'text-amber-700' : 'text-[#FFD60A]'}`}>
+                        <HelpCircle className="w-3 h-3" />
                         <span>Follow-Up Questions</span>
                     </div>
                     <div className={`text-[13px] leading-relaxed markdown-content ${isLightTheme ? 'text-slate-800' : 'text-slate-200'}`}>
@@ -2133,11 +2244,12 @@ Provide only the answer, nothing else.`;
             const parts = msg.text.split(/(```[\s\S]*?(?:```|$))/g);
 
             return (
-                <div className={`rounded-lg p-3 my-1 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                    <div className="flex items-center gap-2 mb-2 text-emerald-400 font-semibold text-xs uppercase tracking-wide">
+                <div>
+                    <div className="flex items-center gap-2 mb-2 text-emerald-400 font-semibold text-[10px] uppercase tracking-[0.12em]">
+                        <Zap className="w-3 h-3" />
                         <span>Say this</span>
                     </div>
-                    <div className="text-[14px] leading-relaxed overlay-text-primary">
+                    <div className="text-[13px] leading-relaxed overlay-text-primary">
                         {parts.map((part, i) => {
                             if (part.startsWith('```')) {
                                 // Robust matching: handles unclosed blocks for streaming (```...$)
@@ -2988,7 +3100,7 @@ Provide only the answer, nothing else.`;
     };
 
     return (
-        <div ref={contentRef} data-interface-theme={isGlassTheme ? 'liquid-glass' : undefined} className="flex flex-col items-center w-fit mx-auto h-fit min-h-0 bg-transparent p-0 rounded-[24px] font-sans gap-2 overlay-text-primary">
+        <div ref={contentRef} data-theme="dark" data-interface-theme={isGlassTheme ? 'liquid-glass' : undefined} className="flex flex-col items-center w-fit mx-auto h-fit min-h-0 bg-transparent p-0 rounded-[24px] font-sans gap-2 overlay-text-primary">
 
             <AnimatePresence>
                 {isExpanded && (
@@ -2999,13 +3111,6 @@ Provide only the answer, nothing else.`;
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="flex flex-col items-center gap-2 w-full"
                     >
-                        <TopPill
-                            expanded={isExpanded}
-                            onToggle={() => setIsExpanded(!isExpanded)}
-                            onQuit={() => onEndMeeting ? onEndMeeting() : window.electronAPI.quitApp()}
-                            appearance={appearance}
-                            onLogoClick={() => window.electronAPI?.setWindowMode?.('launcher')}
-                        />
                         <motion.div
                             ref={shellRef}
                             className={`relative max-w-full backdrop-blur-2xl border rounded-[24px] overflow-hidden flex flex-col draggable-area overlay-shell-surface ${overlayPanelClass}`}
@@ -3019,6 +3124,187 @@ Provide only the answer, nothing else.`;
                             }}
                         >
                             {isGlassTheme && <GlassEffectLayer parentRef={shellRef} cornerRadius={24} />}
+
+                            {/* ════════════════ UNIFIED TOP BAR (LiveLens-style) ════════════════ */}
+                            <div className="flex items-center justify-between px-3 py-2 gap-2 no-drag" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                {/* Left: Logo + Model + Mode */}
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <button
+                                        onClick={() => window.electronAPI?.setWindowMode?.('launcher')}
+                                        className="w-7 h-7 rounded-lg overlay-icon-surface overlay-icon-surface-hover flex items-center justify-center interaction-base interaction-press shrink-0"
+                                        style={appearance.iconStyle}
+                                        title="Open launcher"
+                                    >
+                                        <img src={nativelyIcon} alt="Natively" className="w-[18px] h-[18px] object-contain opacity-90 force-black-icon" draggable={false} onDragStart={(e) => e.preventDefault()} />
+                                    </button>
+
+                                    <button
+                                        data-model-selector-toggle="true"
+                                        onClick={(e) => {
+                                            if (!contentRef.current) return;
+                                            const contentRect = contentRef.current.getBoundingClientRect();
+                                            const buttonRect = e.currentTarget.getBoundingClientRect();
+                                            const GAP = 8;
+                                            const x = window.screenX + buttonRect.left;
+                                            const y = window.screenY + contentRect.bottom + GAP;
+                                            window.electronAPI.toggleModelSelector({ x, y });
+                                        }}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border max-w-[170px] interaction-base interaction-press ${controlSurfaceClass}`}
+                                        style={appearance.controlStyle}
+                                        title="Switch model"
+                                    >
+                                        <Cpu className="w-3 h-3 opacity-60 shrink-0" />
+                                        <span className="truncate">
+                                            {(() => {
+                                                const m = currentModel;
+                                                const codexCliName = getCodexCliModelDisplayName(m);
+                                                if (codexCliName) return codexCliName;
+                                                if (m.startsWith('ollama-')) return m.replace('ollama-', '');
+                                                if (m === 'gemini-3.1-flash-lite-preview') return 'Gemini 3.1 Flash';
+                                                if (m === 'gemini-3.1-pro-preview') return 'Gemini 3.1 Pro';
+                                                if (m === 'llama-3.3-70b-versatile') return 'Groq Llama 3.3';
+                                                if (m === 'gpt-5.4') return 'GPT 5.4';
+                                                if (m === 'claude-sonnet-4-6') return 'Sonnet 4.6';
+                                                return m;
+                                            })()}
+                                        </span>
+                                        <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+                                    </button>
+
+                                    {/* Analysis mode pill — next to the model selector. Dropdown is rendered
+                                        via portal (escapes shell's overflow: hidden) and positioned with
+                                        position: fixed so it can extend beyond the shell. */}
+                                    <button
+                                        ref={modeButtonRef}
+                                        onClick={() => isModeDropdownOpen ? setIsModeDropdownOpen(false) : openModeDropdown()}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border max-w-[160px] interaction-base interaction-press ${controlSurfaceClass}`}
+                                        style={appearance.controlStyle}
+                                        title="Switch analysis mode"
+                                    >
+                                        <span className="text-[9px] font-bold uppercase tracking-[0.12em] opacity-60 shrink-0">Mode</span>
+                                        <span className="truncate">{activeModeLabel ?? 'General'}</span>
+                                        <ChevronDown className={`w-3 h-3 opacity-50 shrink-0 transition-transform ${isModeDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                </div>
+
+                                {/* Center: drag handle — explicit drag region for moving the window */}
+                                <div
+                                    className="drag-region flex-1 flex items-center justify-center self-stretch group/drag"
+                                    title="Drag to move"
+                                >
+                                    <GripHorizontal className="w-4 h-4 overlay-text-muted opacity-40 group-hover/drag:opacity-90 transition-opacity" />
+                                </div>
+
+                                {/* Right: Opacity + actions */}
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                    <div
+                                        className="flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px]"
+                                        style={appearance.controlStyle}
+                                        title="Opacity (↑↓ to adjust)"
+                                    >
+                                        <Sun className="w-3 h-3 opacity-50 overlay-text-muted" />
+                                        <input
+                                            type="number"
+                                            min={35}
+                                            max={100}
+                                            step={1}
+                                            value={Math.round((overlayOpacity > 1 ? overlayOpacity : overlayOpacity * 100))}
+                                            onChange={(e) => {
+                                                const next = Math.max(35, Math.min(100, Number(e.target.value) || 0));
+                                                window.electronAPI?.setOverlayOpacity?.(next / 100);
+                                            }}
+                                            className="overlay-numeric-input w-8 bg-transparent border-0 outline-none text-center font-semibold tabular-nums overlay-text-primary"
+                                        />
+                                    </div>
+
+                                    <div className="w-px h-3.5 mx-1" style={appearance.dividerStyle} />
+
+                                    {/* Mic / listening indicator — read-only, reflects STT status */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); /* no-op: indicator only */ }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
+                                            sttUserStatus === 'connected'
+                                                ? 'bg-[#d97757] text-white shadow-[0_0_0_1px_rgba(217,119,87,0.35),0_4px_12px_-4px_rgba(217,119,87,0.45)]'
+                                                : sttUserStatus === 'reconnecting'
+                                                    ? 'overlay-icon-surface text-amber-400'
+                                                    : 'overlay-icon-surface text-red-400'
+                                        }`}
+                                        style={sttUserStatus === 'connected' ? undefined : appearance.iconStyle}
+                                        title={sttUserStatus === 'connected' ? 'Listening' : sttUserStatus === 'reconnecting' ? 'Reconnecting…' : 'STT not connected'}
+                                    >
+                                        <Mic className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Auto-scroll toggle */}
+                                    <button
+                                        onClick={() => setAutoScrollEnabled(v => !v)}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
+                                            autoScrollEnabled
+                                                ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary'
+                                                : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-muted'
+                                        }`}
+                                        style={appearance.iconStyle}
+                                        title={autoScrollEnabled ? 'Auto-scroll on' : 'Auto-scroll off'}
+                                    >
+                                        <ChevronsDown className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Stealth indicator — read-only, reflects active state */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${
+                                            stealthTapActive
+                                                ? 'bg-emerald-500/15 text-emerald-300 shadow-[0_0_0_1px_rgba(52,211,153,0.30)]'
+                                                : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'
+                                        }`}
+                                        style={stealthTapActive ? undefined : appearance.iconStyle}
+                                        title={stealthTapActive ? 'Stealth typing active' : 'Stealth typing — click the input to engage'}
+                                    >
+                                        <Ghost className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <button
+                                        onClick={(e) => {
+                                            if (isSettingsOpen) {
+                                                window.electronAPI.toggleSettingsWindow();
+                                                return;
+                                            }
+                                            if (!contentRef.current) return;
+                                            const contentRect = contentRef.current.getBoundingClientRect();
+                                            const buttonRect = e.currentTarget.getBoundingClientRect();
+                                            const GAP = 8;
+                                            const x = window.screenX + buttonRect.left;
+                                            const y = window.screenY + contentRect.bottom + GAP;
+                                            window.electronAPI.toggleSettingsWindow({ x, y });
+                                        }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-lg interaction-base interaction-press ${isSettingsOpen ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary' : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}`}
+                                        style={appearance.iconStyle}
+                                        title="Settings"
+                                    >
+                                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <div className="w-px h-3.5 mx-1" style={appearance.dividerStyle} />
+
+                                    <button
+                                        onClick={() => setIsExpanded(!isExpanded)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive interaction-base interaction-press"
+                                        style={appearance.iconStyle}
+                                        title={isExpanded ? 'Hide overlay' : 'Show overlay'}
+                                    >
+                                        {isExpanded ? <EyeOff className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    </button>
+
+                                    <button
+                                        onClick={() => onEndMeeting ? onEndMeeting() : window.electronAPI.quitApp()}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg overlay-icon-surface hover:bg-red-500/10 hover:text-red-400 overlay-text-interactive interaction-base interaction-press"
+                                        style={appearance.iconStyle}
+                                        title="End session"
+                                    >
+                                        <Square className="w-3 h-3" fill="currentColor" strokeWidth={0} />
+                                    </button>
+                                </div>
+                            </div>
 
                             {/* System Audio Permission Warning Banner */}
                             {systemAudioWarning && (
@@ -3172,7 +3458,7 @@ Provide only the answer, nothing else.`;
                             )}
 
                             {/* Quick Actions - Minimal & Clean */}
-                            <div className={`flex flex-nowrap justify-center items-center gap-1.5 px-4 pb-3 overflow-x-hidden ${rollingTranscript && showTranscript ? 'pt-1' : 'pt-3'}`}>
+                            <div className={`flex flex-nowrap justify-center items-center gap-1.5 px-4 pb-3 overflow-x-hidden no-drag ${rollingTranscript && showTranscript ? 'pt-1' : 'pt-3'}`}>
                                 <button onClick={handleWhatToSay} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 duration-200 interaction-base interaction-press whitespace-nowrap shrink-0 ${quickActionClass}`} style={appearance.chipStyle}>
                                     <Pencil className="w-3 h-3 opacity-70" /> What to answer?
                                 </button>
@@ -3208,30 +3494,17 @@ Provide only the answer, nothing else.`;
                             </div>
 
                             {/* Input Area */}
-                            <div className="p-3 pt-0">
-                                {/* Latent Context Preview (Attached Screenshot) */}
+                            <div className="px-3 pt-0 pb-3 no-drag">
+                                {/* Screenshot thumbnail row + inline Capture & Process button */}
                                 {attachedContext.length > 0 && (
-                                    <div className={`mb-2 rounded-lg p-2 transition-all duration-200 border ${subtleSurfaceClass}`} style={appearance.subtleStyle}>
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <span className="text-[11px] font-medium overlay-text-primary">
-                                                {attachedContext.length} screenshot{attachedContext.length > 1 ? 's' : ''} attached
-                                            </span>
-                                            <button
-                                                onClick={() => setAttachedContext([])}
-                                                className="p-1 rounded-full transition-colors overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive"
-                                                title="Remove all"
-                                                style={appearance.iconStyle}
-                                            >
-                                                <X className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                        <div className="flex gap-1.5 overflow-x-auto max-w-full pb-1">
+                                    <div className="flex items-center gap-1.5 mb-2 px-0.5">
+                                        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 min-w-0 flex-1">
                                             {attachedContext.map((ctx, idx) => (
                                                 <div key={ctx.path} className="relative group/thumb flex-shrink-0">
                                                     <img
                                                         src={ctx.preview}
                                                         alt={`Screenshot ${idx + 1}`}
-                                                        className={`h-10 w-auto rounded border ${isLightTheme ? 'border-black/15' : 'border-white/20'}`}
+                                                        className="h-9 w-auto rounded-md border border-white/10"
                                                     />
                                                     <button
                                                         onClick={() => setAttachedContext(prev => prev.filter((_, i) => i !== idx))}
@@ -3243,15 +3516,20 @@ Provide only the answer, nothing else.`;
                                                 </div>
                                             ))}
                                         </div>
-                                        <span className="text-[10px] overlay-text-muted">Ask a question or click Answer</span>
+                                        <span className="text-[10px] overlay-text-muted shrink-0 whitespace-nowrap">
+                                            {attachedContext.length} attached
+                                        </span>
+                                        <button
+                                            onClick={() => setAttachedContext([])}
+                                            className="text-[10px] overlay-text-muted hover:overlay-text-primary px-1.5 py-0.5 rounded shrink-0"
+                                            title="Remove all"
+                                        >
+                                            Clear
+                                        </button>
                                     </div>
                                 )}
 
-                                {/* Stealth hotkey conflict banner — shown if globalShortcut.register()
-                                    failed for chat:focusInput (typically because Cmd+Shift+Space is
-                                    already claimed by another app, or by macOS in some configs).
-                                    Click-to-activate still works (mousedown listener is independent
-                                    of the hotkey), but the user can rebind to anything in Settings. */}
+                                {/* Stealth banners — preserved */}
                                 {stealthHotkeyConflict && (
                                     <div className="mb-2 px-3 py-2 rounded-xl border border-rose-400/40 bg-rose-500/10 text-[11px] flex items-center gap-2"
                                          data-stealth-ignore="true">
@@ -3273,12 +3551,6 @@ Provide only the answer, nothing else.`;
                                         >×</button>
                                     </div>
                                 )}
-
-                                {/* Stealth tap permission banner — shown only when the user
-                                    pressed the activation hotkey but Accessibility wasn't
-                                    granted. Inline above the input so it's discoverable without
-                                    blocking the rest of the UI. Dismissed automatically once
-                                    the next start() succeeds. */}
                                 {stealthPermissionMissing && (
                                     <div className="mb-2 px-3 py-2 rounded-xl border border-amber-400/40 bg-amber-500/10 text-[11px] flex items-center gap-2"
                                          data-stealth-ignore="true">
@@ -3302,186 +3574,168 @@ Provide only the answer, nothing else.`;
                                     </div>
                                 )}
 
-                                {/* data-stealth-engage marks this subtree as
-                                    the ONLY clickable region that engages the
-                                    CGEventTap. See the click-to-activate
-                                    useEffect (~line 2840) for the opt-IN
-                                    rationale — buttons elsewhere in the
-                                    overlay no longer accidentally engage the
-                                    tap and break inputs in Settings/Model
-                                    Selector windows. */}
-                                <div className="relative group" data-stealth-engage="true">
-                                    <input
-                                        ref={textInputRef}
-                                        type="text"
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                                        // Block native DOM focus on click — the panel becoming
-                                        // key window is exactly the signal coding-interview
-                                        // platforms watch for via window.onblur on the parent.
-                                        // mousedown listener (capture phase) already engaged
-                                        // the CGEventTap, so typing routes through that path.
-                                        onMouseDown={blockInputFocus}
-                                        readOnly={stealthTapActive}
-                                        className={`w-full border focus:ring-1 rounded-xl pl-3 pr-10 py-2.5 focus:outline-none transition-all duration-200 ease-sculpted text-[13px] leading-relaxed ${inputClass} ${stealthTapActive ? 'ring-2 ring-emerald-400/30 border-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.15)]' : ''}`}
-                                        style={appearance.inputStyle}
-                                    />
-
-                                    {/* Custom Rich Placeholder */}
-                                    {!inputValue && (
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none text-[13px] overlay-text-muted">
-                                            <span>Ask anything on screen or conversation, or</span>
-                                            <div className="flex items-center gap-1 opacity-80">
-                                                {(shortcuts.selectiveScreenshot || ['⌘', 'Shift', 'H']).map((key, i) => (
-                                                    <React.Fragment key={i}>
-                                                        {i > 0 && <span className="text-[10px]">+</span>}
-                                                        <kbd className="px-1.5 py-0.5 rounded border text-[10px] font-sans min-w-[20px] text-center overlay-control-surface overlay-text-secondary" style={appearance.controlStyle}>{key}</kbd>
-                                                    </React.Fragment>
-                                                ))}
-                                            </div>
-                                            <span>for selective screenshot</span>
-                                        </div>
-                                    )}
-
-                                    {!inputValue && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none opacity-20">
-                                            <span className="text-[10px]">↵</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Bottom Row */}
-                                <div className="flex items-center justify-between mt-3 px-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <button
-                                            data-model-selector-toggle="true"
-                                            onClick={(e) => {
-                                                // Calculate position for detached window
-                                                if (!contentRef.current) return;
-                                                const contentRect = contentRef.current.getBoundingClientRect();
-                                                const buttonRect = e.currentTarget.getBoundingClientRect();
-                                                const GAP = 8;
-
-                                                const x = window.screenX + buttonRect.left;
-                                                const y = window.screenY + contentRect.bottom + GAP;
-
-                                                window.electronAPI.toggleModelSelector({ x, y });
-                                            }}
-                                            className={`
-                                                flex items-center gap-2 px-3 py-1.5
-                                                border rounded-lg transition-colors
-                                                text-xs font-medium w-[140px]
-                                                interaction-base interaction-press
-                                                ${controlSurfaceClass}
-                                            `}
-                                            style={appearance.controlStyle}
-                                        >
-                                            <span className="truncate min-w-0 flex-1">
-                                                {(() => {
-                                                    const m = currentModel;
-                                                    const codexCliName = getCodexCliModelDisplayName(m);
-                                                    if (codexCliName) return codexCliName;
-                                                    if (m.startsWith('ollama-')) return m.replace('ollama-', '');
-                                                    if (m === 'gemini-3.1-flash-lite-preview') return 'Gemini 3.1 Flash';
-                                                    if (m === 'gemini-3.1-pro-preview') return 'Gemini 3.1 Pro';
-                                                    if (m === 'llama-3.3-70b-versatile') return 'Groq Llama 3.3';
-                                                    if (m === 'gpt-5.4') return 'GPT 5.4';
-                                                    if (m === 'claude-sonnet-4-6') return 'Sonnet 4.6';
-                                                    return m;
-                                                })()}
-                                            </span>
-                                            <ChevronDown size={14} className="shrink-0 transition-transform" />
-                                        </button>
-
-                                        <div className="w-px h-3 mx-1" style={appearance.dividerStyle} />
-
-                                        <div className="relative">
-                                            <button
-                                                onClick={(e) => {
-                                                    if (isSettingsOpen) {
-                                                        // If open, just close it (toggle will handle logic but we can be explicit or just toggle)
-                                                        // Actually toggle-settings-window handles hiding if visible, so logic is same.
-                                                        window.electronAPI.toggleSettingsWindow();
-                                                        return;
-                                                    }
-
-                                                    if (!contentRef.current) return;
-
-                                                    const contentRect = contentRef.current.getBoundingClientRect();
-                                                    const buttonRect = e.currentTarget.getBoundingClientRect();
-                                                    const POPUP_WIDTH = 270; // Matches SettingsWindowHelper actual width
-                                                    const GAP = 8; // Same gap as between TopPill and main body (gap-2 = 8px)
-
-                                                    // X: Left-aligned relative to the Settings Button
-                                                    const x = window.screenX + buttonRect.left;
-
-                                                    // Y: Below the main content + gap
-                                                    const y = window.screenY + contentRect.bottom + GAP;
-
-                                                    window.electronAPI.toggleSettingsWindow({ x, y });
-                                                }}
-                                                className={`
-                                            w-7 h-7 flex items-center justify-center rounded-lg
-                                            interaction-base interaction-press
-                                            ${isSettingsOpen
-                                                        ? 'overlay-icon-surface overlay-icon-surface-hover overlay-text-primary'
-                                                        : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}
-                                        `}
-
-                                                style={appearance.iconStyle}
-                                            >
-                                                <SlidersHorizontal className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-
-
-
-                                        {/* Mouse Passthrough Toggle */}
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => {
-                                                    const newState = !isMousePassthrough;
-                                                    setIsMousePassthrough(newState);
-                                                    window.electronAPI?.setOverlayMousePassthrough?.(newState);
-                                                }}
-                                                className={`
-                                                    w-7 h-7 flex items-center justify-center rounded-lg
-                                                    interaction-base interaction-press
-                                                    ${isMousePassthrough
-                                                        ? 'overlay-icon-surface overlay-icon-surface-hover text-sky-400 opacity-100'
-                                                        : 'overlay-icon-surface overlay-icon-surface-hover overlay-text-interactive'}
-                                                `}
-
-                                                style={appearance.iconStyle}
-                                            >
-                                                <PointerOff className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-
+                                {/* Bordered input shell — entire shell is the stealth-engage region so any
+                                    click inside (input field or surrounding padding) reliably engages the
+                                    CGEventTap. Previously engage was on an inner wrapper, so clicks on the
+                                    padding landed on a non-engage element and the input felt dead. */}
+                                <div
+                                    data-stealth-engage="true"
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all duration-150 ${inputClass} ${stealthTapActive ? 'ring-2 ring-emerald-400/30 border-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.15)]' : ''}`}
+                                    style={appearance.inputStyle}
+                                >
+                                    <div className="relative flex-1 min-w-0">
+                                        <input
+                                            ref={textInputRef}
+                                            type="text"
+                                            value={inputValue}
+                                            onChange={(e) => setInputValue(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+                                            onMouseDown={blockInputFocus}
+                                            readOnly={stealthTapActive}
+                                            placeholder="Ask anything, or hit ⌘K to autopilot…"
+                                            className="w-full bg-transparent border-0 outline-none text-[13px] leading-relaxed overlay-text-primary placeholder:overlay-text-muted px-0.5"
+                                        />
                                     </div>
 
                                     <button
+                                        data-stealth-ignore="true"
                                         onClick={handleManualSubmit}
                                         disabled={!inputValue.trim()}
-                                        className={`
-                                    w-7 h-7 rounded-full flex items-center justify-center
-                                    interaction-base interaction-press
-                                    ${inputValue.trim()
-                                                ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]'
-                                                : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'
-                                            }
-                                `}
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 interaction-base interaction-press ${inputValue.trim()
+                                            ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-500/20 hover:bg-[#0071E3]'
+                                            : 'overlay-icon-surface overlay-text-muted cursor-not-allowed'
+                                            }`}
                                         style={inputValue.trim() ? undefined : appearance.iconStyle}
+                                        title="Send (Enter)"
                                     >
-                                        <ArrowRight className="w-3.5 h-3.5" />
+                                        <ArrowUp className="w-3.5 h-3.5" />
                                     </button>
+                                </div>
+
+                                {/* Footer keyboard hint row */}
+                                <div className="flex items-center justify-between mt-2 px-1.5">
+                                    <div className="flex items-center gap-2 text-[10px] overlay-text-muted">
+                                        <span className="flex items-center gap-1">
+                                            <kbd className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded font-mono text-[9.5px] font-semibold border overlay-control-surface overlay-text-secondary" style={appearance.controlStyle}>↵</kbd>
+                                            send
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <kbd className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded font-mono text-[9.5px] font-semibold border overlay-control-surface overlay-text-secondary" style={appearance.controlStyle}>⌘⇧H</kbd>
+                                            screenshot
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <kbd className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded font-mono text-[9.5px] font-semibold border overlay-control-surface overlay-text-secondary" style={appearance.controlStyle}>⌘⇧Space</kbd>
+                                            stealth type
+                                        </span>
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 text-[10px] ${stealthTapActive ? 'text-emerald-400' : 'overlay-text-muted'}`}>
+                                        <Ghost className="w-3 h-3" />
+                                        {stealthTapActive ? 'Stealth active' : 'Stealth ready'}
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ──────── Mode dropdown — portalled so it can escape the shell's overflow:hidden ──────── */}
+            {isModeDropdownOpen && modeDropdownPos && createPortal(
+                <div
+                    ref={modeDropdownRef}
+                    className="rounded-xl border overflow-hidden shadow-2xl no-drag"
+                    style={{
+                        position: 'fixed',
+                        top: modeDropdownPos.top,
+                        left: modeDropdownPos.left,
+                        width: 280,
+                        zIndex: 9999,
+                        background: 'rgba(20, 22, 28, 0.96)',
+                        borderColor: 'rgba(250, 249, 245, 0.10)',
+                        backdropFilter: 'blur(20px) saturate(150%)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+                        boxShadow: '0 24px 60px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)',
+                    }}
+                >
+                    {/* YOUR MODES */}
+                    <div className="px-3 pt-2.5 pb-1">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[9.5px] font-bold uppercase tracking-[0.12em] overlay-text-muted">Your modes</span>
+                            {userModes.length > 0 && (
+                                <span className="text-[9.5px] overlay-text-muted tabular-nums">{userModes.length}</span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="px-1.5 pb-1.5 max-h-[180px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                        {userModes.length === 0 ? (
+                            <div className="px-2.5 py-3 text-[11px] overlay-text-muted text-center">
+                                No saved modes yet. Pick a template below to create your first one.
+                            </div>
+                        ) : (
+                            userModes.map((m) => (
+                                <button
+                                    key={m.id}
+                                    onClick={() => handleActivateMode(m.id)}
+                                    className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.05]"
+                                >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        {m.isActive ? (
+                                            <Check className="w-3.5 h-3.5 text-[#d97757] shrink-0" strokeWidth={2.5} />
+                                        ) : (
+                                            <span className="w-3.5 h-3.5 shrink-0" />
+                                        )}
+                                        <span className={`text-[12px] truncate ${m.isActive ? 'overlay-text-primary font-semibold' : 'overlay-text-secondary'}`}>
+                                            {m.name}
+                                        </span>
+                                    </div>
+                                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0 overlay-text-muted" style={{ background: 'rgba(250,249,245,0.05)' }}>
+                                        {m.templateType.replace(/-/g, ' ')}
+                                    </span>
+                                </button>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-px mx-3" style={{ background: 'rgba(250,249,245,0.08)' }} />
+
+                    {/* NEW FROM TEMPLATE */}
+                    <div className="px-3 pt-2 pb-1">
+                        <span className="text-[9.5px] font-bold uppercase tracking-[0.12em] overlay-text-muted">New from template</span>
+                    </div>
+                    <div className="px-1.5 pb-2 max-h-[220px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                        {MODE_TEMPLATES.map((t) => (
+                            <button
+                                key={t.type}
+                                onClick={() => handleCreateFromTemplate(t.type, t.label)}
+                                className="w-full flex items-start gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.05] group/template"
+                                title={t.description}
+                            >
+                                <Plus className="w-3.5 h-3.5 overlay-text-muted shrink-0 mt-0.5 group-hover/template:text-[#d97757] transition-colors" strokeWidth={2.5} />
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-[12px] font-medium overlay-text-secondary truncate">{t.label}</div>
+                                    <div className="text-[10px] overlay-text-muted truncate">{t.description}</div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Footer — link to launcher Modes manager */}
+                    <div className="px-1.5 pt-1.5 pb-2 border-t" style={{ borderColor: 'rgba(250,249,245,0.06)' }}>
+                        <button
+                            onClick={() => {
+                                setIsModeDropdownOpen(false);
+                                window.electronAPI?.openSettingsTab?.('modes');
+                            }}
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors hover:bg-white/[0.05] text-[11px] overlay-text-secondary"
+                        >
+                            <Settings2 className="w-3 h-3 opacity-70" />
+                            Manage modes…
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 };

@@ -392,6 +392,10 @@ export interface ElectronAPI {
   cropperCancelled: () => void;
   onResetCropper: (callback: (data: { hudPosition: { x: number; y: number } }) => void) => () => void;
 
+  // Analysis mode (persisted setting)
+  getAnalysisMode?: () => Promise<string>;
+  setAnalysisMode?: (mode: string) => Promise<void>;
+
   // Platform
   platform: NodeJS.Platform;
 

@@ -5,7 +5,6 @@ import NativelyInterface from "./components/NativelyInterface"
 import SettingsPopup from "./components/SettingsPopup" // Keeping for legacy/specific window support if needed
 import Launcher from "./components/Launcher"
 import ModelSelectorWindow from "./components/ModelSelectorWindow"
-import SettingsOverlay from "./components/SettingsOverlay"
 import StartupSequence from "./components/StartupSequence"
 import { AnimatePresence, motion } from "framer-motion"
 import UpdateBanner from "./components/UpdateBanner"
@@ -30,8 +29,6 @@ import {
 } from './premium'
 import { analytics } from "./lib/analytics/analytics.service"
 import { ErrorBoundary } from "./components/ErrorBoundary"
-import ModesSettings from "./components/settings/ModesSettings"
-import { ProfileIntelligenceSettings } from "./components/ProfileIntelligenceSettings"
 
 const queryClient = new QueryClient()
 
@@ -98,25 +95,8 @@ const App: React.FC = () => {
       return true;
     }
   });
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = useState<string>('general');
-  const [isModesOpen, setIsModesOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const openSettingsExclusive = useCallback((tab: string = 'general') => {
-    setIsModesOpen(false);
-    setIsProfileOpen(false);
-    setSettingsInitialTab(tab);
-    setIsSettingsOpen(true);
-  }, []);
-  const openProfileExclusive = useCallback(() => {
-    setIsModesOpen(false);
-    setIsSettingsOpen(false);
-    setIsProfileOpen(true);
-  }, []);
-  const openModesExclusive = useCallback(() => {
-    setIsProfileOpen(false);
-    setIsSettingsOpen(false);
-    setIsModesOpen(true);
+    window.dispatchEvent(new CustomEvent('natively:open-settings', { detail: { tab } }));
   }, []);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isPremiumActive, setIsPremiumActive] = useState(false);
@@ -166,7 +146,7 @@ const App: React.FC = () => {
   } | null>(null);
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
 
-  const isAppReady = !isSettingsWindow && !isOverlayWindow && !isModelSelectorWindow && !showStartup && !isSettingsOpen && isLauncherMainView && !isProfileOpen;
+  const isAppReady = !isSettingsWindow && !isOverlayWindow && !isModelSelectorWindow && !showStartup && isLauncherMainView;
   const { activeAd, dismissAd, previewAd } = useAdCampaigns(
     planDetails,
     hasProfile,
@@ -288,9 +268,9 @@ const App: React.FC = () => {
       }
     }
 
-    // Listen for open-settings-tab events from other windows (e.g. overlay Modes button)
+    // Listen for open-settings-tab events from other windows — forward to Launcher via DOM event
     const removeOpenSettingsTab = window.electronAPI?.onOpenSettingsTab?.((tab: string) => {
-      openSettingsExclusive(tab);
+      window.dispatchEvent(new CustomEvent('natively:open-settings', { detail: { tab: tab || 'general' } }));
     });
 
     // Listen for meeting processing completion to trigger post-meeting ads
@@ -537,90 +517,12 @@ const App: React.FC = () => {
                 <div id="launcher-container" className="h-full w-full relative">
                   <Launcher
                     onStartMeeting={handleStartMeeting}
-                    onOpenSettings={(tab = 'general') => openSettingsExclusive(tab)}
-                    onOpenProfile={() => openProfileExclusive()}
-                    onOpenModes={() => openModesExclusive()}
                     onPageChange={setIsLauncherMainView}
                     ollamaPullStatus={ollamaPullStatus}
                     ollamaPullPercent={ollamaPullPercent}
                     ollamaPullMessage={ollamaPullMessage}
                   />
                 </div>
-                <SettingsOverlay
-                  isOpen={isSettingsOpen}
-                  onClose={() => {
-                    setIsSettingsOpen(false);
-                  }}
-                  initialTab={settingsInitialTab}
-                />
-                <AnimatePresence>
-                  {isModesOpen && (
-                    <motion.div
-                      key="modes-panel"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-                      onClick={(e) => { if (e.target === e.currentTarget) setIsModesOpen(false); }}
-                    >
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.92, y: 18, filter: 'blur(12px)' }}
-                        animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, scale: 0.96, y: 8, filter: 'blur(8px)' }}
-                        transition={{
-                          opacity: { duration: 0.32, ease: [0.23, 1, 0.32, 1] },
-                          filter: { duration: 0.34, ease: [0.23, 1, 0.32, 1] },
-                          scale: { type: 'spring', stiffness: 320, damping: 34, mass: 0.9 },
-                          y: { type: 'spring', stiffness: 320, damping: 34, mass: 0.9 },
-                        }}
-                        style={{
-                          willChange: 'transform, opacity, filter',
-                          transformOrigin: 'center',
-                          boxShadow: '0 30px 80px -20px rgba(0,0,0,0.65), 0 16px 40px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)',
-                        }}
-                        className="w-[820px] h-[600px] max-w-[95vw] max-h-[90vh] rounded-2xl overflow-hidden border border-white/10 bg-[#141414]"
-                      >
-                        <ModesSettings onClose={() => setIsModesOpen(false)} isPremium={isPremiumActive} isLoaded={hasLoadedLicense} isTrialActive={!!activeTrial} onOpenNativelyAPI={() => openSettingsExclusive('natively-api')} />
-                      </motion.div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <AnimatePresence>
-                  {isProfileOpen && (
-                    <motion.div
-                      key="profile-panel"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-                      onClick={(e) => { if (e.target === e.currentTarget) setIsProfileOpen(false); }}
-                    >
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.92, y: 18, filter: 'blur(12px)' }}
-                        animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, scale: 0.96, y: 8, filter: 'blur(8px)' }}
-                        transition={{
-                          opacity: { duration: 0.32, ease: [0.23, 1, 0.32, 1] },
-                          filter: { duration: 0.34, ease: [0.23, 1, 0.32, 1] },
-                          scale: { type: 'spring', stiffness: 320, damping: 34, mass: 0.9 },
-                          y: { type: 'spring', stiffness: 320, damping: 34, mass: 0.9 },
-                        }}
-                        style={{
-                          willChange: 'transform, opacity, filter',
-                          transformOrigin: 'center',
-                          boxShadow: '0 30px 80px -20px rgba(0,0,0,0.65), 0 16px 40px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)',
-                        }}
-                        className="w-[820px] h-[600px] max-w-[95vw] max-h-[90vh] rounded-2xl overflow-hidden border border-white/10 bg-[#141414]"
-                      >
-                        <ProfileIntelligenceSettings
-                          onClose={() => setIsProfileOpen(false)}
-                        />
-                      </motion.div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
                 <ToastViewport />
               </ToastProvider>
             </QueryClientProvider>
@@ -732,7 +634,7 @@ const App: React.FC = () => {
       )}
       {/* Ad toasters — render whenever activeAd is set (isLauncherMainView guard bypassed
           when triggered via preview shortcut so the card always surfaces) */}
-      {(isLauncherMainView || !!activeAd) && !isSettingsOpen && (
+      {(isLauncherMainView || !!activeAd) && (
         <NativelyApiPromoToaster
           isOpen={activeAd === 'natively_api'}
           onDismiss={() => dismissAd('natively_api')}
@@ -744,12 +646,12 @@ const App: React.FC = () => {
           <ProfileFeatureToaster
             isOpen={activeAd === 'profile'}
             onDismiss={dismissAd}
-            onSetupProfile={() => openProfileExclusive()}
+            onSetupProfile={dismissAd}
           />
           <JDAwarenessToaster
             isOpen={activeAd === 'jd'}
             onDismiss={dismissAd}
-            onSetupJD={() => openProfileExclusive()}
+            onSetupJD={dismissAd}
           />
           <PremiumPromoToaster
             isOpen={activeAd === 'promo'}
@@ -789,10 +691,7 @@ const App: React.FC = () => {
           // If user activated during post-trial modal, close it — they have a plan now
           setShowTrialExpiredModal(false);
           setActiveTrial(null);
-          // After activation, open settings to Profile Intelligence
-          setTimeout(() => {
-            openProfileExclusive();
-          }, 300);
+          // TODO: re-enable profile navigation post-activation when Task #3 is done
         }}
         onDeactivated={() => { setIsPremiumActive(false); setPlanDetails({ isPremium: false }); }}
       />

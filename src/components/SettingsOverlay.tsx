@@ -12,7 +12,6 @@ import { analytics } from '../lib/analytics/analytics.service';
 import { AboutSection } from './AboutSection';
 import { HelpSettings } from './settings/HelpSettings';
 import { AIProvidersSettings } from './settings/AIProvidersSettings';
-import { NativelyApiSettings } from './settings/NativelyApiSettings';
 import { NativelyProSettings } from './settings/NativelyProSettings';
 import { PhoneMirrorSettings } from './settings/PhoneMirrorSettings';
 import { LocalWhisperModelPanel } from './LocalWhisperModelPanel';
@@ -346,23 +345,19 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({ value, options, onChang
 };
 
 interface SettingsOverlayProps {
-    isOpen: boolean;
     onClose: () => void;
     initialTab?: string;
 }
 
-const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, initialTab = 'general' }) => {
+const normalizeTab = (tab?: string) => (tab === 'natively-api' ? 'natively-pro' : tab) || 'general';
+
+const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ onClose, initialTab = 'general' }) => {
     const isLight = useResolvedTheme() === 'light';
-    const [activeTab, setActiveTab] = useState(initialTab);
-    
-    // Sync active tab when modal opens
+    const [activeTab, setActiveTab] = useState(() => normalizeTab(initialTab));
+
     useEffect(() => {
-        if (isOpen && initialTab) {
-            setActiveTab(initialTab);
-            
-            
-        }
-    }, [isOpen, initialTab]);
+        if (initialTab) setActiveTab(normalizeTab(initialTab));
+    }, [initialTab]);
     
     const { shortcuts, updateShortcut, resetShortcuts } = useShortcuts();
     const [isUndetectable, setIsUndetectable] = useState(false);
@@ -384,19 +379,12 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
     const [showVerboseToast, setShowVerboseToast] = useState(false);
     const verboseToastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Close dropdown when clicking outside
-    // Sync with global state changes
     useEffect(() => {
-        if (isOpen) {
-            
-            
-            // Fetch true initial state from main process
-            window.electronAPI?.getUndetectable?.().then(setIsUndetectable).catch(() => { });
-            window.electronAPI?.getOverlayMousePassthrough?.().then(setIsMousePassthrough).catch(() => { });
-            window.electronAPI?.getDisguise?.().then(setDisguiseMode).catch(() => { });
-            window.electronAPI?.getVerboseLogging?.().then(setVerboseLogging).catch(() => { });
-        }
-    }, [isOpen]);
+        window.electronAPI?.getUndetectable?.().then(setIsUndetectable).catch(() => { });
+        window.electronAPI?.getOverlayMousePassthrough?.().then(setIsMousePassthrough).catch(() => { });
+        window.electronAPI?.getDisguise?.().then(setDisguiseMode).catch(() => { });
+        window.electronAPI?.getVerboseLogging?.().then(setVerboseLogging).catch(() => { });
+    }, []);
 
     useEffect(() => {
         if (!showVerboseToast) return;
@@ -533,13 +521,12 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
         setPreviewOverlayOpacity(overlayOpacity);
     }, [overlayOpacity]);
 
-    // Bug fix #3 (close-during-drag): if the overlay closes while the user is still dragging,
-    // restore all DOM state so nothing is left in a broken state.
     useEffect(() => {
-        if (!isOpen && isPreviewingOpacity) {
-            stopPreviewingOpacity();
-        }
-    }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+        return () => {
+            if (isPreviewingOpacity) stopPreviewingOpacity();
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const startPreviewingOpacity = () => {
         // Bug fix #5: guard against rapid repeated calls (double pointerDown / touch events)
@@ -884,8 +871,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                 console.error('Failed to load STT settings:', e);
             }
         };
-        if (isOpen) loadSttSettings();
-    }, [isOpen]);
+        loadSttSettings();
+    }, []);
 
     // PR #173: Live-reload settings whenever the backend broadcasts a credentials change
     // (e.g., when the user saves an STT key in a different window, or main fires it after
@@ -893,22 +880,19 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
     useEffect(() => {
         if (!window.electronAPI?.onCredentialsChanged) return;
         const unsubscribe = window.electronAPI.onCredentialsChanged(() => {
-            if (isOpen) {
-                // Re-fetch credentials silently — purely additive, no state reset
-                window.electronAPI?.getStoredCredentials?.().then((creds: any) => {
-                    if (!creds) return;
-                    setSttProvider(creds.sttProvider || 'none');
-                    if (creds.groqSttModel) setGroqSttModel(creds.groqSttModel);
-                    setHasNativelyKey(creds.hasNativelyKey || false);
-                    setHasStoredSttGroqKey(creds.hasSttGroqKey);
-                    setHasStoredSttOpenaiKey(creds.hasSttOpenaiKey);
-                    setHasStoredDeepgramKey(creds.hasDeepgramKey);
-                    setHasStoredElevenLabsKey(creds.hasElevenLabsKey);
-                    setHasStoredAzureKey(creds.hasAzureKey);
-                    setHasStoredIbmWatsonKey(creds.hasIbmWatsonKey);
-                    setHasStoredSonioxKey(creds.hasSonioxKey || false);
-                }).catch(() => { /* silently ignore */ });
-            }
+            window.electronAPI?.getStoredCredentials?.().then((creds: any) => {
+                if (!creds) return;
+                setSttProvider(creds.sttProvider || 'none');
+                if (creds.groqSttModel) setGroqSttModel(creds.groqSttModel);
+                setHasNativelyKey(creds.hasNativelyKey || false);
+                setHasStoredSttGroqKey(creds.hasSttGroqKey);
+                setHasStoredSttOpenaiKey(creds.hasSttOpenaiKey);
+                setHasStoredDeepgramKey(creds.hasDeepgramKey);
+                setHasStoredElevenLabsKey(creds.hasElevenLabsKey);
+                setHasStoredAzureKey(creds.hasAzureKey);
+                setHasStoredIbmWatsonKey(creds.hasIbmWatsonKey);
+                setHasStoredSonioxKey(creds.hasSonioxKey || false);
+            }).catch(() => { /* silently ignore */ });
         });
         return () => unsubscribe();
     }, []); // mount-once: isOpen is checked inside the callback
@@ -1112,15 +1096,12 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
     };
 
     useEffect(() => {
-        if (!isOpen) return;
-
         const unsubs = [
             window.electronAPI.onUpdateChecking(() => {
                 setUpdateStatus('checking');
             }),
             window.electronAPI.onUpdateAvailable(() => {
                 setUpdateStatus('available');
-                // Don't close settings - let user see the button change to "Update Available"
             }),
             window.electronAPI.onUpdateNotAvailable(() => {
                 setUpdateStatus('uptodate');
@@ -1132,83 +1113,59 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                 setTimeout(() => setUpdateStatus('idle'), 3000);
             })
         ];
-
         return () => unsubs.forEach(unsub => unsub());
-    }, [isOpen, onClose]);
+    }, [onClose]);
 
 
 
     useEffect(() => {
-        if (isOpen) {
-            // Load detectable status
-            if (window.electronAPI?.getUndetectable) {
-                window.electronAPI.getUndetectable().then(setIsUndetectable);
-            }
-            if (window.electronAPI?.getOpenAtLogin) {
-                window.electronAPI.getOpenAtLogin().then(setOpenOnLogin);
-            }
-            if (window.electronAPI?.getThemeMode) {
-                window.electronAPI.getThemeMode().then(({ mode }) => setThemeMode(mode));
-            }
+        window.electronAPI?.getUndetectable?.().then(setIsUndetectable).catch(() => {});
+        window.electronAPI?.getOpenAtLogin?.().then(setOpenOnLogin).catch(() => {});
 
-            // Load settings
-            const loadDevices = async () => {
-                try {
-                    const [inputs, outputs] = await Promise.all([
-                        // @ts-ignore
-                        window.electronAPI?.getInputDevices() || Promise.resolve([]),
-                        // @ts-ignore
-                        window.electronAPI?.getOutputDevices() || Promise.resolve([])
-                    ]);
-
-                    // Map to shape compatible with CustomSelect (which expects MediaDeviceInfo-like objects)
-                    const formatDevices = (devs: any[]) => devs.map(d => ({
-                        deviceId: d.id,
-                        label: d.name,
-                        kind: 'audioinput' as MediaDeviceKind,
-                        groupId: '',
-                        toJSON: () => d
-                    }));
-
-                    setInputDevices(formatDevices(inputs));
-                    setOutputDevices(formatDevices(outputs));
-
-                    // Load saved preferences
-                    const savedInput = localStorage.getItem('preferredInputDeviceId');
-                    const savedOutput = localStorage.getItem('preferredOutputDeviceId');
-
-                    if (savedInput && inputs.find((d: any) => d.id === savedInput)) {
-                        setSelectedInput(savedInput);
-                    } else if (inputs.length > 0 && !selectedInput) {
-                        setSelectedInput(inputs[0].id);
-                    }
-
-                    if (savedOutput && outputs.find((d: any) => d.id === savedOutput)) {
-                        setSelectedOutput(savedOutput);
-                    } else if (outputs.length > 0 && !selectedOutput) {
-                        setSelectedOutput(outputs[0].id);
-                    }
-                } catch (e) {
-                    console.error("Error loading native devices:", e);
+        const loadDevices = async () => {
+            try {
+                const [inputs, outputs] = await Promise.all([
+                    // @ts-ignore
+                    window.electronAPI?.getInputDevices() || Promise.resolve([]),
+                    // @ts-ignore
+                    window.electronAPI?.getOutputDevices() || Promise.resolve([])
+                ]);
+                const formatDevices = (devs: any[]) => devs.map(d => ({
+                    deviceId: d.id,
+                    label: d.name,
+                    kind: 'audioinput' as MediaDeviceKind,
+                    groupId: '',
+                    toJSON: () => d
+                }));
+                setInputDevices(formatDevices(inputs));
+                setOutputDevices(formatDevices(outputs));
+                const savedInput = localStorage.getItem('preferredInputDeviceId');
+                const savedOutput = localStorage.getItem('preferredOutputDeviceId');
+                if (savedInput && inputs.find((d: any) => d.id === savedInput)) {
+                    setSelectedInput(savedInput);
+                } else if (inputs.length > 0) {
+                    setSelectedInput(inputs[0].id);
                 }
-            };
-            loadDevices();
-
-            // Load Experimental SCK pref
-            const savedSck = localStorage.getItem('useExperimentalSckBackend') === 'true';
-            setUseExperimentalSck(savedSck);
-
-            // Load Calendar Status
-            if (window.electronAPI?.getCalendarStatus) {
-                window.electronAPI.getCalendarStatus().then(setCalendarStatus);
+                if (savedOutput && outputs.find((d: any) => d.id === savedOutput)) {
+                    setSelectedOutput(savedOutput);
+                } else if (outputs.length > 0) {
+                    setSelectedOutput(outputs[0].id);
+                }
+            } catch (e) {
+                console.error("Error loading native devices:", e);
             }
-        }
-    }, [isOpen, selectedInput, selectedOutput]); // Re-run if isOpen changes, or if selected devices are cleared
+        };
+        loadDevices();
 
-    // Fetch upcoming calendar events while the Calendar tab is open and connected.
-    // Polls every 60s to mirror the Launcher's cadence.
+        const savedSck = localStorage.getItem('useExperimentalSckBackend') === 'true';
+        setUseExperimentalSck(savedSck);
+
+        window.electronAPI?.getCalendarStatus?.().then(setCalendarStatus).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     useEffect(() => {
-        if (!isOpen || activeTab !== 'calendar' || !calendarStatus.connected) return;
+        if (activeTab !== 'calendar' || !calendarStatus.connected) return;
         if (!window.electronAPI?.getUpcomingEvents) return;
 
         let cancelled = false;
@@ -1220,7 +1177,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
         fetchEvents();
         const interval = setInterval(fetchEvents, 60_000);
         return () => { cancelled = true; clearInterval(interval); };
-    }, [isOpen, activeTab, calendarStatus.connected]);
+    }, [activeTab, calendarStatus.connected]);
 
     // Listen for device-selection-applied so the user can see when their saved
     // device couldn't be opened and audio fell back to the system default.
@@ -1248,9 +1205,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
         return unsubscribe;
     }, []);
 
-    // Use the native mic test path so device IDs stay consistent with the meeting runtime.
     useEffect(() => {
-        if (isOpen && activeTab === 'audio') {
+        if (activeTab === 'audio') {
             const unsubscribe = window.electronAPI?.onAudioTestLevel?.((level) => {
                 setMicLevel(Math.max(0, Math.min(100, level * 100)));
             });
@@ -1273,125 +1229,64 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                 console.error("Error stopping native microphone test:", error);
             });
         }
-    }, [isOpen, activeTab, selectedInput]);
+    }, [activeTab, selectedInput]);
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    id="settings-backdrop"
-                    className={`fixed inset-0 z-50 flex items-center justify-center p-8 transition-colors duration-150 ${isPreviewingOpacity ? 'bg-transparent backdrop-blur-none' : 'bg-black/60 backdrop-blur-sm'}`}
-                >
-                    <motion.div
-                        id="settings-panel-wrapper"
-                        initial={{ scale: 0.94, opacity: 0, y: 20 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.94, opacity: 0, y: 20 }}
-                        transition={{ 
-                            type: "spring", 
-                            stiffness: 400, 
-                            damping: 32,
-                            mass: 1
-                        }}
-                        className="bg-bg-elevated w-full max-w-4xl h-[80vh] rounded-2xl border border-border-subtle shadow-2xl overflow-hidden relative"
-                    >
-                        <div 
-                            id="settings-panel" 
-                            className="flex w-full h-full"
-                            style={{ visibility: isPreviewingOpacity ? 'hidden' : 'visible' }}
-                        >
-                        {/* Sidebar */}
-                        <div className="w-64 bg-bg-sidebar flex flex-col border-r border-border-subtle">
-                            <div className="p-6">
-                                <h2 className="font-semibold text-gray-400 text-xs uppercase tracking-wider mb-2">Settings</h2>
-                                <nav className="space-y-1">
-                                    <button
-                                        onClick={() => setActiveTab('general')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'general' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <Monitor size={16} /> General
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('natively-api')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'natively-api' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <NativelyLogoMark size={16} className={activeTab === 'natively-api' ? 'text-blue-500' : 'text-blue-500/70'} />
-                                        <span>Natively API</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('natively-pro')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'natively-pro' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <NativelyLogoMark size={16} className={activeTab === 'natively-pro' ? 'text-text-primary' : 'text-text-secondary'} />
-                                        <span>Natively Pro</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('ai-providers')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'ai-providers' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <FlaskConical size={16} /> AI Providers
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('calendar')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'calendar' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <Calendar size={16} /> Calendar
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('audio')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'audio' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <Mic size={16} /> Audio
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('keybinds')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'keybinds' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <Keyboard size={16} /> Keybinds
-                                    </button>
+        <div id="settings-backdrop" className="flex w-full h-full">
+            <div
+                id="settings-panel"
+                className="flex w-full h-full"
+                style={{ visibility: isPreviewingOpacity ? 'hidden' : 'visible' }}
+            >
+                {/* Sidebar — LiveLens premium style */}
+                <div className="w-[200px] flex flex-col border-r border-white/[0.07] shrink-0" style={{ background: '#0d0f14' }}>
+                    <div className="px-[10px] py-5 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                        <nav className="flex flex-col gap-[2px]">
+                            {/* ── App ── */}
+                            <p className="text-[10px] font-bold tracking-[0.09em] uppercase text-[#e2e5ed]/[0.22] px-[10px] pb-[5px] pt-1">App</p>
+                            <button onClick={() => setActiveTab('general')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'general' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <Monitor size={14} className="shrink-0" /> General
+                            </button>
+                            <button onClick={() => setActiveTab('keybinds')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'keybinds' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <Keyboard size={14} className="shrink-0" /> Shortcuts
+                            </button>
 
-                                    <button
-                                        onClick={() => setActiveTab('phone-mirror')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'phone-mirror' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <Smartphone size={16} /> Phone Mirror
-                                    </button>
+                            {/* ── Intelligence ── */}
+                            <p className="text-[10px] font-bold tracking-[0.09em] uppercase text-[#e2e5ed]/[0.22] px-[10px] pb-[5px] pt-[10px]">Intelligence</p>
+                            <button onClick={() => setActiveTab('ai-providers')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'ai-providers' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <FlaskConical size={14} className="shrink-0" /> AI Providers
+                            </button>
+                            <button onClick={() => setActiveTab('natively-pro')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'natively-pro' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <Star size={14} className="shrink-0" /> Natively Pro
+                            </button>
+                            <button onClick={() => setActiveTab('phone-mirror')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'phone-mirror' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <Smartphone size={14} className="shrink-0" /> Phone Mirror
+                            </button>
 
-                                    <button
-                                        onClick={() => setActiveTab('help')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-3 ${activeTab === 'help' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <HelpCircle size={16} /> Setup & Help
-                                    </button>
+                            {/* ── Input ── */}
+                            <p className="text-[10px] font-bold tracking-[0.09em] uppercase text-[#e2e5ed]/[0.22] px-[10px] pb-[5px] pt-[10px]">Input</p>
+                            <button onClick={() => setActiveTab('audio')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'audio' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <Mic size={14} className="shrink-0" /> Audio &amp; STT
+                            </button>
+                            <button onClick={() => setActiveTab('calendar')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'calendar' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <Calendar size={14} className="shrink-0" /> Calendar
+                            </button>
 
-                                    <button
-                                        onClick={() => setActiveTab('about')}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'about' ? 'bg-bg-item-active text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50'}`}
-                                    >
-                                        <Info size={16} /> About
-                                    </button>
-                                </nav>
-                            </div>
+                            {/* ── Support ── */}
+                            <p className="text-[10px] font-bold tracking-[0.09em] uppercase text-[#e2e5ed]/[0.22] px-[10px] pb-[5px] pt-[10px]">Support</p>
+                            <button onClick={() => setActiveTab('help')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'help' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <HelpCircle size={14} className="shrink-0" /> Setup &amp; Help
+                            </button>
+                            <button onClick={() => setActiveTab('about')} className={`w-full text-left px-[10px] py-2 rounded-[8px] text-[12.5px] font-medium transition-all flex items-center gap-[9px] border ${activeTab === 'about' ? 'bg-white/[0.08] border-white/[0.10] text-[#e2e5ed]' : 'border-transparent text-[#e2e5ed]/50 hover:bg-white/[0.05] hover:text-[#e2e5ed]/75'}`}>
+                                <Info size={14} className="shrink-0" /> About
+                            </button>
+                        </nav>
+                    </div>
+                </div>
 
-                            <div className="mt-auto p-6 border-t border-border-subtle">
-                                <button
-                                    onClick={() => window.electronAPI.quitApp()}
-                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3"
-                                >
-                                    <LogOut size={16} /> Quit Natively
-                                </button>
-                                <button onClick={onClose} className="group mt-2 w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-item-active/50 transition-colors flex items-center gap-3">
-                                    <X size={18} className="group-hover:text-red-500 transition-colors" /> Close
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 bg-bg-main overflow-y-auto p-8 relative">
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto" style={{ background: '#0d0f14' }}>
+                <div style={{ width: '100%', maxWidth: 760, margin: '0 auto', padding: '32px 32px 40px' }}>
                             {activeTab === 'general' && (
                                 <div className="space-y-6 animated fadeIn">
                                     <div className="space-y-3.5">
@@ -1938,9 +1833,6 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                             
                             {activeTab === 'ai-providers' && (
                                 <AIProvidersSettings />
-                            )}
-                            {activeTab === 'natively-api' && (
-                                <NativelyApiSettings />
                             )}
                             {activeTab === 'natively-pro' && (
                                 <NativelyProSettings />
@@ -2879,19 +2771,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
                             )}
                         </div>
                     </div>
-                    </motion.div>
-                </motion.div>
-            )
-            }
+                </div>
 
-
-            {/* ------------------------------------------------------------------ */}
-            {/* Live Preview — mockup sits below the z-50 modal                    */}
-            {/* ------------------------------------------------------------------ */}
-            {/* ------------------------------------------------------------------ */}
-            {/* Live Preview — mockup sits below the z-50 modal                    */}
-            {/* ALWAYS MOUNTED to prevent React AnimatePresence lag spikes         */}
-            {/* ------------------------------------------------------------------ */}
             <div
                 id="settings-mockup-wrapper"
                 className="fixed inset-0 z-[49] pointer-events-none transition-opacity duration-150"
@@ -2899,7 +2780,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, init
             >
                 <MockupNativelyInterface opacity={previewOverlayOpacity} />
             </div>
-        </AnimatePresence >
+        </div>
     );
 };
 

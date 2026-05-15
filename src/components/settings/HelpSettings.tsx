@@ -903,7 +903,7 @@ export const HelpSettings: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
                 {onNavigate && (
                     <div
-                        onClick={() => onNavigate('natively-api')}
+                        onClick={() => onNavigate('natively-pro')}
                         className="mb-8 group cursor-pointer bg-bg-card hover:bg-bg-item-surface border border-border-subtle hover:border-white transition-all rounded-2xl flex items-center justify-between p-4 px-5 shadow-sm hover:shadow-md"
                     >
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 flex-1">
@@ -913,7 +913,7 @@ export const HelpSettings: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                             <div className="flex-1">
                                 <h4 className="text-[14px] font-bold text-text-primary mb-0.5">Want to skip the manual setup?</h4>
                                 <p className="text-[13px] text-text-secondary">
-                                    Use the <span className="font-semibold text-text-primary">Natively API</span> for an out-of-the-box experience. One-click zero-configuration usage.
+                                    Use <span className="font-semibold text-text-primary">Natively Pro</span> for an out-of-the-box experience. One-click zero-configuration usage.
                                 </p>
                             </div>
                         </div>
@@ -1626,7 +1626,7 @@ export const HelpSettings: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                                 <Star size={14} /> Pro Feature
                             </h4>
                             <p className="text-[11px] text-text-secondary leading-relaxed mb-0">
-                                Modes are locked behind Natively Pro. Free and trial users see only the General mode. Activate a license via <strong>Settings → Natively API</strong> to unlock all seven modes.
+                                Modes are locked behind Natively Pro. Free and trial users see only the General mode. Activate a license via <strong>Settings → Natively Pro</strong> to unlock all seven modes.
                             </p>
                         </div>
                     </div>

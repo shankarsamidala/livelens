@@ -22,7 +22,22 @@ module.exports = {
         },
         accent: {
           primary: 'var(--accent-primary)',
+          hover: 'var(--accent-primary-hover)',
+          muted: 'var(--accent-muted)',
+          'muted-hover': 'var(--accent-muted-hover)',
+          bg: 'var(--accent-bg)',
+          border: 'var(--accent-border)',
           secondary: 'var(--accent-muted)',
+        },
+        status: {
+          success: 'var(--status-success)',
+          'success-muted': 'var(--status-success-muted)',
+          warning: 'var(--status-warning)',
+          'warning-muted': 'var(--status-warning-muted)',
+          error: 'var(--status-error)',
+          'error-muted': 'var(--status-error-muted)',
+          info: 'var(--status-info)',
+          'info-muted': 'var(--status-info-muted)',
         },
         button: {
           primary: {
@@ -32,7 +47,19 @@ module.exports = {
             'disabled-border': 'var(--btn-primary-disabled-border)',
             'disabled-text': 'var(--btn-primary-disabled-text)',
             'shadow-color': 'var(--btn-primary-shadow-color)',
-          }
+          },
+          secondary: {
+            bg: 'var(--btn-secondary-bg)',
+            hover: 'var(--btn-secondary-hover)',
+            border: 'var(--btn-secondary-border)',
+            text: 'var(--btn-secondary-text)',
+          },
+          danger: {
+            bg: 'var(--btn-danger-bg)',
+            hover: 'var(--btn-danger-hover)',
+            border: 'var(--btn-danger-border)',
+            text: 'var(--btn-danger-text)',
+          },
         },
         text: {
           primary: 'var(--text-primary)',

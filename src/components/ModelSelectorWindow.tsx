@@ -46,28 +46,14 @@ const ModelSelectorWindow = () => {
                 // 3. Codex CLI
                 const codexCliConfig = await window.electronAPI?.getCodexCliConfig?.();
 
-                // 4. Ollama
+                // 4. Ollama — quietly skip if not available. Previously this
+                // auto-fired forceRestartOllama() on an empty list, which spawned
+                // a kill-by-PID routine that took out Electron's own process when
+                // port 11434 was bound to a non-Ollama PID. If the user wants
+                // Ollama, they'll start it themselves; we just list what exists.
                 let ollamaModels: string[] = [];
                 try {
-                    let oModels = await window.electronAPI?.getAvailableOllamaModels?.();
-
-                    // If no models found, try to fix/restart Ollama (server might be down)
-                    if (!oModels || oModels.length === 0) {
-                        try {
-                            // @ts-ignore
-                            if (window.electronAPI?.forceRestartOllama) {
-                                // @ts-ignore
-                                await window.electronAPI.forceRestartOllama();
-                                // Wait a moment for server to come up
-                                await new Promise(resolve => setTimeout(resolve, 1500));
-                                // Retry fetch
-                                oModels = await window.electronAPI?.getAvailableOllamaModels?.();
-                            }
-                        } catch (e) {
-                            console.warn("Retrying Ollama failed", e);
-                        }
-                    }
-
+                    const oModels = await window.electronAPI?.getAvailableOllamaModels?.();
                     if (oModels) ollamaModels = oModels;
                 } catch (e) {
                     // Ignore ollama errors here

@@ -22,83 +22,98 @@
   /* System Fonts - SF Pro */
   --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 
-  /* --- SEMANTIC TOKEN SYSTEM (DEFAULT: DARK) --- */
-  /* Reference Image Matching */
-  --bg-sidebar: #18181B;
-  /* User Spec: Side Panel */
-  --bg-main: #1E1E21;
-  /* User Spec: Main BG */
-  --bg-card: #242429;
-  /* User Spec: Detectable Container */
+  /* --- SEMANTIC TOKEN SYSTEM (DEFAULT: DARK / PREMIUM BLACK) --- */
+  --bg-sidebar:      #0d0f14;
+  --bg-main:         #080a0e;
+  --bg-card:         #0d0f14;
 
-  --bg-toggle-switch: #303033;
-  /* User Spec: Toggle Button */
-  --bg-item-surface: #27272A;
-  /* User Spec: Icons & Input Backgrounds */
-  --bg-item-active: #2C2C2C;
-  /* Selected state */
+  --bg-toggle-switch: #1a1d24;
+  --bg-item-surface:  #111419;
+  --bg-item-active:   #161a22;
 
-  --bg-primary: #000000;
-  /* Fallback */
-  --bg-secondary: #050505;
-  /* Fallback */
-  --bg-elevated: #151515;
-  /* Fallback */
-  --bg-input: #1A1A1A;
-  /* Fallback */
+  --bg-primary:   #080a0e;
+  --bg-secondary: #0a0c11;
+  --bg-elevated:  #0d0f14;
+  --bg-input:     #111419;
 
-  --text-primary: #ffffff;
-  --text-secondary: #A0A0A0;
-  --text-tertiary: #606060;
+  --text-primary:   #e2e5ed;
+  --text-secondary: rgba(226,229,237,0.55);
+  --text-tertiary:  rgba(226,229,237,0.30);
 
-  --border-subtle: transparent;
-  --border-muted: #333333;
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-muted:  rgba(255,255,255,0.10);
 
-  --accent-primary: #3b82f6;
-  --accent-muted: rgba(59, 130, 246, 0.15);
+  /* ── Accent — premium orange (Natively brand) ── */
+  --accent-primary:       #d97757;
+  --accent-primary-hover: #c06645;
+  --accent-muted:         rgba(217, 119, 87, 0.15);
+  --accent-muted-hover:   rgba(217, 119, 87, 0.22);
+  --accent-bg:            rgba(217, 119, 87, 0.10);
+  --accent-border:        rgba(217, 119, 87, 0.22);
 
-  --bg-component: #262626;
-  /* Specific legacy value */
+  /* ── Semantic status tokens ── */
+  --status-success:        #34d399;   /* emerald-400 */
+  --status-success-muted:  rgba(52, 211, 153, 0.15);
+  --status-warning:        #f59e0b;   /* amber-400 */
+  --status-warning-muted:  rgba(245, 158, 11, 0.15);
+  --status-error:          #f87171;   /* red-400 */
+  --status-error-muted:    rgba(248, 113, 113, 0.15);
+  --status-info:           #60a5fa;   /* blue-400 — reserved for info only */
+  --status-info-muted:     rgba(96, 165, 250, 0.12);
 
-  --overlay-bg: rgba(30, 30, 30, 0.65);
+  --bg-component: #111419;
+
+  --overlay-bg: rgba(20, 22, 28, 0.92);
 
   --overlay-opacity: 0.65;
-  --overlay-border: rgba(255, 255, 255, 0.12);
-  --overlay-border-soft: rgba(255, 255, 255, 0.1);
-  --overlay-panel-bg: rgb(30 30 30 / calc(0.05 + (var(--overlay-opacity) * 0.55)));
-  --overlay-pill-bg: rgb(30 30 30 / calc(0.04 + (var(--overlay-opacity) * 0.48)));
-  --overlay-transcript-bg: rgb(30 30 30 / calc(0.02 + (var(--overlay-opacity) * 0.24)));
-  --overlay-chip-bg: rgba(255, 255, 255, 0.035);
-  --overlay-chip-hover-bg: rgba(255, 255, 255, 0.11);
-  --overlay-input-bg: rgba(255, 255, 255, 0.05);
-  --overlay-input-hover-bg: rgba(255, 255, 255, 0.12);
-  --overlay-input-focus-bg: rgba(255, 255, 255, 0.16);
-  --overlay-control-bg: rgba(255, 255, 255, 0.05);
-  --overlay-control-hover-bg: rgba(255, 255, 255, 0.12);
-  --overlay-code-bg: rgba(255, 255, 255, 0.03);
-  --overlay-code-border: rgba(255, 255, 255, 0.08);
-  --overlay-code-header-bg: rgba(255, 255, 255, 0.05);
-  --overlay-inline-code-bg: rgba(255, 255, 255, 0.07);
-  --overlay-icon-bg: rgba(255, 255, 255, 0.05);
-  --overlay-icon-hover-bg: rgba(255, 255, 255, 0.12);
-  --overlay-panel-shadow: rgb(0 0 0 / calc(0.05 + (var(--overlay-opacity) * 0.18)));
-  --overlay-pill-shadow: rgb(0 0 0 / calc(0.03 + (var(--overlay-opacity) * 0.12)));
-  --overlay-text-primary: rgba(255, 255, 255, 0.985);
-  --overlay-text-secondary: rgba(255, 255, 255, 0.9);
-  --overlay-text-muted: rgba(255, 255, 255, 0.7);
-  --overlay-text-placeholder: rgba(255, 255, 255, 0.58);
+  --overlay-border: rgba(250, 249, 245, 0.09);
+  --overlay-border-soft: rgba(250, 249, 245, 0.06);
+  --overlay-panel-bg: rgb(20 22 28 / calc(0.50 + (var(--overlay-opacity) * 0.42)));
+  --overlay-pill-bg: rgb(20 22 28 / calc(0.40 + (var(--overlay-opacity) * 0.40)));
+  --overlay-transcript-bg: rgb(20 22 28 / calc(0.20 + (var(--overlay-opacity) * 0.30)));
+  --overlay-chip-bg: rgba(250, 249, 245, 0.06);
+  --overlay-chip-hover-bg: rgba(250, 249, 245, 0.10);
+  --overlay-input-bg: rgba(250, 249, 245, 0.04);
+  --overlay-input-hover-bg: rgba(250, 249, 245, 0.08);
+  --overlay-input-focus-bg: rgba(250, 249, 245, 0.10);
+  --overlay-control-bg: rgba(250, 249, 245, 0.05);
+  --overlay-control-hover-bg: rgba(250, 249, 245, 0.10);
+  --overlay-code-bg: rgba(250, 249, 245, 0.03);
+  --overlay-code-border: rgba(250, 249, 245, 0.08);
+  --overlay-code-header-bg: rgba(250, 249, 245, 0.05);
+  --overlay-inline-code-bg: rgba(250, 249, 245, 0.07);
+  --overlay-icon-bg: rgba(250, 249, 245, 0.05);
+  --overlay-icon-hover-bg: rgba(250, 249, 245, 0.10);
+  --overlay-panel-shadow: rgb(0 0 0 / calc(0.18 + (var(--overlay-opacity) * 0.22)));
+  --overlay-pill-shadow: rgb(0 0 0 / calc(0.10 + (var(--overlay-opacity) * 0.16)));
+  --overlay-text-primary: #faf9f5;
+  --overlay-text-secondary: rgba(250, 249, 245, 0.78);
+  --overlay-text-muted: rgba(250, 249, 245, 0.55);
+  --overlay-text-placeholder: rgba(250, 249, 245, 0.38);
   --overlay-text-strong: #ffffff;
   --overlay-shell-blur: calc(2px + (var(--overlay-opacity) * 18px));
   --overlay-pill-blur: calc(1px + (var(--overlay-opacity) * 12px));
   --overlay-transcript-blur: calc(var(--overlay-opacity) * 6px);
 
-  /* Primary Action Button Defaults (Dark) */
-  --btn-primary-bg: #2563EB; /* blue-600 */
-  --btn-primary-hover: #3b82f6; /* blue-500 */
-  --btn-primary-disabled-bg: rgba(30, 58, 138, 0.3); /* blue-900/30 */
-  --btn-primary-disabled-border: rgba(30, 64, 175, 0.3); /* blue-800/30 */
-  --btn-primary-disabled-text: rgba(96, 165, 250, 0.4); /* blue-400/40 */
-  --btn-primary-shadow-color: rgba(30, 58, 138, 0.3); /* blue-900/30 */
+  /* ── Primary action button — orange accent ── */
+  --btn-primary-bg:               #d97757;
+  --btn-primary-hover:            #c06645;
+  --btn-primary-disabled-bg:      rgba(217, 119, 87, 0.12);
+  --btn-primary-disabled-border:  rgba(217, 119, 87, 0.18);
+  --btn-primary-disabled-text:    rgba(217, 119, 87, 0.35);
+  --btn-primary-shadow-color:     rgba(217, 119, 87, 0.28);
+
+  /* ── Secondary / ghost button ── */
+  --btn-secondary-bg:             rgba(255, 255, 255, 0.05);
+  --btn-secondary-hover:          rgba(255, 255, 255, 0.09);
+  --btn-secondary-border:         rgba(255, 255, 255, 0.10);
+  --btn-secondary-text:           var(--text-secondary);
+
+  /* ── Danger button ── */
+  --btn-danger-bg:                rgba(248, 113, 113, 0.12);
+  --btn-danger-hover:             rgba(248, 113, 113, 0.20);
+  --btn-danger-border:            rgba(248, 113, 113, 0.25);
+  --btn-danger-text:              #f87171;
 }
 
 [data-theme='light'] {
@@ -131,7 +146,7 @@
   /* ── Interactive elements ── */
   --bg-component:      #F3F4F6;   /* Secondary button fill (gray-100)             */
   --bg-item-surface:   #EAECEF;   /* Row hover — clearly visible against canvas   */
-  --bg-item-active:    rgba(37, 99, 235, 0.09); /* Blue-tinted selection (Linear/Notion style) */
+  --bg-item-active:    rgba(217, 119, 87, 0.09); /* Orange-tinted selection */
   --bg-toggle-switch:  #D1D5DB;   /* Toggle off-state track (gray-300)            */
 
   /* ── Typography — Tailwind gray scale, proven for readability ── */
@@ -144,8 +159,10 @@
   --border-muted:      rgba(0, 0, 0, 0.11);   /* inputs, tables                   */
 
   /* ── Accent ── */
-  --accent-primary:    #2563EB;   /* blue-600 — accessible, confident             */
-  --accent-muted:      rgba(37, 99, 235, 0.10);
+  --accent-primary:       #d97757;
+  --accent-primary-hover: #c06645;
+  --accent-muted:         rgba(217, 119, 87, 0.15);
+  --accent-muted-hover:   rgba(217, 119, 87, 0.22);
 
   --bg-component:      #F3F4F6;
 
@@ -181,13 +198,13 @@
   --overlay-pill-blur:       calc(2px + (var(--overlay-opacity) * 12px));
   --overlay-transcript-blur: calc(var(--overlay-opacity) * 5px);
 
-  /* Primary Action Button (Light) */
-  --btn-primary-bg: #2563EB; /* blue-600 */
-  --btn-primary-hover: #1d4ed8; /* blue-700 */
-  --btn-primary-disabled-bg: var(--bg-input); /* #F9FAFB */
-  --btn-primary-disabled-border: var(--border-subtle);
-  --btn-primary-disabled-text: var(--text-tertiary);
-  --btn-primary-shadow-color: rgba(0, 0, 0, 0.05);
+  /* Primary Action Button (Light — orange accent matches dark) */
+  --btn-primary-bg:               #d97757;
+  --btn-primary-hover:            #c06645;
+  --btn-primary-disabled-bg:      rgba(217, 119, 87, 0.10);
+  --btn-primary-disabled-border:  rgba(217, 119, 87, 0.18);
+  --btn-primary-disabled-text:    rgba(217, 119, 87, 0.40);
+  --btn-primary-shadow-color:     rgba(217, 119, 87, 0.22);
 }
 
 [data-theme='light'] .force-black-icon {
@@ -906,6 +923,19 @@ body {
   -webkit-backdrop-filter: blur(var(--overlay-shell-blur)) saturate(140%);
 }
 
+/* Hide native spinner arrows on overlay numeric inputs (e.g. opacity pill).
+   The pill is interacted with via ↑/↓ keys + drag, not visible spinners. */
+.overlay-numeric-input::-webkit-inner-spin-button,
+.overlay-numeric-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+.overlay-numeric-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 [data-theme='light'] .overlay-shell-surface {
   backdrop-filter: blur(var(--overlay-shell-blur)) saturate(200%);
   -webkit-backdrop-filter: blur(var(--overlay-shell-blur)) saturate(200%);
@@ -1155,6 +1185,17 @@ body {
 
 .drag-region {
   -webkit-app-region: drag;
+}
+
+/* Center drag handle in the top bar — overrides the global cursor lock
+   so users see grab/grabbing feedback. */
+.drag-region,
+.drag-region * {
+  cursor: grab !important;
+}
+.drag-region:active,
+.drag-region:active * {
+  cursor: grabbing !important;
 }
 
 /* Make sure buttons and interactive elements are not draggable */

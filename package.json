@@ -208,7 +208,6 @@
     "jspdf": "^4.0.0",
     "katex": "^0.16.27",
     "keytar": "^7.9.0",
-    "liquid-glass-react": "^1.1.1",
     "lucide-react": "^0.460.0",
     "mammoth": "^1.11.0",
     "onnxruntime-node": "1.22.0",

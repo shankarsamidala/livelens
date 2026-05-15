@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     X, RefreshCw, Upload, Briefcase, Trash2, Pencil, Check, Globe,
-    Building2, Search, AlertCircle, Gift, Info, Star, Sparkles, User, CheckCircle, ArrowUpRight
+    Building2, Search, AlertCircle, Gift, Info, Star, Sparkles, User, CheckCircle, ArrowUpRight,
+    FileText, BadgeCheck, TrendingUp, BrainCircuit, Users, MessageSquareQuote, Handshake, Key, Target, Copy
 } from 'lucide-react';
 import { ProfileVisualizer, PremiumUpgradeModal } from '../premium';
-import { useResolvedTheme } from '../hooks/useResolvedTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const spring = { type: "spring" as const, stiffness: 100, damping: 20 };
@@ -336,6 +336,83 @@ const MagneticButton = ({ children, onClick, disabled, className = "", primary =
 };
 
 // ---------------------------------------------------------------------------
+// PanelCard — lighter card wrapper for SaaS-style sections (preserves
+// Framer Motion staggered reveal but drops the heavy double-bezel shell).
+// ---------------------------------------------------------------------------
+const PanelCard = ({ children, className = "", delay = 0, style = {} }: any) => (
+    <motion.div
+        layout
+        initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        transition={{ ...spring, delay }}
+        style={style}
+        className={`rounded-2xl border border-border-subtle bg-bg-item-surface overflow-hidden ${className}`}
+    >
+        {children}
+    </motion.div>
+);
+
+// ProgressRing — animated SVG ring used in the hero stats.
+const ProgressRing = ({ value, max = 100, color, label, size = 48 }: { value: number; max?: number; color: string; label: string; size?: number }) => {
+    const radius = (size / 2) - 3;
+    const circumference = 2 * Math.PI * radius;
+    const pct = Math.max(0, Math.min(1, max > 0 ? value / max : 0));
+    const offset = circumference * (1 - pct);
+    return (
+        <div className="flex flex-col items-center gap-1.5">
+            <div className="relative" style={{ width: size, height: size }}>
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                    <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={2.5} stroke="rgba(255,255,255,0.06)" />
+                    <motion.circle
+                        cx={size / 2} cy={size / 2} r={radius}
+                        fill="none" strokeWidth={2.5} stroke={color} strokeLinecap="round"
+                        style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
+                        strokeDasharray={circumference}
+                        initial={{ strokeDashoffset: circumference }}
+                        animate={{ strokeDashoffset: offset }}
+                        transition={{ ...spring, delay: 0.35 }}
+                    />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[14px] font-bold tabular-nums text-text-primary">
+                        {value.toLocaleString()}
+                    </span>
+                </div>
+            </div>
+            <span className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-text-tertiary">{label}</span>
+        </div>
+    );
+};
+
+// IntelTab — single pill button used in the company intel tab strip.
+const IntelTab = ({ active, onClick, children, count }: { active: boolean; onClick: () => void; children: React.ReactNode; count?: number }) => (
+    <button
+        onClick={onClick}
+        className={`px-3 py-1.5 rounded-full text-[11.5px] font-semibold transition-all duration-150 flex items-center gap-1.5 border ${
+            active
+                ? 'bg-white/[0.07] text-text-primary border-white/[0.10]'
+                : 'text-text-tertiary hover:text-text-secondary hover:bg-white/[0.04] border-transparent'
+        }`}
+    >
+        {children}
+        {typeof count === 'number' && (
+            <span className="px-1 rounded text-[9px] font-mono bg-white/[0.06] text-text-tertiary">{count}</span>
+        )}
+    </button>
+);
+
+// Small section heading used between cards.
+const SectionLabel = ({ icon: Icon, children, action }: { icon?: any; children: React.ReactNode; action?: React.ReactNode }) => (
+    <div className="flex items-center justify-between mb-3 px-1">
+        <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.12em] flex items-center gap-1.5">
+            {Icon && <Icon size={11} strokeWidth={2} />}
+            {children}
+        </span>
+        {action}
+    </div>
+);
+
+// ---------------------------------------------------------------------------
 // StarRating
 // ---------------------------------------------------------------------------
 const StarRating = ({ value, size = 11 }: { value: number; size?: number }) => {
@@ -391,7 +468,7 @@ const writePremiumCache = (isPremium: boolean, plan: string) => {
     } catch { /* localStorage disabled — fall back to live check */ }
 };
 
-export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }) {
+export function ProfileIntelligenceSettings({ onClose, bypassPremium = false }: { onClose: () => void; bypassPremium?: boolean }) {
     // Premium Status — seed from cache so the header CTA paints correctly
     // before licenseGetDetails() resolves.
     const cachedPremium = readPremiumCache();
@@ -399,8 +476,8 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
     const [premiumPlan, setPremiumPlan] = useState<string>(cachedPremium.plan);
     const [isTrialActive, setIsTrialActive] = useState(false);
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
-    const hasProfileAccess = isPremium || isTrialActive;
-    const isLight = useResolvedTheme() === 'light';
+    const hasProfileAccess = bypassPremium || isPremium || isTrialActive;
+    const isLight = false;
 
     // Profile Engine State
     const [profileStatus, setProfileStatus] = useState<{
@@ -428,6 +505,8 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
     const [customNotes, setCustomNotes] = useState('');
     const [customNotesSaved, setCustomNotesSaved] = useState(false);
     const customNotesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [activeIntelTab, setActiveIntelTab] = useState<'hiring' | 'culture' | 'reviews' | 'benefits' | 'news' | 'competitors' | 'sources'>('hiring');
+    const [copiedStep, setCopiedStep] = useState<string | null>(null);
 
     useEffect(() => {
         // Fetch premium details — canonical source of truth. Sync the
@@ -551,47 +630,29 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
                         </motion.div>
 
                                     <BezelCard delay={0.2}>
-                                        <div className="flex flex-col justify-between min-h-[200px]">
-
-                                            {/* Header */}
-                                            <div className="p-5 pb-4">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-full bg-bg-input border border-border-subtle flex items-center justify-center text-text-primary shadow-sm hover:scale-105 transition-transform duration-300">
-                                                            <span className="font-bold text-sm tracking-tight">
-                                                                {profileData?.identity?.name ? profileData.identity.name.charAt(0).toUpperCase() : 'U'}
-                                                            </span>
+                                        <div className="p-6">
+                                            {/* Top row: avatar + identity + ring stats */}
+                                            <div className="flex items-start justify-between gap-5">
+                                                <div className="flex items-start gap-4 min-w-0">
+                                                    <div className="relative shrink-0">
+                                                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-[20px] shadow-lg" style={{ background: 'linear-gradient(135deg, #d97757, #b05530)', boxShadow: '0 10px 24px -10px rgba(217,119,87,0.45)' }}>
+                                                            {profileData?.identity?.name ? profileData.identity.name.charAt(0).toUpperCase() : 'U'}
                                                         </div>
-                                                        <div>
-                                                            <h4 className="text-sm font-bold text-text-primary tracking-tight">
+                                                        {profileStatus.profileMode && hasProfileAccess && (
+                                                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-bg-item-surface" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            <h4 className="text-[17px] font-bold text-text-primary tracking-[-0.025em] truncate">
                                                                 {profileData?.identity?.name || 'Identity Node Inactive'}
                                                             </h4>
-                                                            <p className="text-xs text-text-secondary mt-0.5 tracking-wide">
-                                                                {profileData?.identity?.email || 'Upload a resume to begin mapping.'}
-                                                            </p>
+                                                            {profileStatus.hasProfile && <BadgeCheck size={15} className="text-accent-primary shrink-0" />}
                                                         </div>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-3">
-                                                        {profileStatus.hasProfile && (
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (!confirm('Are you sure you want to delete your mapped persona? This will destroy all structured timeline data.')) return;
-                                                                    try {
-                                                                        await window.electronAPI?.profileDelete?.();
-                                                                        setProfileStatus({ hasProfile: false, profileMode: false });
-                                                                        setProfileData(null);
-                                                                    } catch (e) { console.error('Failed to delete profile:', e); }
-                                                                }}
-                                                                className="text-[12px] font-medium text-text-tertiary hover:text-red-500 transition-colors px-3 py-1.5 rounded-full hover:bg-red-500/10"
-                                                            >
-                                                                Disconnect
-                                                            </button>
-                                                        )}
-
-                                                        {/* High-fidelity Toggle */}
-                                                        <div className={`flex items-center gap-2 bg-bg-input px-3 py-1.5 rounded-full border border-border-subtle ${!hasProfileAccess ? 'opacity-40 cursor-not-allowed' : ''}`} title={!hasProfileAccess ? 'Requires Pro license' : ''}>
-                                                            <span className="text-xs font-medium text-text-secondary">Persona Engine</span>
+                                                        <p className="text-[12px] text-text-secondary mb-3 truncate">
+                                                            {profileData?.identity?.email || 'Upload a resume to begin mapping.'}
+                                                        </p>
+                                                        <div className="flex items-center gap-2 flex-wrap">
                                                             <div
                                                                 onClick={async () => {
                                                                     if (!profileStatus.hasProfile || !hasProfileAccess) return;
@@ -603,62 +664,112 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
                                                                         console.error('Failed to toggle profile mode:', e);
                                                                     }
                                                                 }}
-                                                                className={`w-9 h-5 rounded-full relative transition-colors ${(!profileStatus.hasProfile || !hasProfileAccess) ? 'opacity-40 cursor-not-allowed bg-bg-toggle-switch' : profileStatus.profileMode ? 'bg-accent-primary' : 'bg-bg-toggle-switch border border-border-muted'}`}
+                                                                title={!hasProfileAccess ? 'Requires Pro license' : ''}
+                                                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-all ${
+                                                                    profileStatus.profileMode && hasProfileAccess
+                                                                        ? 'cursor-pointer'
+                                                                        : !profileStatus.hasProfile || !hasProfileAccess
+                                                                        ? 'opacity-40 cursor-not-allowed'
+                                                                        : 'cursor-pointer'
+                                                                }`}
+                                                                style={
+                                                                    profileStatus.profileMode && hasProfileAccess
+                                                                        ? { background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.18)' }
+                                                                        : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }
+                                                                }
                                                             >
-                                                                <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform ${profileStatus.profileMode && hasProfileAccess ? 'translate-x-4' : 'translate-x-0'}`} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Data Metrics & Extracted Skills */}
-                                            <div className="p-5 pt-0 mt-auto">
-                                                <div className="flex items-center justify-between bg-bg-input border border-border-subtle py-4 px-6 rounded-2xl shadow-sm">
-                                                    <div className="flex flex-col items-center justify-center flex-1">
-                                                        <span className="text-[20px] font-bold text-text-primary tracking-tight leading-none mb-1">{profileData?.experienceCount || 0}</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                                                            <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-widest">Experience</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="h-8 w-px bg-border-subtle/60" />
-
-                                                    <div className="flex flex-col items-center justify-center flex-1">
-                                                        <span className="text-[20px] font-bold text-text-primary tracking-tight leading-none mb-1">{profileData?.projectCount || 0}</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
-                                                            <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-widest">Projects</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="h-8 w-px bg-border-subtle/60" />
-
-                                                    <div className="flex flex-col items-center justify-center flex-1">
-                                                        <span className="text-[20px] font-bold text-text-primary tracking-tight leading-none mb-1">{profileData?.nodeCount || 0}</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]" />
-                                                            <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-widest">Nodes</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {profileData?.skills && profileData.skills.length > 0 && (
-                                                    <div className="mt-5">
-                                                        <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-2">
-                                                            Top Skills
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {profileData.skills.slice(0, 15).map((skill: string, i: number) => (
-                                                                <span key={i} className="text-[10px] font-medium text-text-secondary px-2 py-1 rounded-md border border-border-subtle bg-bg-input">
-                                                                    {skill}
+                                                                <span
+                                                                    className="w-1.5 h-1.5 rounded-full"
+                                                                    style={{
+                                                                        background: profileStatus.profileMode && hasProfileAccess ? '#34d399' : 'rgba(255,255,255,0.25)',
+                                                                        boxShadow: profileStatus.profileMode && hasProfileAccess ? '0 0 8px rgba(52,211,153,0.6)' : 'none',
+                                                                    }}
+                                                                />
+                                                                <span
+                                                                    className="text-[10.5px] font-bold tracking-wide"
+                                                                    style={{ color: profileStatus.profileMode && hasProfileAccess ? '#34d399' : 'rgba(226,229,237,0.55)' }}
+                                                                >
+                                                                    Persona Engine
                                                                 </span>
-                                                            ))}
+                                                                <div className={`w-7 h-3.5 rounded-full relative transition-colors ${profileStatus.profileMode && hasProfileAccess ? 'bg-emerald-500/40' : 'bg-white/10'}`}>
+                                                                    <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-transform ${profileStatus.profileMode && hasProfileAccess ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                                                                </div>
+                                                            </div>
+                                                            {profileStatus.hasProfile && (
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        if (!confirm('Are you sure you want to delete your mapped persona? This will destroy all structured timeline data.')) return;
+                                                                        try {
+                                                                            await window.electronAPI?.profileDelete?.();
+                                                                            setProfileStatus({ hasProfile: false, profileMode: false });
+                                                                            setProfileData(null);
+                                                                        } catch (e) { console.error('Failed to delete profile:', e); }
+                                                                    }}
+                                                                    className="text-[10.5px] font-medium text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors px-2.5 py-1.5 rounded-lg flex items-center gap-1"
+                                                                >
+                                                                    <Trash2 size={11} strokeWidth={2} />
+                                                                    Disconnect
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                )}
+                                                </div>
+
+                                                {/* Stat rings */}
+                                                <div className="grid grid-cols-3 gap-2.5 shrink-0">
+                                                    <div className="px-3 py-3 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                                        <ProgressRing
+                                                            value={profileData?.totalExperienceYears || profileStatus.totalExperienceYears || 0}
+                                                            max={10}
+                                                            color="#d97757"
+                                                            label="Years"
+                                                        />
+                                                    </div>
+                                                    <div className="px-3 py-3 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                                        <ProgressRing
+                                                            value={profileData?.projectCount || 0}
+                                                            max={20}
+                                                            color="#a78bfa"
+                                                            label="Projects"
+                                                        />
+                                                    </div>
+                                                    <div className="px-3 py-3 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                                        <ProgressRing
+                                                            value={profileData?.nodeCount || 0}
+                                                            max={300}
+                                                            color="#34d399"
+                                                            label="Nodes"
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
+
+                                            {/* Skills */}
+                                            {profileData?.skills && profileData.skills.length > 0 && (
+                                                <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                                                    <div className="flex items-center justify-between mb-2.5">
+                                                        <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.12em]">Top skills</span>
+                                                        <span className="text-[10.5px] text-text-tertiary">{profileData.skills.length} extracted</span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {profileData.skills.slice(0, 15).map((skill: string, i: number) => (
+                                                            <span
+                                                                key={i}
+                                                                className="text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors"
+                                                                style={i < 3
+                                                                    ? { background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.22)', color: 'rgba(217,119,87,0.95)' }
+                                                                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(226,229,237,0.65)' }
+                                                                }
+                                                            >
+                                                                {skill}
+                                                            </span>
+                                                        ))}
+                                                        {profileData.skills.length > 15 && (
+                                                            <span className="text-[11px] text-text-tertiary px-2.5 py-1">+{profileData.skills.length - 15} more</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </BezelCard>
 
@@ -971,21 +1082,24 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
 
                                     {profileData?.hasActiveJD && profileData?.activeJD?.company && (
                                         <BezelCard delay={0.5}>
-                                            <div className="p-5">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-lg bg-bg-input border border-border-subtle flex items-center justify-center text-purple-500">
-                                                            <Building2 size={20} />
+                                            <div className="overflow-hidden">
+                                                {/* Top accent strip */}
+                                                <div className="h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent 70%)' }} />
+
+                                                {/* Company header */}
+                                                <div className="px-5 pt-4 pb-4 flex items-center justify-between gap-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-[16px] shrink-0" style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: 'white', boxShadow: '0 8px 20px -10px rgba(167,139,250,0.5)' }}>
+                                                            {profileData.activeJD.company.charAt(0).toUpperCase()}
                                                         </div>
-                                                        <div>
+                                                        <div className="min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <h4 className="text-sm font-bold text-text-primary">
-                                                                    Company Intel: <span className="text-purple-400">{profileData.activeJD.company}</span>
-                                                                </h4>
-                                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full tracking-widest uppercase bg-purple-500/15 text-purple-400 border border-purple-500/25">Beta</span>
+                                                                <h3 className="text-[15px] font-bold text-text-primary tracking-[-0.015em] truncate">{profileData.activeJD.company}</h3>
+                                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider" style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.20)', color: '#a78bfa' }}>Beta</span>
                                                             </div>
-                                                            <p className="text-[11px] text-text-secondary mt-0.5">
-                                                                {companyDossier ? 'Research complete' : 'Run research to get hiring strategy, salaries & competitors'}
+                                                            <p className="text-[11px] text-text-tertiary truncate">
+                                                                {profileData.activeJD?.title || 'Active job target'}
+                                                                {profileData.activeJD?.level && ` · ${profileData.activeJD.level}`}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -1011,14 +1125,14 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
                                                         disabled={companyResearching}
                                                     >
                                                         {companyResearching ? <RefreshCw size={14} className="animate-spin" /> : <Search size={14} />}
-                                                        {companyResearching ? 'Researching...' : companyDossier ? 'Refresh' : 'Research Now'}
+                                                        {companyResearching ? 'Researching…' : companyDossier ? 'Refresh' : 'Research now'}
                                                     </MagneticButton>
                                                 </div>
 
                                                 {/* Search quota exhausted notice */}
                                                 {companySearchQuotaExhausted && (
-                                                    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-400 leading-relaxed">
-                                                        <span className="shrink-0 mt-[1px]">⚠</span>
+                                                    <div className="mx-5 mt-4 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-400 leading-relaxed">
+                                                        <AlertCircle size={12} className="shrink-0 mt-px" />
                                                         <span>
                                                             Web search credits exhausted for this month — showing AI-only research instead.
                                                             Resets next billing cycle or <span className="underline cursor-pointer" onClick={() => (window.electronAPI as any)?.openExternal?.('https://checkout.dodopayments.com/buy/pdt_0NbFixGmD8CSeawb5qvVl')}>upgrade your plan</span>.
@@ -1026,224 +1140,351 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
                                                     </div>
                                                 )}
 
-                                                {/* Dossier Results */}
-                                                {companyDossier && (
-                                                    <div className="space-y-4 border-t border-border-subtle pt-4 mt-2">
+                                                {/* Empty state */}
+                                                {!companyDossier && !companyResearching && (
+                                                    <div className="px-5 py-8 flex flex-col items-center text-center gap-2.5">
+                                                        <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.18)' }}>
+                                                            <Building2 size={18} className="text-purple-400" />
+                                                        </div>
+                                                        <p className="text-[12.5px] font-semibold text-text-secondary">No research yet</p>
+                                                        <p className="text-[11px] text-text-tertiary max-w-[300px] leading-relaxed">
+                                                            Run research to pull hiring strategy, salary ranges, culture signals, and competitors for {profileData.activeJD.company}.
+                                                        </p>
+                                                    </div>
+                                                )}
 
-                                                        {/* Hiring Strategy */}
-                                                        {companyDossier.hiring_strategy && (
-                                                            <div>
-                                                                <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-1">Hiring Strategy</div>
-                                                                <p className="text-xs text-text-secondary leading-relaxed bg-bg-input p-3 rounded-lg">{companyDossier.hiring_strategy}</p>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Interview Focus + Difficulty badge */}
-                                                        {companyDossier.interview_focus && (
-                                                            <div>
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide">Interview Focus</div>
-                                                                    {companyDossier.interview_difficulty && (
-                                                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
-                                                                            companyDossier.interview_difficulty === 'easy' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-                                                                            companyDossier.interview_difficulty === 'medium' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
-                                                                            companyDossier.interview_difficulty === 'hard' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                                                                            'bg-red-500/10 text-red-400 border-red-500/20'
+                                                {/* Salary Hero — uses the first salary estimate if present */}
+                                                {companyDossier?.salary_estimates?.length > 0 && (() => {
+                                                    const s = companyDossier.salary_estimates[0];
+                                                    return (
+                                                        <div className="mx-5 mt-5 mb-4 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                                            <div className="px-4 py-3 flex items-center justify-between gap-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <TrendingUp size={13} className="text-emerald-400" />
+                                                                    <span className="text-[11.5px] font-semibold text-text-primary">Salary estimate</span>
+                                                                    {s.confidence && (
+                                                                        <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
+                                                                            s.confidence === 'high' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                                            s.confidence === 'medium' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                                            'bg-red-500/10 text-red-400'
                                                                         }`}>
-                                                                            {companyDossier.interview_difficulty.replace('_', ' ').toUpperCase()}
+                                                                            {s.confidence.toUpperCase()} confidence
                                                                         </span>
                                                                     )}
                                                                 </div>
-                                                                <p className="text-xs text-text-secondary leading-relaxed bg-bg-input p-3 rounded-lg">{companyDossier.interview_focus}</p>
+                                                                {s.title && (
+                                                                    <span className="text-[10.5px] text-text-tertiary truncate max-w-[180px]">
+                                                                        {s.title}{s.location ? ` · ${s.location}` : ''}
+                                                                    </span>
+                                                                )}
                                                             </div>
-                                                        )}
-
-                                                        {/* Salary Estimates */}
-                                                        {companyDossier.salary_estimates?.length > 0 && (
-                                                            <div>
-                                                                <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-1">Salary Estimates</div>
-                                                                <div className="space-y-2 bg-bg-input p-3 rounded-lg">
-                                                                    {companyDossier.salary_estimates.map((s: any, i: number) => (
-                                                                        <div key={i} className="flex items-center justify-between pb-2 mb-2 border-b border-border-subtle last:border-0 last:pb-0 last:mb-0">
-                                                                            <span className="text-xs text-text-primary font-medium">{s.title} <span className="text-text-tertiary">({s.location})</span></span>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-xs font-bold text-green-400">
-                                                                                    {s.currency} {s.min?.toLocaleString()} – {s.max?.toLocaleString()}
-                                                                                </span>
-                                                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${s.confidence === 'high' ? 'bg-green-500/10 text-green-500 border-green-500/20' : s.confidence === 'medium' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
-                                                                                    {s.confidence?.toUpperCase()}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
+                                                            <div className="px-4 py-5 grid grid-cols-3 gap-5">
+                                                                <div>
+                                                                    <p className="text-[10px] uppercase tracking-[0.1em] font-semibold text-text-tertiary mb-1">Base low</p>
+                                                                    <p className="text-[20px] font-bold tabular-nums tracking-tight text-text-primary">
+                                                                        {s.currency || '$'}{(s.min || 0).toLocaleString()}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="text-center">
+                                                                    <p className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1 text-accent-primary">Target mid</p>
+                                                                    <p className="text-[26px] font-bold tabular-nums tracking-tight text-accent-primary">
+                                                                        {s.currency || '$'}{Math.round(((s.min || 0) + (s.max || 0)) / 2).toLocaleString()}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-[10px] uppercase tracking-[0.1em] font-semibold text-text-tertiary mb-1">Stretch</p>
+                                                                    <p className="text-[20px] font-bold tabular-nums tracking-tight text-text-primary">
+                                                                        {s.currency || '$'}{(s.max || 0).toLocaleString()}
+                                                                    </p>
                                                                 </div>
                                                             </div>
-                                                        )}
-
-                                                        {/* Work Culture — 5-star ratings */}
-                                                        {companyDossier.culture_ratings && typeof companyDossier.culture_ratings === 'object' &&
-                                                          Object.values(companyDossier.culture_ratings).some(v => typeof v === 'number' && (v as number) > 0) && (
-                                                            <div>
-                                                                <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-2">Work Culture</div>
-                                                                <div className="bg-bg-input p-3 rounded-lg">
-                                                                    {/* Overall score hero */}
-                                                                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-border-subtle">
-                                                                        <div>
-                                                                            <span className="text-2xl font-bold text-text-primary">{companyDossier.culture_ratings.overall.toFixed(1)}</span>
-                                                                            <span className="text-xs text-text-tertiary"> / 5</span>
-                                                                            {companyDossier.culture_ratings.review_count && (
-                                                                                <div className="text-[10px] text-text-tertiary mt-0.5">{companyDossier.culture_ratings.review_count}</div>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="text-right">
-                                                                            <StarRating value={companyDossier.culture_ratings.overall} size={14} />
-                                                                            {companyDossier.culture_ratings.data_sources?.length > 0 && (
-                                                                                <div className="flex gap-1 mt-1 justify-end">
-                                                                                    {companyDossier.culture_ratings.data_sources.map((src: string, i: number) => (
-                                                                                        <span key={i} className="text-[9px] text-text-tertiary bg-bg-input px-1.5 py-0.5 rounded">{src}</span>
-                                                                                    ))}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
+                                                            <div className="px-4 pb-4">
+                                                                <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                                                                    <div className="absolute inset-y-0 left-[8%] right-[8%] rounded-full" style={{ background: 'linear-gradient(90deg, rgba(217,119,87,0.35), rgba(217,119,87,0.85), rgba(217,119,87,0.35))' }} />
+                                                                    <div className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-bg-item-surface" style={{ left: '50%', background: 'var(--accent-primary)', boxShadow: '0 0 0 3px rgba(217,119,87,0.18)' }} />
+                                                                </div>
+                                                            </div>
+                                                            {companyDossier.salary_estimates.length > 1 && (
+                                                                <div className="px-4 pb-4 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                                                    <p className="text-[9.5px] font-bold uppercase tracking-wider text-text-tertiary mb-2 mt-3">More roles</p>
+                                                                    <div className="space-y-1.5">
+                                                                        {companyDossier.salary_estimates.slice(1).map((alt: any, i: number) => (
+                                                                            <div key={i} className="flex items-center justify-between text-[11px]">
+                                                                                <span className="text-text-secondary truncate">{alt.title}{alt.location ? ` · ${alt.location}` : ''}</span>
+                                                                                <span className="text-text-primary font-medium tabular-nums shrink-0 ml-2">
+                                                                                    {alt.currency || '$'}{(alt.min || 0).toLocaleString()} – {(alt.max || 0).toLocaleString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        ))}
                                                                     </div>
-                                                                    {/* Sub-ratings grid */}
-                                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                                                                        {[
-                                                                            { label: 'Work-Life Balance', key: 'work_life_balance' },
-                                                                            { label: 'Career Growth', key: 'career_growth' },
-                                                                            { label: 'Compensation', key: 'compensation' },
-                                                                            { label: 'Management', key: 'management' },
-                                                                            { label: 'Diversity & Inclusion', key: 'diversity' },
-                                                                        ].map(({ label, key }) => {
-                                                                            const raw = (companyDossier.culture_ratings as any)[key];
-                                                                            const val: number = typeof raw === 'number' ? raw : 0;
-                                                                            return val > 0 ? (
-                                                                                <div key={key} className="flex items-center justify-between gap-2">
-                                                                                    <span className="text-[10px] text-text-tertiary truncate">{label}</span>
-                                                                                    <div className="flex items-center gap-1 shrink-0">
-                                                                                        <StarRating value={val} size={9} />
-                                                                                        <span className="text-[10px] text-text-secondary font-medium">{val.toFixed(1)}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {/* Tabbed dossier */}
+                                                {companyDossier && (() => {
+                                                    const hasHiring = !!(companyDossier.hiring_strategy || companyDossier.interview_focus);
+                                                    const hasCulture = !!(companyDossier.culture_ratings && Object.values(companyDossier.culture_ratings).some(v => typeof v === 'number' && (v as number) > 0)) || (companyDossier.core_values?.length > 0);
+                                                    const hasReviews = (companyDossier.employee_reviews?.length > 0) || (companyDossier.critics?.length > 0);
+                                                    const hasBenefits = companyDossier.benefits?.length > 0;
+                                                    const hasNews = !!companyDossier.recent_news;
+                                                    const hasCompetitors = companyDossier.competitors?.length > 0;
+                                                    const sourcesCount = Array.isArray(companyDossier.sources) ? companyDossier.sources.filter(Boolean).length : 0;
+                                                    return (
+                                                        <div>
+                                                            <div className="px-3 pt-3 pb-3 flex items-center gap-1 overflow-x-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', scrollbarWidth: 'none' }}>
+                                                                {hasHiring     && <IntelTab active={activeIntelTab === 'hiring'}     onClick={() => setActiveIntelTab('hiring')}>Hiring</IntelTab>}
+                                                                {hasCulture    && <IntelTab active={activeIntelTab === 'culture'}    onClick={() => setActiveIntelTab('culture')}>Culture</IntelTab>}
+                                                                {hasReviews    && <IntelTab active={activeIntelTab === 'reviews'}    onClick={() => setActiveIntelTab('reviews')}>Reviews</IntelTab>}
+                                                                {hasBenefits   && <IntelTab active={activeIntelTab === 'benefits'}   onClick={() => setActiveIntelTab('benefits')}>Benefits</IntelTab>}
+                                                                {hasNews       && <IntelTab active={activeIntelTab === 'news'}       onClick={() => setActiveIntelTab('news')}>News</IntelTab>}
+                                                                {hasCompetitors && <IntelTab active={activeIntelTab === 'competitors'} onClick={() => setActiveIntelTab('competitors')}>Competitors</IntelTab>}
+                                                                {sourcesCount > 0 && <IntelTab active={activeIntelTab === 'sources'} onClick={() => setActiveIntelTab('sources')} count={sourcesCount}>Sources</IntelTab>}
+                                                            </div>
+
+                                                            <div className="p-5 space-y-4">
+                                                                {/* HIRING TAB */}
+                                                                {activeIntelTab === 'hiring' && (
+                                                                    <>
+                                                                        {companyDossier.hiring_strategy && (
+                                                                            <div>
+                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                    <Target size={13} className="text-accent-primary" />
+                                                                                    <span className="text-[11px] font-bold tracking-[0.04em] uppercase text-accent-primary">Hiring strategy</span>
+                                                                                </div>
+                                                                                <p className="text-[12.5px] leading-relaxed text-text-secondary">{companyDossier.hiring_strategy}</p>
+                                                                            </div>
+                                                                        )}
+                                                                        {companyDossier.interview_focus && (
+                                                                            <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                    <BrainCircuit size={13} className="text-violet-400" />
+                                                                                    <span className="text-[11px] font-bold tracking-[0.04em] uppercase text-violet-400">Interview focus</span>
+                                                                                    {companyDossier.interview_difficulty && (
+                                                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                                                                            companyDossier.interview_difficulty === 'easy' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                                                            companyDossier.interview_difficulty === 'medium' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                                                            companyDossier.interview_difficulty === 'hard' ? 'bg-orange-500/10 text-orange-400' :
+                                                                                            'bg-red-500/10 text-red-400'
+                                                                                        }`}>
+                                                                                            {companyDossier.interview_difficulty.replace('_', ' ').toUpperCase()}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <p className="text-[12.5px] leading-relaxed text-text-secondary">{companyDossier.interview_focus}</p>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
+
+                                                                {/* CULTURE TAB */}
+                                                                {activeIntelTab === 'culture' && (
+                                                                    <>
+                                                                        {companyDossier.culture_ratings && Object.values(companyDossier.culture_ratings).some(v => typeof v === 'number' && (v as number) > 0) && (
+                                                                            <div>
+                                                                                <div className="flex items-center gap-2 mb-3">
+                                                                                    <Users size={13} className="text-emerald-400" />
+                                                                                    <span className="text-[11px] font-bold tracking-[0.04em] uppercase text-emerald-400">Culture signals</span>
+                                                                                </div>
+                                                                                <div className="rounded-xl p-4 mb-3" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                                                                    <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                                                                        <div>
+                                                                                            <span className="text-[28px] font-bold text-text-primary tabular-nums">{(companyDossier.culture_ratings.overall || 0).toFixed(1)}</span>
+                                                                                            <span className="text-[12px] text-text-tertiary"> / 5</span>
+                                                                                            {companyDossier.culture_ratings.review_count && (
+                                                                                                <div className="text-[10px] text-text-tertiary mt-0.5">{companyDossier.culture_ratings.review_count}</div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="text-right">
+                                                                                            <StarRating value={companyDossier.culture_ratings.overall || 0} size={14} />
+                                                                                            {companyDossier.culture_ratings.data_sources?.length > 0 && (
+                                                                                                <div className="flex gap-1 mt-1.5 justify-end flex-wrap">
+                                                                                                    {companyDossier.culture_ratings.data_sources.map((src: string, i: number) => (
+                                                                                                        <span key={i} className="text-[9.5px] text-text-tertiary px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>{src}</span>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                                                                                        {[
+                                                                                            { label: 'Work-Life Balance', key: 'work_life_balance' },
+                                                                                            { label: 'Career Growth', key: 'career_growth' },
+                                                                                            { label: 'Compensation', key: 'compensation' },
+                                                                                            { label: 'Management', key: 'management' },
+                                                                                            { label: 'Diversity & Inclusion', key: 'diversity' },
+                                                                                        ].map(({ label, key }) => {
+                                                                                            const raw = (companyDossier.culture_ratings as any)[key];
+                                                                                            const val: number = typeof raw === 'number' ? raw : 0;
+                                                                                            return val > 0 ? (
+                                                                                                <div key={key} className="flex items-center justify-between gap-2">
+                                                                                                    <span className="text-[11px] text-text-secondary truncate">{label}</span>
+                                                                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                                                                        <StarRating value={val} size={10} />
+                                                                                                        <span className="text-[11px] text-text-primary font-semibold tabular-nums">{val.toFixed(1)}</span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            ) : null;
+                                                                                        })}
                                                                                     </div>
                                                                                 </div>
-                                                                            ) : null;
-                                                                        })}
+                                                                            </div>
+                                                                        )}
+                                                                        {companyDossier.core_values?.length > 0 && (
+                                                                            <div>
+                                                                                <div className="text-[11px] font-bold tracking-[0.04em] uppercase text-purple-400 mb-2">Core values</div>
+                                                                                <div className="flex flex-wrap gap-1.5">
+                                                                                    {companyDossier.core_values.map((v: string, i: number) => (
+                                                                                        <span key={i} className="text-[11px] text-purple-400/90 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20">{v}</span>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
+
+                                                                {/* REVIEWS TAB */}
+                                                                {activeIntelTab === 'reviews' && (
+                                                                    <>
+                                                                        {companyDossier.employee_reviews?.length > 0 && (
+                                                                            <div>
+                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                    <MessageSquareQuote size={13} className="text-cyan-400" />
+                                                                                    <span className="text-[11px] font-bold tracking-[0.04em] uppercase text-cyan-400">What employees say</span>
+                                                                                </div>
+                                                                                <div className="space-y-2">
+                                                                                    {companyDossier.employee_reviews.map((r: any, i: number) => (
+                                                                                        <div key={i} className="rounded-xl px-3.5 py-3" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                                                                            <div className="flex items-start gap-2">
+                                                                                                <span className={`mt-1 shrink-0 w-1.5 h-1.5 rounded-full ${r.sentiment === 'positive' ? 'bg-emerald-400' : r.sentiment === 'mixed' ? 'bg-yellow-400' : 'bg-red-400'}`} />
+                                                                                                <p className="text-[12px] leading-relaxed text-text-secondary italic">"{r.quote}"</p>
+                                                                                            </div>
+                                                                                            <div className="flex items-center gap-2 mt-2 ml-3.5">
+                                                                                                {r.role && <span className="text-[10px] text-text-tertiary">— {r.role}</span>}
+                                                                                                {r.source && <span className="text-[10px] text-text-tertiary/70">· {r.source}</span>}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        {companyDossier.critics?.length > 0 && (
+                                                                            <div className={`${companyDossier.employee_reviews?.length > 0 ? 'pt-4' : ''}`} style={companyDossier.employee_reviews?.length > 0 ? { borderTop: '1px solid rgba(255,255,255,0.06)' } : {}}>
+                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                    <AlertCircle size={13} className="text-orange-400" />
+                                                                                    <span className="text-[11px] font-bold tracking-[0.04em] uppercase text-orange-400">Common complaints</span>
+                                                                                </div>
+                                                                                <div className="space-y-2">
+                                                                                    {companyDossier.critics.map((c: any, i: number) => (
+                                                                                        <div key={i} className="rounded-xl px-3.5 py-3" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                                                                            <div className="flex items-center justify-between mb-1">
+                                                                                                <span className="text-[10.5px] font-semibold text-orange-400/90">{c.category}</span>
+                                                                                                <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
+                                                                                                    c.frequency === 'widespread' ? 'bg-red-500/10 text-red-400' :
+                                                                                                    c.frequency === 'frequently' ? 'bg-orange-500/10 text-orange-400' :
+                                                                                                    'bg-yellow-500/10 text-yellow-400'
+                                                                                                }`}>
+                                                                                                    {c.frequency?.toUpperCase()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <p className="text-[12px] leading-relaxed text-text-secondary">{c.complaint}</p>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
+
+                                                                {/* BENEFITS TAB */}
+                                                                {activeIntelTab === 'benefits' && companyDossier.benefits?.length > 0 && (
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2 mb-2">
+                                                                            <Gift size={13} className="text-emerald-400" />
+                                                                            <span className="text-[11px] font-bold tracking-[0.04em] uppercase text-emerald-400">Benefits &amp; perks</span>
+                                                                        </div>
+                                                                        <div className="flex flex-wrap gap-1.5">
+                                                                            {companyDossier.benefits.map((b: string, i: number) => (
+                                                                                <span key={i} className="text-[11.5px] text-emerald-400/90 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">{b}</span>
+                                                                            ))}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                                )}
 
-                                                        {/* Employee Reviews */}
-                                                        {companyDossier.employee_reviews?.length > 0 && (
-                                                            <div>
-                                                                <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-2">Employee Reviews</div>
-                                                                <div className="space-y-2">
-                                                                    {companyDossier.employee_reviews.map((r: any, i: number) => (
-                                                                        <div key={i} className="bg-bg-input p-3 rounded-lg">
-                                                                            <div className="flex items-start gap-2">
-                                                                                <span className={`mt-0.5 shrink-0 w-2 h-2 rounded-full ${r.sentiment === 'positive' ? 'bg-green-400' : r.sentiment === 'mixed' ? 'bg-yellow-400' : 'bg-red-400'}`} />
-                                                                                <p className="text-xs text-text-secondary leading-relaxed italic">"{r.quote}"</p>
-                                                                            </div>
-                                                                            <div className="flex items-center gap-2 mt-2 ml-4">
-                                                                                {r.role && <span className="text-[10px] text-text-tertiary">{r.role}</span>}
-                                                                                {r.role && r.source && <span className="text-text-tertiary/40 text-[10px]">·</span>}
-                                                                                {r.source && <span className="text-[10px] text-text-tertiary/70 bg-bg-input px-1.5 py-0.5 rounded">{r.source}</span>}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                                {/* NEWS TAB */}
+                                                                {activeIntelTab === 'news' && companyDossier.recent_news && (
+                                                                    <div>
+                                                                        <div className="text-[11px] font-bold tracking-[0.04em] uppercase text-text-secondary mb-2">Recent news</div>
+                                                                        <p className="text-[12.5px] leading-relaxed text-text-secondary">{companyDossier.recent_news}</p>
+                                                                    </div>
+                                                                )}
 
-                                                        {/* Critics — common complaints */}
-                                                        {companyDossier.critics?.length > 0 && (
-                                                            <div>
-                                                                <div className="flex items-center gap-1.5 mb-2">
-                                                                    <AlertCircle size={11} className="text-orange-400" />
-                                                                    <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide">Common Complaints</div>
-                                                                </div>
-                                                                <div className="space-y-2">
-                                                                    {companyDossier.critics.map((c: any, i: number) => (
-                                                                        <div key={i} className="bg-bg-input p-3 rounded-lg">
-                                                                            <div className="flex items-center justify-between mb-1">
-                                                                                <span className="text-[10px] font-semibold text-orange-400/90">{c.category}</span>
-                                                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
-                                                                                    c.frequency === 'widespread' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                                                                    c.frequency === 'frequently' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                                                                                    'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-                                                                                }`}>
-                                                                                    {c.frequency?.toUpperCase()}
+                                                                {/* COMPETITORS TAB */}
+                                                                {activeIntelTab === 'competitors' && companyDossier.competitors?.length > 0 && (
+                                                                    <div>
+                                                                        <div className="text-[11px] font-bold tracking-[0.04em] uppercase text-text-secondary mb-2">Competitors</div>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {companyDossier.competitors.map((c: string, i: number) => (
+                                                                                <span key={i} className="text-[11.5px] text-text-secondary px-2.5 py-1 rounded-full flex items-center gap-1.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                                                                    <Building2 size={10} className="text-text-tertiary" /> {c}
                                                                                 </span>
-                                                                            </div>
-                                                                            <p className="text-xs text-text-secondary leading-relaxed">{c.complaint}</p>
+                                                                            ))}
                                                                         </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                                    </div>
+                                                                )}
 
-                                                        {/* Benefits */}
-                                                        {companyDossier.benefits?.length > 0 && (
-                                                            <div>
-                                                                <div className="flex items-center gap-1.5 mb-2">
-                                                                    <Gift size={11} className="text-emerald-400" />
-                                                                    <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide">Benefits & Perks</div>
-                                                                </div>
-                                                                <div className="flex flex-wrap gap-1.5">
-                                                                    {companyDossier.benefits.map((b: string, i: number) => (
-                                                                        <span key={i} className="text-[11px] text-emerald-400/90 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">{b}</span>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                                {/* SOURCES TAB */}
+                                                                {activeIntelTab === 'sources' && sourcesCount > 0 && (
+                                                                    <div>
+                                                                        <div className="text-[11px] font-bold tracking-[0.04em] uppercase text-text-secondary mb-2">Sources ({sourcesCount})</div>
+                                                                        <div className="space-y-1.5">
+                                                                            {companyDossier.sources.filter(Boolean).map((src: any, i: number) => {
+                                                                                const url = typeof src === 'string' ? src : (src?.url ?? '');
+                                                                                const label = typeof src === 'string' ? src : (src?.title ?? src?.url ?? `Source ${i + 1}`);
+                                                                                const isUrl = typeof url === 'string' && /^https?:\/\//.test(url);
+                                                                                return (
+                                                                                    <div
+                                                                                        key={i}
+                                                                                        onClick={() => isUrl && (window.electronAPI as any)?.openExternal?.(url)}
+                                                                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg ${isUrl ? 'cursor-pointer hover:bg-white/[0.04]' : ''}`}
+                                                                                        style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}
+                                                                                    >
+                                                                                        <Globe size={11} className="text-text-tertiary shrink-0" />
+                                                                                        <span className="text-[11px] text-text-secondary truncate">{label}</span>
+                                                                                        {isUrl && <ArrowUpRight size={10} className="text-text-tertiary ml-auto shrink-0" />}
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
 
-                                                        {/* Core Values */}
-                                                        {companyDossier.core_values?.length > 0 && (
-                                                            <div>
-                                                                <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-2">Core Values</div>
-                                                                <div className="flex flex-wrap gap-1.5">
-                                                                    {companyDossier.core_values.map((v: string, i: number) => (
-                                                                        <span key={i} className="text-[11px] text-purple-400/90 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20">{v}</span>
-                                                                    ))}
-                                                                </div>
+                                                                {/* Empty fallback for selected tab */}
+                                                                {(
+                                                                    (activeIntelTab === 'hiring' && !hasHiring) ||
+                                                                    (activeIntelTab === 'culture' && !hasCulture) ||
+                                                                    (activeIntelTab === 'reviews' && !hasReviews) ||
+                                                                    (activeIntelTab === 'benefits' && !hasBenefits) ||
+                                                                    (activeIntelTab === 'news' && !hasNews) ||
+                                                                    (activeIntelTab === 'competitors' && !hasCompetitors) ||
+                                                                    (activeIntelTab === 'sources' && sourcesCount === 0)
+                                                                ) && (
+                                                                    <p className="text-[11.5px] text-text-tertiary italic text-center py-4">No data for this section yet.</p>
+                                                                )}
                                                             </div>
-                                                        )}
-
-                                                        {/* Recent News */}
-                                                        {companyDossier.recent_news && (
-                                                            <div>
-                                                                <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-1">Recent News</div>
-                                                                <p className="text-xs text-text-secondary leading-relaxed bg-bg-input p-3 rounded-lg">{companyDossier.recent_news}</p>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Competitors */}
-                                                        {companyDossier.competitors?.length > 0 && (
-                                                            <div>
-                                                                <div className="text-[10px] font-bold text-text-primary uppercase tracking-wide mb-2">Competitors</div>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {companyDossier.competitors.map((c: string, i: number) => (
-                                                                        <span key={i} className="text-[11px] text-text-secondary px-2.5 py-1 rounded-full bg-bg-input flex items-center gap-1.5">
-                                                                            <Building2 size={10} className="text-text-tertiary" /> {c}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Sources count */}
-                                                        {companyDossier.sources?.length > 0 && (
-                                                            <div className="text-[10px] text-text-tertiary mt-2">
-                                                                Sources: {companyDossier.sources.filter(Boolean).length} references
-                                                            </div>
-                                                        )}
-
-                                                        {/* Beta disclaimer */}
-                                                        <div className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-lg bg-purple-500/5 border border-purple-500/15">
-                                                            <span className="text-purple-400/70 mt-px shrink-0">⚠</span>
-                                                            <p className="text-[10px] text-text-tertiary leading-relaxed">
-                                                                <span className="font-semibold text-purple-400/80">Beta feature.</span> Company research is AI-generated and may contain inaccuracies. Verify salary figures and hiring details independently before use.
-                                                            </p>
                                                         </div>
+                                                    );
+                                                })()}
+
+                                                {/* Beta disclaimer */}
+                                                {companyDossier && (
+                                                    <div className="mx-5 mb-5 flex items-start gap-2 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.15)' }}>
+                                                        <AlertCircle size={11} className="text-purple-400/70 shrink-0 mt-0.5" />
+                                                        <p className="text-[10.5px] text-text-tertiary leading-relaxed">
+                                                            <span className="font-semibold text-purple-400/85">Beta.</span> Company research is AI-generated and may contain inaccuracies. Verify salary figures and hiring details independently before acting on them.
+                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
@@ -1255,198 +1496,183 @@ export function ProfileIntelligenceSettings({ onClose }: { onClose: () => void }
 
                                     {profileData?.hasActiveJD && (
                                         <BezelCard delay={0.6}>
-
-                                                <div className="p-5">
-                                                    {/* Header row */}
-                                                    <div className="flex items-center justify-between mb-5">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="relative">
-                                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(6,182,212,0.1) 100%)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                                                                    <Briefcase size={15} className="text-emerald-400" />
-                                                                </div>
-                                                                {negotiationScript && (
-                                                                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-bg-item-surface" />
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="text-[13px] font-bold text-text-primary tracking-tight">Negotiation Script</h3>
-                                                                <p className="text-[10px] text-text-tertiary mt-0.5 tracking-wide uppercase">
-                                                                    {negotiationScript ? `Tailored for ${profileData?.activeJD?.company || 'this role'}` : 'AI-powered salary coaching'}
-                                                                </p>
-                                                            </div>
+                                            <div className="p-5">
+                                                {/* Header */}
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.15), rgba(34,211,238,0.10))', border: '1px solid rgba(52,211,153,0.22)' }}>
+                                                            <Handshake size={15} className="text-emerald-400" />
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            {negotiationScript && (
-                                                                <button
-                                                                    onClick={async () => {
-                                                                        setNegotiationGenerating(true);
-                                                                        setNegotiationError('');
-                                                                        try {
-                                                                            const result = await window.electronAPI?.profileGenerateNegotiation?.(true);
-                                                                            if (result?.success && result.script) {
-                                                                                setNegotiationScript(result.script);
-                                                                            } else {
-                                                                                setNegotiationError(result?.error || 'Failed to regenerate');
-                                                                            }
-                                                                        } catch { setNegotiationError('Generation failed'); }
-                                                                        finally { setNegotiationGenerating(false); }
-                                                                    }}
-                                                                    disabled={negotiationGenerating}
-                                                                    title="Regenerate script"
-                                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-bg-input transition-all border border-border-subtle"
-                                                                >
-                                                                    <RefreshCw size={12} className={negotiationGenerating ? 'animate-spin' : ''} />
-                                                                </button>
-                                                            )}
-                                                            {!negotiationScript && (
-                                                                <MagneticButton
-                                                                    onClick={async () => {
-                                                                        setNegotiationGenerating(true);
-                                                                        setNegotiationError('');
-                                                                        try {
-                                                                            const result = await window.electronAPI?.profileGenerateNegotiation?.(false);
-                                                                            if (result?.success && result.script) {
-                                                                                setNegotiationScript(result.script);
-                                                                            } else {
-                                                                                setNegotiationError(result?.error || 'Failed to generate');
-                                                                            }
-                                                                        } catch { setNegotiationError('Generation failed'); }
-                                                                        finally { setNegotiationGenerating(false); }
-                                                                    }}
-                                                                    disabled={negotiationGenerating}
-                                                                    primary={true}
-                                                                    style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(6,182,212,0.15) 100%)', border: '1px solid rgba(16,185,129,0.3)', color: '#34d399' }}
-                                                                >
-                                                                    {negotiationGenerating ? <RefreshCw size={11} className="animate-spin" /> : <Sparkles size={11} />}
-                                                                    {negotiationGenerating ? 'Generating…' : 'Generate Script'}
-                                                                </MagneticButton>
-                                                            )}
+                                                        <div>
+                                                            <h3 className="text-[14px] font-bold text-text-primary tracking-[-0.015em]">Negotiation script</h3>
+                                                            <p className="text-[11px] text-text-tertiary mt-0.5">
+                                                                {negotiationScript ? `Tailored for ${profileData?.activeJD?.company || 'this role'}` : 'AI-powered salary coaching'}
+                                                            </p>
                                                         </div>
                                                     </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {negotiationScript && (
+                                                            <button
+                                                                onClick={async () => {
+                                                                    setNegotiationGenerating(true);
+                                                                    setNegotiationError('');
+                                                                    try {
+                                                                        const result = await window.electronAPI?.profileGenerateNegotiation?.(true);
+                                                                        if (result?.success && result.script) {
+                                                                            setNegotiationScript(result.script);
+                                                                        } else {
+                                                                            setNegotiationError(result?.error || 'Failed to regenerate');
+                                                                        }
+                                                                    } catch { setNegotiationError('Generation failed'); }
+                                                                    finally { setNegotiationGenerating(false); }
+                                                                }}
+                                                                disabled={negotiationGenerating}
+                                                                title="Regenerate script"
+                                                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-medium text-text-tertiary hover:text-text-primary hover:bg-white/[0.05] transition-all border border-border-subtle"
+                                                            >
+                                                                <RefreshCw size={11} className={negotiationGenerating ? 'animate-spin' : ''} />
+                                                                Regenerate
+                                                            </button>
+                                                        )}
+                                                        {!negotiationScript && (
+                                                            <MagneticButton
+                                                                onClick={async () => {
+                                                                    setNegotiationGenerating(true);
+                                                                    setNegotiationError('');
+                                                                    try {
+                                                                        const result = await window.electronAPI?.profileGenerateNegotiation?.(false);
+                                                                        if (result?.success && result.script) {
+                                                                            setNegotiationScript(result.script);
+                                                                        } else {
+                                                                            setNegotiationError(result?.error || 'Failed to generate');
+                                                                        }
+                                                                    } catch { setNegotiationError('Generation failed'); }
+                                                                    finally { setNegotiationGenerating(false); }
+                                                                }}
+                                                                disabled={negotiationGenerating}
+                                                                primary={true}
+                                                                style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.22), rgba(34,211,238,0.16))', border: '1px solid rgba(52,211,153,0.30)', color: '#34d399' }}
+                                                            >
+                                                                {negotiationGenerating ? <RefreshCw size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                                                                {negotiationGenerating ? 'Generating…' : 'Generate script'}
+                                                            </MagneticButton>
+                                                        )}
+                                                    </div>
+                                                </div>
 
-                                                    {negotiationError && (
-                                                        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                                                            <AlertCircle size={12} className="text-red-400 shrink-0" />
-                                                            <p className="text-[11px] text-red-400">{negotiationError}</p>
+                                                {negotiationError && (
+                                                    <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                                                        <AlertCircle size={12} className="text-red-400 shrink-0" />
+                                                        <p className="text-[11px] text-red-400">{negotiationError}</p>
+                                                    </div>
+                                                )}
+
+                                                {/* Empty state */}
+                                                {!negotiationScript && !negotiationGenerating && !negotiationError && (
+                                                    <div className="flex flex-col items-center justify-center py-9 gap-3">
+                                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(34,211,238,0.06))', border: '1px solid rgba(52,211,153,0.18)' }}>
+                                                            <Handshake size={20} className="text-emerald-500/60" />
                                                         </div>
-                                                    )}
-
-                                                    {/* Empty state */}
-                                                    {!negotiationScript && !negotiationGenerating && !negotiationError && (
-                                                        <div className="flex flex-col items-center justify-center py-8 gap-3">
-                                                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.06) 100%)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                                                                <Briefcase size={20} className="text-emerald-500/50" />
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <p className="text-[12px] font-medium text-text-secondary">No script yet</p>
-                                                                <p className="text-[10px] text-text-tertiary mt-0.5">Generate a personalized opening, justification &amp; counter-offer</p>
-                                                            </div>
+                                                        <div className="text-center">
+                                                            <p className="text-[12.5px] font-semibold text-text-secondary">No script yet</p>
+                                                            <p className="text-[11px] text-text-tertiary mt-0.5 max-w-[300px]">Generate a personalised opening, justification, and counter-offer for {profileData?.activeJD?.company || 'this role'}.</p>
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                )}
 
-                                                    {/* First-time generation skeleton — only when no prior script exists */}
-                                                    {negotiationGenerating && !negotiationScript && (
-                                                        <div className="space-y-3 py-2">
-                                                            {[40, 70, 55].map((w, i) => (
-                                                                <div key={i} className="h-3 rounded-full bg-bg-input animate-pulse" style={{ width: `${w}%`, animationDelay: `${i * 150}ms` }} />
-                                                            ))}
-                                                            <div className="h-12 rounded-lg bg-bg-input animate-pulse mt-2" style={{ animationDelay: '450ms' }} />
-                                                        </div>
-                                                    )}
+                                                {negotiationGenerating && !negotiationScript && (
+                                                    <div className="space-y-3 py-2">
+                                                        {[40, 70, 55].map((w, i) => (
+                                                            <div key={i} className="h-3 rounded-full bg-white/[0.05] animate-pulse" style={{ width: `${w}%`, animationDelay: `${i * 150}ms` }} />
+                                                        ))}
+                                                        <div className="h-20 rounded-xl bg-white/[0.05] animate-pulse mt-2" style={{ animationDelay: '450ms' }} />
+                                                    </div>
+                                                )}
 
-                                                    {/* Existing script stays visible during regeneration to avoid a layout
-                                                        collapse → re-expand jump (which Framer's layout animation amplifies).
-                                                        We just dim it and let the spinner in the refresh button signal work. */}
-                                                    {negotiationScript && (
-                                                        <div
-                                                            className="space-y-3 transition-opacity duration-300"
-                                                            style={{
-                                                                opacity: negotiationGenerating ? 0.45 : 1,
-                                                                pointerEvents: negotiationGenerating ? 'none' : 'auto',
-                                                            }}>
-                                                            {/* Salary Range Hero */}
-                                                            {negotiationScript.salary_range && (
-                                                                <div className="rounded-xl p-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.06) 100%)', border: '1px solid rgba(16,185,129,0.18)' }}>
-                                                                    <div>
-                                                                        <div className="text-[9px] font-bold uppercase tracking-widest text-emerald-500/70 mb-1">Target Compensation</div>
-                                                                        <div className="text-xl font-bold tracking-tight" style={{ color: '#34d399' }}>
+                                                {negotiationScript && (
+                                                    <div
+                                                        className="space-y-3 transition-opacity duration-300"
+                                                        style={{
+                                                            opacity: negotiationGenerating ? 0.45 : 1,
+                                                            pointerEvents: negotiationGenerating ? 'none' : 'auto',
+                                                        }}
+                                                    >
+                                                        {/* Salary range hero */}
+                                                        {negotiationScript.salary_range && (
+                                                            <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                                                <div className="h-[2px]" style={{ background: 'linear-gradient(90deg, #34d399, transparent 70%)' }} />
+                                                                <div className="px-4 py-3.5 flex items-center justify-between gap-4">
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-emerald-400/80 mb-1">Target compensation</p>
+                                                                        <p className="text-[20px] font-bold tabular-nums tracking-tight" style={{ color: '#34d399' }}>
                                                                             {negotiationScript.salary_range.currency} {negotiationScript.salary_range.min.toLocaleString()}
-                                                                            <span className="text-text-tertiary font-normal mx-2">–</span>
+                                                                            <span className="text-text-tertiary font-normal mx-1.5">–</span>
                                                                             {negotiationScript.salary_range.max.toLocaleString()}
-                                                                        </div>
+                                                                        </p>
                                                                         {negotiationScript.sources?.length > 0 && (
-                                                                            <div className="text-[9px] text-text-tertiary mt-1">{negotiationScript.sources.length} market source{negotiationScript.sources.length > 1 ? 's' : ''}</div>
+                                                                            <p className="text-[10px] text-text-tertiary mt-1">{negotiationScript.sources.length} market source{negotiationScript.sources.length > 1 ? 's' : ''}</p>
                                                                         )}
                                                                     </div>
-                                                                    <span className={`text-[9px] font-bold px-2 py-1 rounded-full tracking-wide ${
+                                                                    <span className={`text-[9.5px] font-bold px-2 py-1 rounded-full tracking-wide shrink-0 ${
                                                                         negotiationScript.salary_range.confidence === 'high' ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/25' :
                                                                         negotiationScript.salary_range.confidence === 'medium' ? 'text-yellow-400 bg-yellow-500/15 border border-yellow-500/25' :
-                                                                        'text-text-tertiary bg-bg-input border border-border-subtle'
+                                                                        'text-text-tertiary bg-white/[0.04] border border-border-subtle'
                                                                     }`}>
                                                                         {(negotiationScript.salary_range.confidence || 'low').toUpperCase()}
                                                                     </span>
                                                                 </div>
-                                                            )}
+                                                            </div>
+                                                        )}
 
-                                                            {/* Step cards */}
+                                                        {/* 3-column step cards */}
+                                                        <div className="grid grid-cols-3 gap-2.5">
                                                             {[
-                                                                {
-                                                                    step: '01',
-                                                                    label: 'Opening',
-                                                                    sublabel: 'When asked about salary expectations',
-                                                                    content: negotiationScript.opening_line,
-                                                                    accent: '#10b981',
-                                                                    accentBg: 'rgba(16,185,129,0.07)',
-                                                                    accentBorder: 'rgba(16,185,129,0.2)',
-                                                                    quote: true,
-                                                                },
-                                                                {
-                                                                    step: '02',
-                                                                    label: 'Justify Your Ask',
-                                                                    sublabel: 'Link your track record to the number',
-                                                                    content: negotiationScript.justification,
-                                                                    accent: '#60a5fa',
-                                                                    accentBg: 'rgba(96,165,250,0.07)',
-                                                                    accentBorder: 'rgba(96,165,250,0.2)',
-                                                                    quote: false,
-                                                                },
-                                                                {
-                                                                    step: '03',
-                                                                    label: 'Counter & Hold',
-                                                                    sublabel: 'If they come back lower',
-                                                                    content: negotiationScript.counter_offer_fallback,
-                                                                    accent: '#fb923c',
-                                                                    accentBg: 'rgba(251,146,60,0.07)',
-                                                                    accentBorder: 'rgba(251,146,60,0.2)',
-                                                                    quote: true,
-                                                                },
+                                                                { step: 1, label: 'Opening',     sublabel: 'When asked about salary',         content: negotiationScript.opening_line,           accent: '#60a5fa', quote: true  },
+                                                                { step: 2, label: 'Justify',     sublabel: 'Link your record to the number',  content: negotiationScript.justification,           accent: '#a78bfa', quote: false },
+                                                                { step: 3, label: 'Counter',     sublabel: 'If they come back lower',         content: negotiationScript.counter_offer_fallback,  accent: '#34d399', quote: true  },
                                                             ].filter(s => s.content).map((s) => ({ ...s, content: s.content.replace(/^["'"']+|["'"']+$/g, '').trim() })).map((s) => (
-                                                                <div key={s.step} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${s.accentBorder}`, background: s.accentBg }}>
-                                                                    <div className="flex items-center justify-between px-3.5 pt-3 pb-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="text-[10px] font-black tracking-widest" style={{ color: s.accent, opacity: 0.6 }}>STEP {s.step}</span>
-                                                                            <span className="text-[11px] font-bold text-text-primary">{s.label}</span>
+                                                                <div
+                                                                    key={s.step}
+                                                                    className="rounded-xl overflow-hidden flex flex-col"
+                                                                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+                                                                >
+                                                                    <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${s.accent}, transparent 80%)` }} />
+                                                                    <div className="px-3.5 pt-3 pb-3.5 flex flex-col gap-2 flex-1">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div
+                                                                                    className="w-5 h-5 rounded-md flex items-center justify-center text-[10.5px] font-bold tabular-nums"
+                                                                                    style={{ background: `${s.accent}1F`, border: `1px solid ${s.accent}33`, color: s.accent }}
+                                                                                >
+                                                                                    {s.step}
+                                                                                </div>
+                                                                                <span className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-text-tertiary">{s.label}</span>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    navigator.clipboard?.writeText(s.content);
+                                                                                    setCopiedStep(String(s.step));
+                                                                                    setTimeout(() => setCopiedStep(null), 1500);
+                                                                                }}
+                                                                                title="Copy to clipboard"
+                                                                                className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-white/[0.05] transition-colors"
+                                                                            >
+                                                                                {copiedStep === String(s.step)
+                                                                                    ? <Check size={11} className="text-emerald-400" strokeWidth={2.5} />
+                                                                                    : <Copy size={11} />}
+                                                                            </button>
                                                                         </div>
-                                                                        <button
-                                                                            onClick={() => navigator.clipboard?.writeText(s.content)}
-                                                                            title="Copy to clipboard"
-                                                                            className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-medium transition-all hover:bg-bg-input text-text-tertiary hover:text-text-secondary"
-                                                                        >
-                                                                            <Check size={9} />
-                                                                            Copy
-                                                                        </button>
-                                                                    </div>
-                                                                    <p className="text-[10px] text-text-tertiary px-3.5 pb-2 -mt-1 tracking-wide">{s.sublabel}</p>
-                                                                    <div className="mx-3.5 mb-3.5">
-                                                                        <p className={`text-[12px] leading-relaxed text-text-primary ${s.quote ? 'pl-3 italic' : ''}`}>
+                                                                        <p className="text-[10px] text-text-tertiary leading-snug">{s.sublabel}</p>
+                                                                        <p className={`text-[11.5px] leading-relaxed text-text-primary mt-1 ${s.quote ? 'italic' : ''}`}>
                                                                             {s.content}
                                                                         </p>
                                                                     </div>
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </BezelCard>
                                     )}
 
